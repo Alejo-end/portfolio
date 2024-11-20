@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import RingMenu from "../components/RingMenu";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -10,6 +11,17 @@ const geistSans = localFont({
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+const porterSans = localFont({
+  src: "./fonts/porter-sans-inline-block.otf",
+  variable: "--font-porter-sans",
+  weight: "100 900",
+});
+const porterMono = localFont({
+  src: "./fonts/porter-sans-inline-block.ttf",
+  variable: "--font-porter-mono",
   weight: "100 900",
 });
 
@@ -26,8 +38,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${porterSans.variable} ${porterMono.variable} ${geistMono.variable} ${geistSans.variable} antialiased`}
       >
+        <RingMenu /> {/* Floating Sidebar */}
         {children}
       </body>
     </html>
