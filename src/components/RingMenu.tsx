@@ -7,16 +7,16 @@ import { Home, Briefcase, User, Code } from "lucide-react"; // Import icons from
 // Define the menu items
 const menuItems = [
     { name: "Home", icon: Home, path: "/" },
-    { name: "Work XP", icon: Code, path: "/work-experience" },
+    { name: "XP", icon: Code, path: "/experience" },
     { name: "Projects", icon: Briefcase, path: "/projects" },
-    { name: "Persona", icon: User, path: "/me" },
+    { name: "Persona", icon: User, path: "https://bento.me/alejoend" },
 ];
 
 const RingMenu = () => {
     const pathname = usePathname(); // Get the current path in Next.js
 
     return (
-        <div className={`fixed top-5 left-5 bg-gray-100 shadow-lg rounded-lg w-48 font-[family-name:var(--font-porter-sans)]`}>
+        <div className={`fixed top-5 left-5 bg-gray-100 shadow-lg rounded-lg w-52 text-lg font-[family-name:var(--font-porter-sans)]`}>
             {menuItems.map((item, index) => {
                 const Icon = item.icon;
                 const isSelected = pathname === item.path; // Compare current route with the item's path

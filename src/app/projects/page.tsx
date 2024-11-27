@@ -18,19 +18,25 @@ interface Project {
 
 const projects: Project[] = [
     {
-        title: "AI-Powered Radiotherapy Tool",
-        description: "A web application for radiotherapy planning that utilizes AI to auto-segment medical images. This project streamlines the workflow for radiotherapy physicians and improves treatment accuracy.",
-        technologies: ["React", "TypeScript", "Azure", "TensorFlow.js"],
-        videoSrc: "/videos/radiotherapy-tool.mp4",
-        githubUrl: "https://github.com/yourusername/radiotherapy-tool",
-        liveUrl: "https://radiotherapy-tool.example.com"
+        title: "RNBO Studies",
+        description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
+        technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
+        videoSrc: "/videos/rnbo.mp4",
+        githubUrl: "https://github.com/yourusername/rnbo-studies",
     },
     {
-        title: "Government Services Portal",
-        description: "A comprehensive portal for various government procedures, featuring ID and passport recognition capabilities. This project aims to digitize and simplify access to government services for citizens.",
-        technologies: ["Next.js", "Python", "FastAPI", "OpenCV"],
+        title: "Live Coding",
+        description: "I enjoy live coding and have been using it in small party events.",
+        technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "TypeScript"],
         videoSrc: "/videos/gov-services-portal.mp4",
-        githubUrl: "https://github.com/yourusername/gov-services-portal"
+    },
+    {
+        title: "Delivery Calculator",
+        description: "Delivery fee calculator for a food delivery service. This project was built to help customers estimate the delivery fee based on their location.",
+        technologies: ["React.js", "Typescript", "ChakraUI"],
+        videoSrc: "/videos/delivery-calculator.mp4",
+        githubUrl: "https://github.com/Alejo-end/delivery-calculator",
+        liveUrl: "https://delivery-calculator.vercel.app"
     },
     {
         title: "EcoBridge",
@@ -39,7 +45,7 @@ const projects: Project[] = [
         videoSrc: "/videos/ecobridge.mov",
         githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
         liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o"
-    }
+    },
 ]
 
 export default function Projects() {

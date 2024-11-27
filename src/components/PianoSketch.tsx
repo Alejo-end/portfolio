@@ -69,7 +69,7 @@ const PianoSketch = () => {
         };
     }, []);
 
-    return <div ref={sketchRef} />;
+    return <div className='cursor-pointer' ref={sketchRef} />;
 }
 
 export default PianoSketch;
