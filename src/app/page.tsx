@@ -11,7 +11,7 @@ export default function Home() {
             </div>
             <main className="flex gap-8 row-start-4 items-center sm:items-start w-full justify-center">
                 <div className="w-3/4 flex border-4 border-slate-400 border-dotted rounded-xl p-8 pb-2 gap-2 items-center">
-                    <p className="text-3xl mb-8 font-[family-name:var(--font-porter-sans)]">Alejandro? is a software engineer and UX Designer from Panama currently based in Helsinki, Finland with a enthusiasm for electronics and experimental music</p>
+                    <p className="text-3xl mb-8 font-[family-name:var(--font-porter-sans)]">Alejandro? is a software engineer and UX Designer from Panama  based in Helsinki, Finland with a enthusiasm for electronics and experimental music</p>
                 </div>
             </main>
             <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">

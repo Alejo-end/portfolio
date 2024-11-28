@@ -14,6 +14,7 @@ interface Project {
     videoSrc: string
     githubUrl?: string
     liveUrl?: string
+    year: number
 }
 
 const projects: Project[] = [
@@ -21,22 +22,25 @@ const projects: Project[] = [
         title: "RNBO Studies",
         description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
-        videoSrc: "/videos/rnbo.mp4",
+        videoSrc: "/videos/rnbo.mov",
         githubUrl: "https://github.com/yourusername/rnbo-studies",
+        year: 2024
     },
     {
         title: "Live Coding",
         description: "I enjoy live coding and have been using it in small party events.",
         technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "TypeScript"],
-        videoSrc: "/videos/gov-services-portal.mp4",
+        videoSrc: "/videos/gov-services-portal.mov",
+        year: 2023
     },
     {
         title: "Delivery Calculator",
         description: "Delivery fee calculator for a food delivery service. This project was built to help customers estimate the delivery fee based on their location.",
         technologies: ["React.js", "Typescript", "ChakraUI"],
-        videoSrc: "/videos/delivery-calculator.mp4",
+        videoSrc: "/videos/delivery-calculator.mov",
         githubUrl: "https://github.com/Alejo-end/delivery-calculator",
-        liveUrl: "https://delivery-calculator.vercel.app"
+        liveUrl: "https://delivery-calculator.vercel.app",
+        year: 2022
     },
     {
         title: "EcoBridge",
@@ -44,8 +48,9 @@ const projects: Project[] = [
         technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
         videoSrc: "/videos/ecobridge.mov",
         githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
-        liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o"
-    },
+        liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
+        year: 2020
+    }
 ]
 
 export default function Projects() {
@@ -54,7 +59,6 @@ export default function Projects() {
     return (
         <div className="min-h-screen bg-background pl-[var(--sidebar-width)]">
             <main className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold mb-8">Projects</h1>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
                         <CardContent className="p-6">
@@ -65,14 +69,17 @@ export default function Projects() {
                                         <Button
                                             key={index}
                                             variant="ghost"
-                                            className="w-full justify-start text-left"
+                                            className="w-full justify-start text-left py-6"
                                             onClick={() => setSelectedProject(project)}
                                         >
-                                            <div>
-                                                <p className="font-medium">{project.title}</p>
-                                                <p className="text-sm text-muted-foreground truncate">
-                                                    {project.technologies.join(', ')}
-                                                </p>
+                                            <div className="flex justify-between items-center w-full">
+                                                <div>
+                                                    <p className="font-medium">{project.title}</p>
+                                                    <p className="text-sm text-muted-foreground truncate">
+                                                        {project.technologies.join(', ')}
+                                                    </p>
+                                                </div>
+                                                <span className="text-sm text-muted-foreground">{project.year}</span>
                                             </div>
                                         </Button>
                                     ))}
