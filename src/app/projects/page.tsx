@@ -5,32 +5,44 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Github, Globe } from 'lucide-react'
+import { GithubIcon, Globe } from 'lucide-react'
+import AudioVisualizer from '@/components/AudioVisualizer'
+import FloatingObject from '@/components/FloatingObject'
 
 interface Project {
     title: string
     description: string
     technologies: string[]
-    videoSrc: string
+    videoSrc?: string
     githubUrl?: string
     liveUrl?: string
+    reactComponent?: React.ReactNode
     year: number
 }
 
 const projects: Project[] = [
     {
-        title: "RNBO Studies",
+        title: "MaxMSP Studies",
         description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
-        videoSrc: "/videos/rnbo.mov",
+        reactComponent: <AudioVisualizer><FloatingObject /></AudioVisualizer>,
         githubUrl: "https://github.com/yourusername/rnbo-studies",
         year: 2024
     },
     {
+        title: "Norns Studies",
+        description: "have been exploring the use of Norns, a platform for sound exploration. I ordered the electronics and soldered my own Norns shield from scratch and have been creating my own scripts.",
+        technologies: ["Lua", "SuperCollider", "Norns"],
+        videoSrc: "/videos/norns-studies.mov",
+        githubUrl: "",
+        year: 2024
+
+    },
+    {
         title: "Live Coding",
-        description: "I enjoy live coding and have been using it in small party events.",
-        technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "TypeScript"],
-        videoSrc: "/videos/gov-services-portal.mov",
+        description: "I enjoy live coding and have been part of this community called AlgoRave. There they do some improvisation with coding",
+        technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
+        videoSrc: "/videos/live-coding.mov",
         year: 2023
     },
     {
@@ -62,7 +74,6 @@ export default function Projects() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
                         <CardContent className="p-6">
-                            <h3 className="text-lg font-semibold mb-4">Project List</h3>
                             <ScrollArea className="h-[calc(100vh-12rem)]">
                                 <div className="space-y-4">
                                     {projects.map((project, index) => (
@@ -89,11 +100,21 @@ export default function Projects() {
                     </Card>
                     <Card className="md:col-span-2 rounded-lg border bg-card text-card-foreground shadow-sm">
                         <CardContent className="p-6">
-                            <video
-                                src={selectedProject.videoSrc}
-                                controls
-                                className="w-full aspect-video rounded-lg mb-4"
-                            />
+                            {selectedProject.reactComponent ? (
+                                <div className="w-full aspect-video rounded-lg mb-4">
+                                    {selectedProject.reactComponent}
+                                </div>
+                            ) : selectedProject.videoSrc ? (
+                                <video
+                                    src={selectedProject.videoSrc}
+                                    controls
+                                    className="w-full aspect-video rounded-lg mb-4"
+                                />
+                            ) : (
+                                <div className="w-full aspect-video rounded-lg mb-4 bg-muted flex items-center justify-center">
+                                    <p className="text-muted-foreground">No media available</p>
+                                </div>
+                            )}
                             <h2 className="text-2xl font-semibold">{selectedProject.title}</h2>
                             <p className="mt-4">{selectedProject.description}</p>
                             <div className="flex flex-wrap gap-2 mt-4">
@@ -107,7 +128,7 @@ export default function Projects() {
                                 {selectedProject.githubUrl && (
                                     <a href={selectedProject.githubUrl} target="_blank" rel="noopener noreferrer">
                                         <Button variant="outline" size="sm">
-                                            <Github className="mr-2 h-4 w-4" />
+                                            <GithubIcon className="mr-2 h-4 w-4" />
                                             GitHub
                                         </Button>
                                     </a>
