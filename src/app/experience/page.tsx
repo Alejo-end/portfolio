@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@radix-ui/react-scroll-area'
 import { BoxIcon } from 'lucide-react'
+import Image from 'next/image'
 
 interface WorkExperience {
     company: string
@@ -75,13 +76,7 @@ export default function WorkExperience() {
                                 <video src={selectedExperience.videoSrc} autoPlay loop muted className="w-full h-full object-cover rounded-lg mb-4" />
                             )}
                             {selectedExperience.imageSrc && (
-                                    <img
-                                        src={selectedExperience.imageSrc}
-                                        alt="project-img"
-                                        width={192} // Adjust these values based on your design
-                                        height={192}
-                                        className="w-full h-full object-cover rounded-lg mb-4"
-                                    />
+                                <Image src={selectedExperience.imageSrc} width={800} height={400} className="w-full h-full object-cover rounded-lg mb-4" alt={''} />
                             )}
                             <h3 className="text-2xl font-semibold font-[family-name:var(--font-porter-sans)]">{selectedExperience.position}</h3>
                             <p className="text-lg text-muted-foreground font-[family-name:var(--font-geist-sans)]">{selectedExperience.company}</p>

@@ -1,4 +1,5 @@
-import { createDevice } from '@rnbo/js';
+// disable-eslint
+import { createDevice, Device, Parameter } from '@rnbo/js';
 import React, { useEffect, useRef, useState } from 'react';
 import p5 from 'p5';
 import { createRoot, Root } from 'react-dom/client';
@@ -10,13 +11,13 @@ type AudioVisualizerProps = {
     children?: React.ReactNode;
 };
 
-const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ children }) => {
+const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     const sketchRef = useRef<HTMLDivElement>(null);
     const childrenContainerRef = useRef<HTMLDivElement>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const deviceRef = useRef<any>(null);
-    const xParamRef = useRef<any>(null);
-    const yParamRef = useRef<any>(null);
+    const deviceRef = useRef<Device>(null);
+    const xParamRef = useRef<Parameter>(null);
+    const yParamRef = useRef<Parameter>(null);
     const gainNodeRef = useRef<GainNode | null>(null);
     const reactRootRef = useRef<Root | null>(null);
 
@@ -35,7 +36,6 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ children }) => {
         device.node.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        deviceRef.current = device;
         xParamRef.current = device.parametersById.get('x');
         yParamRef.current = device.parametersById.get('y');
         gainNodeRef.current = gainNode;
@@ -63,13 +63,13 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ children }) => {
         }
     };
 
-    const sketch = (p: any) => {
+    const sketch = (p: p5) => {
         let xValue = 0;
         let yValue = 0;
         let childrenContainer: HTMLDivElement;
 
         p.setup = () => {
-            const canvas = p.createCanvas(920, 520);
+            const canvas = p.createCanvas(920, 500);
             canvas.parent(sketchRef.current!);
 
             p.noCursor();
@@ -97,7 +97,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ children }) => {
             }
 
             // Initialize Audio Context
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            audioContextRef.current = new (window.AudioContext || (window as Window).webkitAudioContext)();
             loadRNBO(audioContextRef.current);
 
             // Resume the AudioContext on mouse click
@@ -107,13 +107,13 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ children }) => {
         p.draw = () => {
             p.background(p.mouseY / 2, 100, 100);
             p.fill(360 - p.mouseY / 2, 100, 100);
-            p.rect(360, 360, p.mouseX + 1, p.mouseX + 1);
+            p.rect(460, 460, p.mouseX + 1, p.mouseX + 1);
 
             // Position the children container to follow rectangle
             if (childrenContainer) {
                 childrenContainer.position(
-                    360 - (p.mouseX + 1) / 2,
-                    360 - (p.mouseX + 1) / 2
+                    200 - (p.mouseX + 1) / 2,
+                    200 - (p.mouseX + 1) / 2
                 );
             }
 

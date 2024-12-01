@@ -16,7 +16,7 @@ const RepeatingTextSketch = ({ sentence, xPos, yPos, angle, bgColor }: Repeating
         const sketch = (p: p5) => {
             let bgColorBrightness: number;
             let textWidth: number;
-            let textHeight: number = 30; // Set a constant height for the text
+            const textHeight: number = 30; // Set a constant height for the text
 
             // Calculate brightness of the background color to adjust text color for contrast
             const getBrightness = (color: p5.Color) => {
