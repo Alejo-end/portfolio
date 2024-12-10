@@ -1,11 +1,15 @@
-"use client"
+'use client'
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
 
 const PianoSketch = () => {
     const sketchRef = useRef<HTMLDivElement>(null);
+    const windowRef = typeof window !== 'undefined' && window;
+
+
 
     useEffect(() => {
+        if (!windowRef) return;
         const sketch = (p: p5) => {
             const keyWidth = 60;
             const keyHeight = 220;
@@ -67,7 +71,7 @@ const PianoSketch = () => {
         return () => {
             p5Instance.remove(); // Clean up p5 instance on component unmount
         };
-    }, []);
+    }, [windowRef]);
 
     return <div className='cursor-pointer' ref={sketchRef} />;
 }

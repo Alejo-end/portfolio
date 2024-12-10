@@ -1,5 +1,5 @@
+'use-client'
 import Image from "next/image";
-import PianoSketch from "../components/PianoSketch";
 import { PersonStandingIcon } from 'lucide-react';
 
 export default function Home() {
@@ -7,7 +7,7 @@ export default function Home() {
         <div className="flex flex-col min-h-screen p-4 sm:p-8 md:p-16 lg:p-20 gap-8 select-none">
             <div className="flex-grow flex items-center self-center">
                 <div className="p-4 sm:p-6 border-4 border-slate-400 border-dotted rounded-xl w-full max-w-3xl">
-                    <PianoSketch />
+                   {/*  <PianoSketch /> */}
                     <p className="text-center mt-2">
                         Done with <a href="https://p5js.org/" target="_blank" rel="noopener noreferrer" className="underline">p5.js</a>
                     </p>
