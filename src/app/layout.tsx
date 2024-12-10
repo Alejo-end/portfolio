@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import RingMenu from "../components/RingMenu";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
+import { Providers } from "./Providers";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -40,8 +42,12 @@ export default function RootLayout({
       <body
         className={`${porterSans.variable} ${porterMono.variable} ${geistMono.variable} ${geistSans.variable} antialiased`}
       >
+        <Providers>
+        <div>
+        <DarkModeToggle /> {/* Dark Mode Toggle */}</div>
         <RingMenu /> {/* Floating Sidebar */}
         {children}
+        </Providers>
       </body>
     </html>
   );

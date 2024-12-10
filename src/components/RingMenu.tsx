@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -20,17 +20,17 @@ export default function RingMenu() {
     const toggleMenu = () => setIsOpen(!isOpen);
 
     return (
-        <div className="fixed top-5 left-5 z-50">
+        <div className="fixed top-16 left-5 z-50 flex items-center gap-2">
             <Button
                 variant="outline"
                 size="icon"
                 onClick={toggleMenu}
-                className="bg-gray-100 shadow-lg rounded-lg"
+                className="bg-gray-100 shadow-lg rounded-lg dark:bg-gray-800"
             >
                 {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
             {isOpen && (
-                <div className="mt-2 bg-gray-100 shadow-lg rounded-lg w-52 text-lg font-[family-name:var(--font-porter-sans)]">
+                <div className="absolute top-full left-0 mt-2 bg-gray-100 shadow-lg rounded-lg w-52 text-lg font-[family-name:var(--font-porter-sans)] dark:bg-gray-800">
                     {menuItems.map((item, index) => {
                         const Icon = item.icon;
                         const isSelected = pathname === item.path;
@@ -40,8 +40,8 @@ export default function RingMenu() {
                                 href={item.path}
                                 key={index}
                                 className={`flex items-center space-x-2 px-3 py-2 mb-2 rounded-lg transition-colors ${isSelected
-                                        ? "border-4 border-black font-bold bg-gray-300 px-2"
-                                        : "text-gray-600 hover:bg-gray-200"
+                                        ? "border-4 border-black font-bold bg-gray-300 px-2 dark:border-white dark:bg-gray-700"
+                                        : "text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
                                     }`}
                                 onClick={() => setIsOpen(false)}
                             >
