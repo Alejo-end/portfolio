@@ -7,9 +7,9 @@ const PianoSketch = () => {
 
     useEffect(() => {
         const sketch = (p: p5) => {
-            const keyWidth = 40;
-            const keyHeight = 120;
-            const blackKeyOffset = 25;
+            const keyWidth = 60;
+            const keyHeight = 220;
+            const blackKeyOffset = 40;
             const whiteKeys = [true, true, true, true, true, true];  // For simplicity, assume 5 white keys
             const blackKeys = [true, true, true]; // Only some keys are black
             const pressedKeys = [false, false, false, false, false, false]; // Track which keys are pressed

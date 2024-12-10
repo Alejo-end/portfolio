@@ -1,19 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { GithubIcon, Globe } from 'lucide-react'
-import AudioVisualizer from '@/components/AudioVisualizer'
-import FloatingObject from '@/components/FloatingObject'
+import { ProjectList } from '@/components/ProjectList'
+import { ProjectDetails } from '@/components/ProjectDetails'
 
 interface Project {
     title: string
     description: string
     technologies: string[]
     videoSrc?: string
+    images?: string | string[]
     githubUrl?: string
     liveUrl?: string
     reactComponent?: React.ReactNode
@@ -22,34 +18,33 @@ interface Project {
 
 const projects: Project[] = [
     {
-        title: "MaxMSP Studies",
-        description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
-        technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
-        reactComponent: <AudioVisualizer><FloatingObject /></AudioVisualizer>,
-        githubUrl: "https://github.com/yourusername/rnbo-studies",
-        year: 2024
-    },
-    {
         title: "Norns Studies",
-        description: "have been exploring the use of Norns, a platform for sound exploration. I ordered the electronics and soldered my own Norns shield from scratch and have been creating my own scripts.",
+        description: "have been exploring with hardware and decided to put together a Norns shield, which is an open source hardware that uses Lua and Supercollider for the creation of scripts that can go from sound processing to a very complex synthetizer. I ordered the electronics and soldered my own Norns shield from scratch.",
         technologies: ["Lua", "SuperCollider", "Norns"],
-        videoSrc: "/videos/norns-studies.mov",
+        images: ["/videos/norns1.png", "/videos/norns-soldering.mov", "/videos/norns3.png", "/videos/norns4.png", "/videos/norns2.png", "/videos/norns5.png", "/videos/norns-1.mp4", "/videos/norns-xl-arcologies-jam.mov"],
         githubUrl: "",
         year: 2024
-
     },
     {
         title: "Live Coding",
-        description: "I enjoy live coding and have been part of this community called AlgoRave. There they do some improvisation with coding",
+        description: "I enjoy live coding and have been part of a community called AlgoRave. There we do some improvisation with coding",
         technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
-        videoSrc: "/videos/live-coding.mov",
+        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png",],
         year: 2023
+    },
+    {
+        title: "MaxMSP Studies",
+        description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
+        technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
+        reactComponent: <div />,
+        githubUrl: "https://github.com/yourusername/rnbo-studies",
+        year: 2024
     },
     {
         title: "Delivery Calculator",
         description: "Delivery fee calculator for a food delivery service. This project was built to help customers estimate the delivery fee based on their location.",
         technologies: ["React.js", "Typescript", "ChakraUI"],
-        videoSrc: "/videos/delivery-calculator.mov",
+        images: "/videos/delivery-calculator.mov",
         githubUrl: "https://github.com/Alejo-end/delivery-calculator",
         liveUrl: "https://delivery-calculator.vercel.app",
         year: 2022
@@ -58,7 +53,7 @@ const projects: Project[] = [
         title: "EcoBridge",
         description: "An open data project aimed at accelerating transparency in public finances. Won 1st place in an open data hackathon and received a grant for further development.",
         technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
-        videoSrc: "/videos/ecobridge.mov",
+        images: "/videos/ecobridge.mov",
         githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
         liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
         year: 2020
@@ -66,84 +61,22 @@ const projects: Project[] = [
 ]
 
 export default function Projects() {
-    const [selectedProject, setSelectedProject] = useState<Project>(projects[0]);
+    const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
 
     return (
-        <div className="min-h-screen bg-background pl-[var(--sidebar-width)]">
-            <main className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                        <CardContent className="p-6">
-                            <ScrollArea className="h-[calc(100vh-12rem)]">
-                                <div className="space-y-4">
-                                    {projects.map((project, index) => (
-                                        <Button
-                                            key={index}
-                                            variant="ghost"
-                                            className="w-full justify-start text-left py-6"
-                                            onClick={() => setSelectedProject(project)}
-                                        >
-                                            <div className="flex justify-between items-center w-full">
-                                                <div>
-                                                    <p className="font-medium">{project.title}</p>
-                                                    <p className="text-sm text-muted-foreground truncate">
-                                                        {project.technologies.join(', ')}
-                                                    </p>
-                                                </div>
-                                                <span className="text-sm text-muted-foreground">{project.year}</span>
-                                            </div>
-                                        </Button>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                    <Card className="md:col-span-2 rounded-lg border bg-card text-card-foreground shadow-sm">
-                        <CardContent className="p-6">
-                            {selectedProject.reactComponent ? (
-                                <div className="w-full aspect-video rounded-lg mb-4">
-                                    {selectedProject.reactComponent}
-                                </div>
-                            ) : selectedProject.videoSrc ? (
-                                <video
-                                    src={selectedProject.videoSrc}
-                                    controls
-                                    className="w-full aspect-video rounded-lg mb-4"
-                                />
-                            ) : (
-                                <div className="w-full aspect-video rounded-lg mb-4 bg-muted flex items-center justify-center">
-                                    <p className="text-muted-foreground">No media available</p>
-                                </div>
-                            )}
-                            <h2 className="text-2xl font-semibold">{selectedProject.title}</h2>
-                            <p className="mt-4">{selectedProject.description}</p>
-                            <div className="flex flex-wrap gap-2 mt-4">
-                                {selectedProject.technologies.map((tech, index) => (
-                                    <Badge key={index} variant="secondary" className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-                                        {tech}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="flex gap-4 mt-6">
-                                {selectedProject.githubUrl && (
-                                    <a href={selectedProject.githubUrl} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="outline" size="sm">
-                                            <GithubIcon className="mr-2 h-4 w-4" />
-                                            GitHub
-                                        </Button>
-                                    </a>
-                                )}
-                                {selectedProject.liveUrl && (
-                                    <a href={selectedProject.liveUrl} target="_blank" rel="noopener noreferrer">
-                                        <Button variant="outline" size="sm">
-                                            <Globe className="mr-2 h-4 w-4" />
-                                            Live Demo
-                                        </Button>
-                                    </a>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+        <div className="min-h-screen bg-background md:pl-[var(--sidebar-width)]">
+            <main className="mx-auto p-8">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+                    <div className="md:col-span-1 mb-6 md:mb-0">
+                    <ProjectList
+                        projects={projects}
+                        selectedProject={selectedProject}
+                        onSelectProject={setSelectedProject}
+                    />
+                    </div>
+                    <div className="md:col-span-4">
+                        <ProjectDetails project={selectedProject} />
+                    </div>
                 </div>
             </main>
         </div>

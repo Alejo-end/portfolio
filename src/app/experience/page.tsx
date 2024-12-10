@@ -1,12 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@radix-ui/react-scroll-area'
-import { BoxIcon } from 'lucide-react'
-import Image from 'next/image'
+import { ExperienceList } from '@/components/ExperienceList'
+import { ExperienceDetails } from '@/components/ExperienceDetails'
 
 interface WorkExperience {
     company: string
@@ -14,9 +10,8 @@ interface WorkExperience {
     duration: string
     description: string
     skills: string[]
-    videoSrc?: string
     imageSrc?: string
-    githubUrl?: string
+    videoSrc?: string
 }
 
 const workExperiences: WorkExperience[] = [
@@ -40,11 +35,10 @@ const workExperiences: WorkExperience[] = [
         company: "PayPro Int.",
         position: "Full Stack Developer (Part-Time Contract)",
         duration: "December 2020 - March 2021",
-        description: "Part of the development team for a software product; developed a web client in React and wrote data scraping scripts in Python.",
+        description: "Part of the development team for a software product; developed a web client in React for managing pharmacies invoicing and wrote data scraping scripts in Python.",
         skills: ["React", "Python"],
         imageSrc: "/videos/aig.png"
     },
-
     {
         company: "Trust for the Americas / OAS",
         position: "Full Stack Developer",
@@ -61,60 +55,25 @@ const workExperiences: WorkExperience[] = [
         skills: ["HTML", "CSS", "JavaScript", "Magento"],
         imageSrc: "/videos/merkadoo.png"
     }
-];
+]
 
 export default function WorkExperience() {
-    const [selectedExperience, setSelectedExperience] = useState<WorkExperience>(workExperiences[0]);
+    const [selectedExperience, setSelectedExperience] = useState<WorkExperience>(workExperiences[0])
 
     return (
-        <div className="min-h-screen bg-background pl-[var(--sidebar-width)]">
-            <main className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="md:col-span-2 rounded-lg border bg-card text-card-foreground shadow-sm">
-                        <CardContent className="p-6">
-                            {selectedExperience.videoSrc && (
-                                <video src={selectedExperience.videoSrc} autoPlay loop muted className="w-full h-full object-cover rounded-lg mb-4" />
-                            )}
-                            {selectedExperience.imageSrc && (
-                                <Image src={selectedExperience.imageSrc} width={800} height={400} className="w-full h-full object-cover rounded-lg mb-4" alt={''} />
-                            )}
-                            <h3 className="text-2xl font-semibold font-[family-name:var(--font-porter-sans)]">{selectedExperience.position}</h3>
-                            <p className="text-lg text-muted-foreground font-[family-name:var(--font-geist-sans)]">{selectedExperience.company}</p>
-                            <p className="text-sm text-muted-foreground mt-1 font-[family-name:var(--font-geist-sans)]">{selectedExperience.duration}</p>
-                            <p className="mt-4">{selectedExperience.description}</p>
-                            <div className="flex flex-wrap gap-2 mt-4">
-                                {selectedExperience.skills.map((skill, skillIndex) => (
-                                    <Badge key={skillIndex} variant="secondary" className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-                                        {skill}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                        <CardContent className="p-6">
-                            <h4 className="text-3xl font-semibold mb-4 font-[family-name:var(--font-porter-sans)]">5 years of Experience</h4>
-                            <ScrollArea className="h-[calc(100vh-12rem)]">
-                                <div className="space-y-4">
-                                    {workExperiences.map((experience, index) => (
-                                        <Button
-                                            key={index}
-                                            variant={selectedExperience === experience ? "secondary" : "ghost"}
-                                            className="w-full h-full justify-start text-left"
-                                            onClick={() => setSelectedExperience(experience)}
-                                        >
-                                            <BoxIcon />
-                                            <div>
-                                                <p className="font-medium text-lg">{experience.position}</p>
-                                                <p className="text-md text-muted-foreground">{experience.company}</p>
-                                                <p className="text-sm text-muted-foreground">{experience.duration}</p>
-                                            </div>
-                                        </Button>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
+        <div className="min-h-screen bg-background md:pl-[var(--sidebar-width)]">
+            <main className="mx-auto md:p-8">
+                <div className="md:grid md:grid-cols-5 gap-8">
+                    <div className="md:col-span-1 mb-6 md:mb-0">
+                        <ExperienceList
+                            experiences={workExperiences}
+                            selectedExperience={selectedExperience}
+                            onSelectExperience={setSelectedExperience}
+                        />
+                    </div>
+                    <div className="md:col-span-4">
+                        <ExperienceDetails experience={selectedExperience} />
+                    </div>
                 </div>
             </main>
         </div>

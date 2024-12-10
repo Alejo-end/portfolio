@@ -1,4 +1,4 @@
-// disable-eslint
+/* // disable-eslint
 import { createDevice, Device, Parameter } from '@rnbo/js';
 import React, { useEffect, useRef, useState } from 'react';
 import p5 from 'p5';
@@ -22,7 +22,7 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     const reactRootRef = useRef<Root | null>(null);
 
     const [isMuted, setIsMuted] = useState(false);
-    const [volume, setVolume] = useState(1);
+    const [volume, setVolume] = useState(0);
 
     const loadRNBO = async (audioContext: AudioContext) => {
         await audioContext.resume();
@@ -69,7 +69,7 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
         let childrenContainer: HTMLDivElement;
 
         p.setup = () => {
-            const canvas = p.createCanvas(920, 500);
+            const canvas = p.createCanvas(920, 920);
             canvas.parent(sketchRef.current!);
 
             p.noCursor();
@@ -165,7 +165,7 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     }, [children]);
 
     return (
-        <div className="relative w-[920px] h-[500px]">
+        <div className="relative w-[920px] h-[920px]">
             <div ref={sketchRef} className="absolute top-0 left-0" />
             <div
                 ref={childrenContainerRef}
@@ -188,4 +188,4 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     );
 };
 
-export default AudioVisualizer;
+export default AudioVisualizer; */
