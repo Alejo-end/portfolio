@@ -28,7 +28,7 @@ const projects: Project[] = [
         title: "Live Coding",
         description: "I enjoy live coding and have been part of a community called AlgoRave. There we do some improvisation with coding",
         technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
-        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png",],
+        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png", "/videos/hydra1.mov", "/videos/hydra2.mov", "/videos/hydra1.png"],
         year: 2023
     },
     {
