@@ -24,7 +24,7 @@ const workExperiences: WorkExperience[] = [
         videoSrc: "/videos/mvision.mov"
     },
     {
-        company: "Autoridad Nacional para la Innovación Gubernamental",
+        company: "National Innovation Office of Panama",
         position: "Full Stack Developer",
         duration: "February 2021 - September 2021",
         description: "Worked with the National Innovation Office of Panama as a Full Stack Developer, using Python and React to build and redesign consulting services for various government procedures. Developed with Next.js and implemented a server with FastAPI for ID and passport recognition.",
@@ -33,7 +33,7 @@ const workExperiences: WorkExperience[] = [
     },
     {
         company: "PayPro Int.",
-        position: "Full Stack Developer (Part-Time Contract)",
+        position: "Full Stack Developer",
         duration: "December 2020 - March 2021",
         description: "Part of the development team for a software product; developed a web client in React for managing pharmacies invoicing and wrote data scraping scripts in Python.",
         skills: ["React", "Python"],

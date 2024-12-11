@@ -66,9 +66,9 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                                 <div className="flex items-start gap-3">
                                     <BoxIcon className="mt-1 h-4 w-4" />
                                     <div>
-                                        <p className="font-medium text-lg">{experience.position}</p>
-                                        <p className="text-md text-muted-foreground">{experience.company}</p>
-                                        <p className="text-sm text-muted-foreground">{experience.duration}</p>
+                                        <p className="text-lg font-[family-name:var(--font-poppins-bold)]">{experience.position}</p>
+                                        <p className="text-md text-muted-foreground font-[family-name:var(--font-poppins-medium)] sm:hidden">{experience.company}</p>
+                                        <p className="text-sm font-[family-name:var(--font-poppins-light)] sm:hidden">{experience.duration}</p>
                                     </div>
                                 </div>
                             </Button>
