@@ -1,11 +1,9 @@
-/* // disable-eslint
 import { createDevice, Device, Parameter } from '@rnbo/js';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import p5 from 'p5';
 import { createRoot, Root } from 'react-dom/client';
 import { Button } from "@/components/ui/button"
-import { Volume2, VolumeX } from 'lucide-react'
-import { Slider } from './ui/slider';
+import { Volume2, VolumeX } from 'lucide-react';
 
 type AudioVisualizerProps = {
     children?: React.ReactNode;
@@ -15,55 +13,45 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     const sketchRef = useRef<HTMLDivElement>(null);
     const childrenContainerRef = useRef<HTMLDivElement>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const deviceRef = useRef<Device>(null);
-    const xParamRef = useRef<Parameter>(null);
-    const yParamRef = useRef<Parameter>(null);
-    const gainNodeRef = useRef<GainNode | null>(null);
+    const deviceRef = useRef<Device | null>(null);
+    const xParamRef = useRef<Parameter | null>(null);
+    const yParamRef = useRef<Parameter | null>(null);
+    const gainParamRef = useRef<Parameter | null>(null);
     const reactRootRef = useRef<Root | null>(null);
+    const p5InstanceRef = useRef<p5 | null>(null);
 
-    const [isMuted, setIsMuted] = useState(false);
-    const [volume, setVolume] = useState(0);
+    const [isMuted, setIsMuted] = useState(true);
+    const [gainValue, setGainValue] = useState();
 
-    const loadRNBO = async (audioContext: AudioContext) => {
-        await audioContext.resume();
+    const createSketch = useCallback((p: p5) => {
+        // Use useCallback to memoize loadRNBO and wrap it inside the sketch creation
+        const loadRNBO = async (audioContext: AudioContext) => {
+            await audioContext.resume();
 
-        const rawPatcher = await fetch('/patches/patch.export.json');
-        const patcher = await rawPatcher.json();
+            const rawPatcher = await fetch('/patches/patch.export.json');
+            const patcher = await rawPatcher.json();
 
-        const device = await createDevice({ context: audioContext, patcher });
+            const device = await createDevice({ context: audioContext, patcher });
+            deviceRef.current = device;
 
-        const gainNode = audioContext.createGain();
-        device.node.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+            // Connect device directly to audio context destination
+            device.node.connect(audioContext.destination);
 
-        xParamRef.current = device.parametersById.get('x');
-        yParamRef.current = device.parametersById.get('y');
-        gainNodeRef.current = gainNode;
-    };
+            // Get references to RNBO parameters
+            xParamRef.current = device.parametersById.get('x');
+            yParamRef.current = device.parametersById.get('y');
 
-    const startAudioContext = () => {
-        const audioContext = audioContextRef.current;
-        if (audioContext && audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-    };
+            // Get reference to gain parameter from the Max patcher
+            const gainParam = device.parametersById.get('gain');
+            gainParamRef.current = gainParam;
 
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-        if (gainNodeRef.current) {
-            gainNodeRef.current.gain.setValueAtTime(isMuted ? volume : 0, audioContextRef.current?.currentTime || 0);
-        }
-    };
+            // Set initial gain value if parameter exists
+            if (gainParam) {
+                // Set initial value from the RNBO parameter or use default
+                setGainValue(gainParam.normalizedValue);
+            }
+        };
 
-    const handleVolumeChange = (newVolume: number[]) => {
-        const volumeValue = newVolume[0];
-        setVolume(volumeValue);
-        if (gainNodeRef.current && !isMuted) {
-            gainNodeRef.current.gain.setValueAtTime(volumeValue, audioContextRef.current?.currentTime || 0);
-        }
-    };
-
-    const sketch = (p: p5) => {
         let xValue = 0;
         let yValue = 0;
         let childrenContainer: HTMLDivElement;
@@ -76,26 +64,25 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
             p.colorMode(p.HSB, 360, 100, 100);
             p.rectMode(p.CENTER);
             p.noStroke();
-
             // Create container for React children
-            childrenContainer = p.createDiv();
-            childrenContainer.parent(sketchRef.current!);
-            childrenContainer.position(0, 0);
-            childrenContainer.style('position', 'absolute');
-            childrenContainer.style('top', '0');
-            childrenContainer.style('left', '0');
-            childrenContainer.style('width', '50%');
-            childrenContainer.style('height', '50%');
-            childrenContainer.style('pointer-events', 'none');
+            childrenContainer = document.createElement('div');
+            childrenContainer.style.position = 'absolute';
+            childrenContainer.style.top = '0';
+            childrenContainer.style.left = '0';
+            childrenContainer.style.width = '50%';
+            childrenContainer.style.height = '50%';
+            sketchRef.current?.appendChild(childrenContainer);
+            childrenContainer.style.left = '0';
+            childrenContainer.style.width = '50%';
+            childrenContainer.style.height = '50%';
+            childrenContainer.style.pointerEvents = 'none';
 
-            // Render React children
             if (childrenContainerRef.current && children) {
                 if (!reactRootRef.current) {
-                    reactRootRef.current = createRoot(childrenContainer.elt);
+                    reactRootRef.current = createRoot(childrenContainer);
                 }
                 reactRootRef.current.render(children);
             }
-
             // Initialize Audio Context
             audioContextRef.current = new (window.AudioContext || (window as Window).webkitAudioContext)();
             loadRNBO(audioContextRef.current);
@@ -107,14 +94,13 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
         p.draw = () => {
             p.background(p.mouseY / 2, 100, 100);
             p.fill(360 - p.mouseY / 2, 100, 100);
-            p.rect(460, 460, p.mouseX + 1, p.mouseX + 1);
+            p.circle(460, 460, p.mouseX + 1);
+
+            
 
             // Position the children container to follow rectangle
             if (childrenContainer) {
-                childrenContainer.position(
-                    200 - (p.mouseX + 1) / 2,
-                    200 - (p.mouseX + 1) / 2
-                );
+                childrenContainer.style.transform = `translate(${200 - (p.mouseX + 1) / 2}px, ${200 - (p.mouseX + 1) / 2}px)`;
             }
 
             yValue = p.map(p.mouseY, 0, p.height, 0, 1);
@@ -128,11 +114,30 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
                 xParamRef.current.normalizedValue = xValue;
             }
         };
+
+        return p;
+    }, [children]);
+
+    const startAudioContext = () => {
+        const audioContext = audioContextRef.current;
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+    };
+
+    const toggleMute = () => {
+        const newMutedState = !isMuted;
+        setIsMuted(newMutedState);
+
+        if (gainParamRef.current) {
+            // Set gain to 0 when muted, otherwise restore previous value
+            gainParamRef.current.normalizedValue = newMutedState ? 0 : gainValue;
+        }
     };
 
     useEffect(() => {
         // Initialize p5.js instance
-        const p5Instance = new p5(sketch, sketchRef.current!);
+        p5InstanceRef.current = new p5(createSketch, sketchRef.current!);
 
         // Cleanup on unmount
         return () => {
@@ -143,19 +148,17 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
             }
 
             // Remove p5 instance
-            p5Instance.remove();
+            if (p5InstanceRef.current) {
+                p5InstanceRef.current.remove();
+                p5InstanceRef.current = null;
+            }
 
             // Close audio context
             if (audioContextRef.current) {
                 audioContextRef.current.close();
             }
-
-            // Destroy RNBO device
-            if (deviceRef.current) {
-                deviceRef.current.destroy();
-            }
         };
-    }, [sketch]);
+    }, [createSketch]);
 
     // Add children dependency to re-render when children change
     useEffect(() => {
@@ -165,27 +168,19 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     }, [children]);
 
     return (
-        <div className="relative w-[920px] h-[920px]">
+        <div className="relative md:w-[920px] md:h-[920px]">
             <div ref={sketchRef} className="absolute top-0 left-0" />
             <div
                 ref={childrenContainerRef}
                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
             />
-            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-4 bg-black/50 p-2 rounded-md w-52">
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-4 bg-black/50 p-2 rounded-md w-12">
                 <Button onClick={toggleMute} variant="ghost" size="icon" aria-label={isMuted ? "Unmute" : "Mute"}>
                     {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
                 </Button>
-                <Slider
-                    value={[volume]}
-                    onValueChange={handleVolumeChange}
-                    max={1}
-                    step={0.01}
-                    className="w-32"
-                    aria-label="Volume"
-                />
             </div>
         </div>
     );
 };
 
-export default AudioVisualizer; */
+export default AudioVisualizer;

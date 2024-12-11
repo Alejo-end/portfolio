@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ProjectList } from '@/components/ProjectList'
 import { ProjectDetails } from '@/components/ProjectDetails'
+import AudioVisualizer from '@/components/AudioVisualizer'
 
 interface Project {
     title: string
@@ -36,8 +37,8 @@ const projects: Project[] = [
         title: "MaxMSP Studies",
         description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
-        reactComponent: <div />,
         githubUrl: "https://github.com/yourusername/rnbo-studies",
+        reactComponent: <div><AudioVisualizer/></div> ,
         year: 2024
     },
     {
