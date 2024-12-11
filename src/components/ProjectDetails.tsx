@@ -43,17 +43,6 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
 
     return (
         <div className="space-y-6">
-            <div className="w-full rounded-lg overflow-hidden bg-secondary/10">
-                {project.reactComponent ? (
-                    project.reactComponent
-                ) : project.images ? (
-                    renderMedia()
-                ) : (
-                    <div className="w-full h-64 flex items-center justify-center">
-                        <p className="text-muted-foreground">No media available</p>
-                    </div>
-                )}
-            </div>
             <Card className="space-y-4 p-4 md:p-6">
                 <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-porter-sans)]">
                     {project.title}
@@ -91,6 +80,18 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
                     )}
                 </div>
             </Card>
+            <div className="w-full rounded-lg overflow-hidden bg-secondary/10">
+                {project.reactComponent ? (
+                    project.reactComponent
+                ) : project.images ? (
+                    renderMedia()
+                ) : (
+                    <div className="w-full h-64 flex items-center justify-center">
+                        <p className="text-muted-foreground">No media available</p>
+                    </div>
+                )}
+            </div>
+            
         </div>
     )
 }

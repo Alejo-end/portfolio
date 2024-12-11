@@ -19,7 +19,7 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
 
     return (
         <div className="space-y-4 p-4 md:p-6">
-            <h4 className="text-lg md:text-3xl font-semibold font-[family-name:var(--font-porter-sans)] text-center md:text-left">5 years of Experience</h4>
+            <h4 className="text-lg md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">5 years of Experience</h4>
             <div className="md:hidden">
                 <Button
                     onClick={toggleDropdown}

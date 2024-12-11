@@ -19,7 +19,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
 
     return (
         <div className="space-y-4 p-4 md:p-6">
-            <h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-porter-sans)] text-center md:text-left">Projects</h4>
+            <h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">Projects</h4>
             <div className="md:hidden">
                 <Button
                     onClick={toggleDropdown}
@@ -42,9 +42,9 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                                 }}
                             >
                                 <div className="flex justify-between items-center w-full">
-                                    <div>
-                                        <p className="font-medium">{project.title}</p>
-                                        <p className="text-sm text-muted-foreground truncate">
+                                    <div className='w-14'>
+                                        <p className="font-medium font-[family-name:var(--font-poppins-bold)]">{project.title}</p>
+                                        <p className="text-sm text-muted-foreground md:text-wrap">
                                             {project.technologies.join(', ')}
                                         </p>
                                     </div>

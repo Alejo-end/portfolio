@@ -1,4 +1,4 @@
-import { createDevice, Device, Parameter } from '@rnbo/js';
+/* import { createDevice, Device, Parameter } from '@rnbo/js';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import p5 from 'p5';
 import { createRoot, Root } from 'react-dom/client';
@@ -20,10 +20,11 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     const reactRootRef = useRef<Root | null>(null);
     const p5InstanceRef = useRef<p5 | null>(null);
 
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
     const [gainValue, setGainValue] = useState();
 
     const createSketch = useCallback((p: p5) => {
+        if (!window) return;
         // Use useCallback to memoize loadRNBO and wrap it inside the sketch creation
         const loadRNBO = async (audioContext: AudioContext) => {
             await audioContext.resume();
@@ -84,7 +85,7 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
                 reactRootRef.current.render(children);
             }
             // Initialize Audio Context
-            audioContextRef.current = new (window.AudioContext || (window as Window).webkitAudioContext)();
+            audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
             loadRNBO(audioContextRef.current);
 
             // Resume the AudioContext on mouse click
@@ -183,4 +184,4 @@ const AudioVisualizer = ({ children }: AudioVisualizerProps) => {
     );
 };
 
-export default AudioVisualizer;
+export default AudioVisualizer; */

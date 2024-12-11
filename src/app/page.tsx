@@ -20,7 +20,7 @@ export default function Home() {
                     </p>
                 </div>
             </main>
-            <footer className="flex gap-4 sm:gap-6 flex-wrap items-center justify-center">
+            <footer className="flex gap-4 sm:gap-6 flex-wrap items-center justify-center font-[family-name:var(--font-poppins-bold)]">
                 <a
                     className="flex items-center gap-2 hover:underline hover:underline-offset-4 text-xl sm:text-2xl md:text-3xl"
                     href="/projects"

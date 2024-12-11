@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { ProjectList } from '@/components/ProjectList'
 import { ProjectDetails } from '@/components/ProjectDetails'
-import AudioVisualizer from '@/components/AudioVisualizer'
-
 interface Project {
     title: string
     description: string
@@ -20,7 +18,7 @@ interface Project {
 const projects: Project[] = [
     {
         title: "Norns Studies",
-        description: "have been exploring with hardware and decided to put together a Norns shield, which is an open source hardware that uses Lua and Supercollider for the creation of scripts that can go from sound processing to a very complex synthetizer. I ordered the electronics and soldered my own Norns shield from scratch.",
+        description: "I have been exploring with hardware and decided to put together a Norns shield, which is an open source hardware that uses Lua and Supercollider for the creation of scripts that can go from sound processing to a very complex synthetizer. I ordered the electronics and soldered my own Norns shield from scratch.",
         technologies: ["Lua", "SuperCollider", "Norns"],
         images: ["/videos/norns1.png", "/videos/norns-soldering.mov", "/videos/norns3.png", "/videos/norns4.png", "/videos/norns2.png", "/videos/norns5.png", "/videos/norns-1.mp4", "/videos/norns-xl-arcologies-jam.mov"],
         githubUrl: "",
@@ -35,10 +33,10 @@ const projects: Project[] = [
     },
     {
         title: "MaxMSP Studies",
-        description: "have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
+        description: "I have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
         githubUrl: "https://github.com/yourusername/rnbo-studies",
-        reactComponent: <div><AudioVisualizer/></div> ,
+        images: "/videos/max1.png",
         year: 2024
     },
     {
@@ -66,9 +64,9 @@ export default function Projects() {
 
     return (
         <div className="min-h-screen bg-background md:pl-[var(--sidebar-width)]">
-            <main className="mx-auto p-8">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-                    <div className="md:col-span-1 mb-6 md:mb-0">
+            <main className="mx-auto py-12 px-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div className="md:col-span-1 mb-2 md:mb-0">
                     <ProjectList
                         projects={projects}
                         selectedProject={selectedProject}
