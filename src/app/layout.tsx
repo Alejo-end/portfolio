@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { Providers } from "./Providers";
-import Image from "next/image";
 import { Globe, Home, PersonStandingIcon, PlaneTakeoff } from 'lucide-react';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
