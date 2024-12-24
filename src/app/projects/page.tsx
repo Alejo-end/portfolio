@@ -63,7 +63,7 @@ export default function Projects() {
     const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
 
     return (
-        <div className="min-h-screen bg-background md:pl-[var(--sidebar-width)]">
+        <div className="min-h-screen bg-background">
             <main className="mx-auto py-4 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div className="md:col-span-1 mb-2 md:mb-0">

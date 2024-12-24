@@ -30,12 +30,12 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                     {isOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
                 </Button>
                 {isOpen && (
-                    <div className="mt-2 border rounded-md shadow-sm">
+                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-zinc-900">
                         {experiences.map((experience, index) => (
                             <Button
                                 key={index}
                                 variant="ghost"
-                                className="w-full justify-start text-left p-3"
+                                className="w-full justify-start text-left p-3 my-3"
                                 onClick={() => {
                                     onSelectExperience(experience)
                                     setIsOpen(false)
@@ -54,21 +54,21 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                 )}
             </div>
             <div className="hidden md:block">
-                <ScrollArea className="">
-                    <div className="">
+                <ScrollArea>
+                    <div>
                         {experiences.map((experience, index) => (
                             <Button
                                 key={index}
                                 variant={selectedExperience === experience ? "secondary" : "ghost"}
-                                className="w-full min-h-[100px] justify-start text-left p-4 transition-all hover:bg-secondary/50"
+                                className="min-h-[100px] w-full justify-start text-left p-4 transition-all hover:bg-secondary/50 mb-2"
                                 onClick={() => onSelectExperience(experience)}
                             >
                                 <div className="flex items-start gap-3">
                                     <BoxIcon className="mt-1 h-4 w-4" />
                                     <div>
                                         <p className="text-lg font-[family-name:var(--font-poppins-bold)]">{experience.position}</p>
-                                        <p className="text-md text-muted-foreground font-[family-name:var(--font-poppins-medium)] sm:hidden">{experience.company}</p>
-                                        <p className="text-sm font-[family-name:var(--font-poppins-light)] sm:hidden">{experience.duration}</p>
+                                        <p className="text-md text-muted-foreground font-[family-name:var(--font-poppins-medium)] hidden md:block">{experience.company}</p>
+                                        <p className="text-sm font-[family-name:var(--font-poppins-light)] hidden md:block">{experience.duration}</p>
                                     </div>
                                 </div>
                             </Button>

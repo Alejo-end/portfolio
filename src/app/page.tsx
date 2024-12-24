@@ -10,7 +10,7 @@ export default function Home() {
     return (
         <div className="flex flex-col min-h-screen p-4 sm:p-8 md:p-16 lg:p-20 gap-8 select-none">
             <main className="flex flex-col items-center w-full gap-10">
-                <div className="w-full max-w-4xl border-4 border-slate-400 border-dotted rounded-xl p-4 sm:p-6 md:p-8">
+                <div className="w-full max-w-4xl border-4 border-gray-600 border-dotted rounded-xl px-4 py-4 sm:px-6 md:px-8">
                     <p className="text-xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 font-[family-name:var(--font-space-grotesk)]">
                         Alejandro? is a software engineer and UX Designer from Panama based in Helsinki, Finland with an enthusiasm for electronics and experimental music
                     </p>
