@@ -44,7 +44,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
     return (
         <div className="space-y-6">
             <Card className="space-y-4 p-4 md:p-6">
-                <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-porter-sans)]">
+                <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-space-grotesk)]">
                     {project.title}
                 </h3>
                 <p className="text-base md:text-lg">

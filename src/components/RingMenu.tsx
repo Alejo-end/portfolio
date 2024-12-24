@@ -20,7 +20,7 @@ export default function RingMenu() {
     const toggleMenu = () => setIsOpen(!isOpen);
 
     return (
-        <div className="fixed top-16 left-5 z-50 flex items-center gap-2">
+        <div className="z-50 flex items-center gap-2">
             <Button
                 variant="outline"
                 size="icon"
@@ -30,7 +30,7 @@ export default function RingMenu() {
                 {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-secondary/100 shadow-lg rounded-lg w-52 text-lg font-[family-name:var(--font-porter-sans)] dark:bg-secondary/100">
+                <div className="mt-2 bg-secondary/100 shadow-lg rounded-lg w-42 text-lg font-[family-name:var(--font-space-grotesk)] dark:bg-secondary/100">
                     {menuItems.map((item, index) => {
                         const Icon = item.icon;
                         const isSelected = pathname === item.path;
@@ -46,7 +46,7 @@ export default function RingMenu() {
                                 onClick={() => setIsOpen(false)}
                             >
                                 <Icon className="w-5 h-5" />
-                                <span className="font-porter-sans">{item.name}</span>
+                                <span className="font-[family-name:var(--font-space-grotesk)]">{item.name}</span>
                             </Link>
                         );
                     })}

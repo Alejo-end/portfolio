@@ -18,8 +18,8 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
     const toggleDropdown = () => setIsOpen(!isOpen)
 
     return (
-        <div className="space-y-4 p-4 md:p-6">
-            <h4 className="text-lg md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">5 years of Experience</h4>
+        <div className="space-y-4 p-4 md:p-6">            
+        <h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">Work Experience</h4>
             <div className="md:hidden">
                 <Button
                     onClick={toggleDropdown}
@@ -54,8 +54,8 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                 )}
             </div>
             <div className="hidden md:block">
-                <ScrollArea className="h-[calc(100vh-12rem)]">
-                    <div className="space-y-4">
+                <ScrollArea className="">
+                    <div className="">
                         {experiences.map((experience, index) => (
                             <Button
                                 key={index}

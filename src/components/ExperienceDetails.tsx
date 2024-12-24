@@ -9,15 +9,15 @@ interface ExperienceDetailsProps {
 
 export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-4">
             <Card className="space-y-4 p-4 md:p-6">
-                <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-porter-sans)]">
+                <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-space-grotesk)]">
                     {experience.position}
                 </h3>
-                <p className="text-xl md:text-2xl font-[family-name:var(--font-poppins-bold)]">
+                <p className="text-xl md:text-2xl font-[family-name:var(--font-host-grotesk)]">
                     {experience.company}
                 </p>
-                <p className="text-lg md:text-xl font-[family-name:var(--font-poppins-bold)] text-muted-foreground">
+                <p className="text-lg md:text-xl font-[family-name:var(--font-host-grotesk)] text-muted-foreground">
                     {experience.duration}
                 </p>
                 <p className="text-base md:text-lg">
