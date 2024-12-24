@@ -1,4 +1,4 @@
-import { Footer } from "./layout";
+import { Footer } from "@/components/Footer";
 import { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Alejandro?",
