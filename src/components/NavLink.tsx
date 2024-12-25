@@ -13,7 +13,7 @@ export function NavLink() {
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Link href="/projects" aria-label="Visit my art portfolio">
+                        <Link href="https://alejandro-three.vercel.app/" aria-label="Visit my art portfolio">
                             <ExternalLinkIcon className="h-5 w-5" />
                         </Link>
                     </TooltipTrigger>
