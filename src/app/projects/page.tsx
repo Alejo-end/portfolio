@@ -50,7 +50,7 @@ const projects: Project[] = [
         title: "Music Experiments",
         description: "I have been using MaxMSP, Norns and SuperCollider to create generative patterns to sample. I also have been using Ableton Live to integrate them in a workflow. Also, strudel is a very interesting library for live coding music I am interested in exploring more.",
         technologies: ["MaxMSP", "SuperCollider", "Strudel.js", "Ableton Live", "Norns"],
-        images: ["/videos/music1.jpeg", "/videos/music2.jpeg", "/videos/music3.jpeg", "/videos/music4.jpeg", "/videos/music5.png"],
+        images: ["/videos/music1.jpeg", "/videos/music2.jpeg", "/videos/music3.jpeg", "/videos/music4.jpeg", "/videos/music5.png", "/videos/music1.mov", "/videos/music2.mov", "/videos/music3.mov"],
         year: 2024
     },
     {
