@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Project } from "@/app/types"
 import { ChevronDown, ChevronUp } from 'lucide-react'
-
+import { NavLink } from './NavLink'
 interface ProjectListProps {
     projects: Project[]
     selectedProject: Project
@@ -19,7 +19,9 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
 
     return (
         <div className="space-y-4 p-4 md:p-6">
-            <h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">Projects</h4>
+            <div className='flex justify-between items-center'><h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">Projects</h4>
+            <NavLink />
+            </div>
             <div className="md:hidden">
                 <Button
                     onClick={toggleDropdown}

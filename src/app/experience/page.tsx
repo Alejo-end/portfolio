@@ -37,7 +37,6 @@ const workExperiences: WorkExperience[] = [
         duration: "December 2020 - March 2021",
         description: "Part of the development team for a software product; developed a web client in React for managing pharmacies invoicing and wrote data scraping scripts in Python.",
         skills: ["React", "Python"],
-        imageSrc: "/videos/aig.png"
     },
     {
         company: "Trust for the Americas / OAS",

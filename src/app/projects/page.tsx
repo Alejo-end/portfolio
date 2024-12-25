@@ -26,18 +26,34 @@ const projects: Project[] = [
     },
     {
         title: "Live Coding",
-        description: "I enjoy live coding and have been part of a community called AlgoRave. There we do some improvisation with coding",
+        description: "Live coding is a way to create music and visuals in real time. I have been exploring this area for a while and I have been part of a community called AlgoRave. There we share and do some improvisation with coding some nights in Helsinki.",
         technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
-        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png", "/videos/hydra1.mov", "/videos/hydra2.mov", "/videos/hydra1.png"],
+        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png", "/videos/hydra1.mov", "/videos/hydra2.mov", "/videos/hydra1.png", "/videos/hydra2.png"],
         year: 2023
     },
     {
         title: "MaxMSP Studies",
-        description: "I have been exploring the use of MaxMSP and Next.js to create interactive audiovisual experiences. This project is a collection of studies that I have been working on.",
-        technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP"],
+        description: "MaxMSP is a visual programming language that allows you to work from signal processing to build complex audio and visual applications. I personally like to use it for sound experimentation and generative music. I also find it very useful for exporting max patches using RNBO to create standalone synths using a raspberry pi or a web browser.",
+        technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP", "Jitter"],
         githubUrl: "https://github.com/yourusername/rnbo-studies",
-        images: "/videos/max1.png",
+        images: ["/videos/max1.png", "/videos/rnbo.png"],
         year: 2024
+    },
+    {
+        title: "3D",
+        description: "3D is fascinating to me. I have been practicing modeling, printing and also scanning. I find it very useful for prototyping and creating physical objects, while scanning is a fun way to create digital models. On the software development side, Three.js, which is a versatile javascript library based on WebGL, is a great tool to create 3D websites and animations.",
+        technologies: ["RealityScan", "Three.js", "React", "RealityCapture", "Blender", "Thinkercad"],
+        images: ["/videos/3dscanning1.png", "/videos/3dscanning2.png", "/videos/3dscanning3.png"],
+        year: 2024
+    },
+    {
+        title: "EcoBridge",
+        description: "An open data project aimed at accelerating transparency in public finances. Won 1st place in an open data hackathon and received a grant for further development.",
+        technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
+        images: "/videos/ecobridge.mov",
+        githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
+        liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
+        year: 2020
     },
     {
         title: "Delivery Calculator",
@@ -48,15 +64,6 @@ const projects: Project[] = [
         liveUrl: "https://delivery-calculator.vercel.app",
         year: 2022
     },
-    {
-        title: "EcoBridge",
-        description: "An open data project aimed at accelerating transparency in public finances. Won 1st place in an open data hackathon and received a grant for further development.",
-        technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
-        images: "/videos/ecobridge.mov",
-        githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
-        liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
-        year: 2020
-    }
 ]
 
 export default function Projects() {
