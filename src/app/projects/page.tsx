@@ -17,6 +17,13 @@ interface Project {
 
 const projects: Project[] = [
     {
+        title: "3D Printed Pinhole Camera Photography",
+        description: "I started in the world of analog photography by building my own 3D printed pinhole camera. I have been experimenting with different pinholes diameters and random developing techniques to create unique images.",
+        technologies: ["3D Printing", "Analog Photography", "DIY", "Pinhole"],
+        images: ["/videos/photo1.jpg", "/videos/photo2.jpg", "/videos/photo4.jpg", "/videos/photo3.jpg", "/videos/photo5.jpg", "/videos/photo6.jpg", "/videos/photo7.jpg", "/videos/photo8.jpg", "/videos/photo9.jpg", "/videos/photo10.jpg", "/videos/photo11.jpg", "/videos/photo12.jpg", "/videos/photo13.jpg", "/videos/photo14.jpg"],
+        year: 2024
+    },
+    {
         title: "Norns Studies",
         description: "I have been exploring with hardware and decided to put together a Norns shield, which is an open source hardware that uses Lua and Supercollider for the creation of scripts that can go from sound processing to a very complex synthetizer. I ordered the electronics and soldered my own Norns shield from scratch.",
         technologies: ["Lua", "SuperCollider", "Norns"],
