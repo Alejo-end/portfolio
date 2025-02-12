@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ProjectList } from '@/components/ProjectList'
-import { ProjectDetails } from '@/components/ProjectDetails'
+import { BlobFile, ProjectDetails } from '@/components/ProjectDetails'
 import { Project } from '../types'
 
 
@@ -72,7 +72,7 @@ const projects: Project[] = [
 ]
 export default function Projects() {
     const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
-    const [blobs, setBlobs] = useState<any[]>([])
+    const [blobs, setBlobs] = useState<BlobFile[]>([])
 
     useEffect(() => {
         async function fetchBlobs() {

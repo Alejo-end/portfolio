@@ -5,7 +5,7 @@ import { GithubIcon, Globe } from 'lucide-react'
 import { Card } from './ui/card'
 import { Project } from '@/app/types'
 
-interface BlobFile {
+export interface BlobFile {
     url: string
     pathname?: string
     contentType?: string
