@@ -1,101 +1,106 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ProjectList } from '@/components/ProjectList'
 import { ProjectDetails } from '@/components/ProjectDetails'
-interface Project {
-    title: string
-    description: string
-    technologies: string[]
-    videoSrc?: string
-    images?: string | string[]
-    githubUrl?: string
-    liveUrl?: string
-    reactComponent?: React.ReactNode
-    year: number
-}
+import { Project } from '../types'
+
 
 const projects: Project[] = [
     {
         title: "3D Printed Pinhole Camera Photography",
-        description: "I started in the world of analog photography by building my own 3D printed pinhole camera. I have been experimenting with different pinholes diameters and random developing techniques to create unique images.",
+        description: "I started in the world of analog photography by building my own 3D printed pinhole camera. I have been experimenting with different pinhole diameters and random developing techniques to create unique images.",
         technologies: ["3D Printing", "Analog Photography", "DIY", "Pinhole"],
-        images: ["/videos/photo1.jpg", "/videos/photo2.jpg", "/videos/photo4.jpg", "/videos/photo3.jpg", "/videos/photo5.jpg", "/videos/photo6.jpg", "/videos/photo7.jpg", "/videos/photo8.jpg", "/videos/photo9.jpg", "/videos/photo10.jpg", "/videos/photo11.jpg", "/videos/photo12.jpg", "/videos/photo13.jpg", "/videos/photo14.jpg"],
+        alias: 'photo',
         year: 2024
     },
     {
         title: "Norns Studies",
-        description: "I have been exploring with hardware and decided to put together a Norns shield, which is an open source hardware that uses Lua and Supercollider for the creation of scripts that can go from sound processing to a very complex synthetizer. I ordered the electronics and soldered my own Norns shield from scratch.",
+        description: "I have been exploring hardware and decided to put together a Norns shield, which is an open source hardware using Lua and Supercollider.",
         technologies: ["Lua", "SuperCollider", "Norns"],
-        images: ["/videos/norns1.png", "/videos/norns-soldering.mov", "/videos/norns3.png", "/videos/norns4.png", "/videos/norns2.png", "/videos/norns5.png", "/videos/norns-1.mp4", "/videos/norns-xl-arcologies-jam.mov"],
+        alias: 'norns',
         githubUrl: "",
         year: 2024
     },
     {
         title: "Live Coding",
-        description: "Live coding is a way to create music and visuals in real time. I have been exploring this area for a while and I have been part of a community called AlgoRave. There we share and do some improvisation with coding some nights in Helsinki.",
+        description: "Live coding is a way to create music and visuals in real time. I'm part of a community called AlgoRave where we improvise with code.",
+        alias: 'livecoding',
         technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
-        images: ["/videos/livecoding1.png", "/videos/livecoding2.png", "/videos/livecoding3.png", "/videos/hydra1.mov", "/videos/hydra2.mov", "/videos/hydra1.png", "/videos/hydra2.png"],
         year: 2023
     },
     {
         title: "MaxMSP Studies",
-        description: "MaxMSP is a visual programming language that allows you to work from signal processing to build complex audio and visual applications. I personally like to use it for sound experimentation and generative music. I also find it very useful for exporting max patches using RNBO to create standalone synths using a raspberry pi or a web browser.",
+        description: "MaxMSP is a visual programming language used for sound and visual experimentation. I use it along with RNBO and React for various experiments.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP", "Jitter"],
         githubUrl: "https://github.com/yourusername/rnbo-studies",
-        images: ["/videos/max1.png", "/videos/rnbo.png"],
+        alias: 'max',
         year: 2024
     },
     {
         title: "3D",
-        description: "3D is fascinating to me. I have been practicing modeling, printing and also scanning. I find it very useful for prototyping and creating physical objects, while scanning is a fun way to create digital models. On the software development side, Three.js, which is a versatile javascript library based on WebGL, is a great tool to create 3D websites and animations.",
+        description: "I enjoy 3D modeling, scanning, and printing. Three.js is an amazing tool to build 3D websites and animations.",
         technologies: ["RealityScan", "Three.js", "React", "RealityCapture", "Blender", "Thinkercad"],
-        images: ["/videos/3dscanning1.png", "/videos/3dscanning2.png", "/videos/3dscanning3.png"],
+        alias: '3dscanning',
         year: 2024
     },
     {
         title: "Music Experiments",
-        description: "I have been using MaxMSP, Norns and SuperCollider to create generative patterns to sample. I also have been using Ableton Live to integrate them in a workflow. Also, strudel is a very interesting library for live coding music I am interested in exploring more.",
+        description: "I use MaxMSP, Norns, and SuperCollider to create generative music patterns. I also integrate them with Ableton Live for a seamless workflow.",
         technologies: ["MaxMSP", "SuperCollider", "Strudel.js", "Ableton Live", "Norns"],
-        images: ["/videos/music1.jpeg", "/videos/music2.jpeg", "/videos/music3.jpeg", "/videos/music4.jpeg", "/videos/music5.png", "/videos/music1.mov", "/videos/music2.mov", "/videos/music3.mov"],
+        alias: 'music',
         year: 2024
     },
     {
         title: "EcoBridge",
-        description: "An open data project aimed at accelerating transparency in public finances. Won 1st place in an open data hackathon and received a grant for further development.",
+        description: "An open data project focused on public finances. This project won 1st place at an open data hackathon.",
         technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
-        images: "/videos/ecobridge.mov",
+        alias: 'ecobridge',
         githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
         liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
         year: 2020
     },
     {
         title: "Delivery Calculator",
-        description: "Delivery fee calculator for a food delivery service. This project was built to help customers estimate the delivery fee based on their location.",
+        description: "A delivery fee calculator for a food service that helps estimate charges based on location.",
         technologies: ["React.js", "Typescript", "ChakraUI"],
-        images: "/videos/delivery-calculator.mov",
+        alias: "calculator",
         githubUrl: "https://github.com/Alejo-end/delivery-calculator",
         liveUrl: "https://delivery-calculator.vercel.app",
         year: 2022
-    },
+    }
 ]
-
 export default function Projects() {
     const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
+    const [blobs, setBlobs] = useState<any[]>([])
+
+    useEffect(() => {
+        async function fetchBlobs() {
+            try {
+                const res = await fetch('/get-images')
+                if (!res.ok) throw new Error('Failed to fetch blobs')
+                const data = await res.json()
+                setBlobs(data)
+            } catch (error) {
+                console.error(error)
+            }
+        }
+        fetchBlobs()
+    }, [])
 
     return (
         <div className="min-h-screen bg-background">
             <main className="mx-auto py-4 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div className="md:col-span-1 mb-2 md:mb-0">
-                    <ProjectList
-                        projects={projects}
-                        selectedProject={selectedProject}
-                        onSelectProject={setSelectedProject}
-                    />
+                        <ProjectList
+                            projects={projects}
+                            selectedProject={selectedProject}
+                            onSelectProject={setSelectedProject}
+                        />
                     </div>
                     <div className="md:col-span-4">
-                        <ProjectDetails project={selectedProject} />
+                        <ProjectDetails project={selectedProject} blobs={blobs} />
                     </div>
                 </div>
             </main>

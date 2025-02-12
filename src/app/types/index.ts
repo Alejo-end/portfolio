@@ -12,11 +12,12 @@ export interface WorkExperience {
 
 export interface Project {
   title: string;
+  alias: string;
   description: string;
   technologies: string[];
-  year: number;
+  videoSrc?: string;
   githubUrl?: string;
   liveUrl?: string;
-  images?: string | string[]; // New attribute for single image or array of images
   reactComponent?: React.ReactNode;
+  year: number;
 }
