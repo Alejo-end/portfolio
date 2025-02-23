@@ -6,6 +6,7 @@ import { BlobFile, ProjectDetails } from '@/components/ProjectDetails'
 import { Project } from '../types'
 
 
+
 const projects: Project[] = [
     {
         title: "3D Printed Pinhole Camera Photography",
