@@ -9,9 +9,16 @@ import { Project } from '../types'
 
 const projects: Project[] = [
     {
+        title: "Analog Photography",
+        description: "I have been learning experimenting with analog photography in 35mm and this is what my camera have taken. using a Chinon CE-4 camera and a 50mm f2.0 Pentax lens.",
+        technologies: ["Photography"],
+        alias: 'film',
+        year: 2025
+    },
+    {
         title: "3D Printed Pinhole Camera Photography",
         description: "I started in the world of analog photography by building my own 3D printed pinhole camera. I have been experimenting with different pinhole diameters and random developing techniques to create unique images.",
-        technologies: ["3D Printing", "Analog Photography", "DIY", "Pinhole"],
+        technologies: ["3D Printing", "Photography", "Pinhole"],
         alias: 'photo',
         year: 2024
     },
