@@ -9,6 +9,13 @@ import { Project } from '../types'
 
 const projects: Project[] = [
     {
+        title: "Sounds of the Weather Turning",
+        description: "Medienfrische 2025 proposal project. A generative music project that uses weather data to create music patterns. The project uses a Raspberry Pi with RNBO from MaxMSP to process and trigger audio soundscapes.",
+        technologies: ["MaxMSP", "RNBO", "Raspberry Pi", "Generative Music"],
+        alias: 'weather', 
+        year: 2025
+    },
+    {
         title: "Analog Photography",
         description: "I have been learning experimenting with analog photography in 35mm and this is what my camera have taken. using a Chinon CE-4 camera and a 50mm f2.0 Pentax lens.",
         technologies: ["Photography"],
@@ -31,13 +38,6 @@ const projects: Project[] = [
         year: 2024
     },
     {
-        title: "Live Coding",
-        description: "Live coding is a way to create music and visuals in real time. I'm part of a community called AlgoRave where we improvise with code.",
-        alias: 'livecoding',
-        technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
-        year: 2023
-    },
-    {
         title: "MaxMSP Studies",
         description: "MaxMSP is a visual programming language used for sound and visual experimentation. I use it along with RNBO and React for various experiments.",
         technologies: ["React", "TypeScript", "RNBO", "Next.js", "MaxMSP", "Jitter"],
@@ -46,7 +46,7 @@ const projects: Project[] = [
         year: 2024
     },
     {
-        title: "3D",
+        title: "3D & Photogrammetry",
         description: "I enjoy 3D modeling, scanning, and printing. Three.js is an amazing tool to build 3D websites and animations.",
         technologies: ["RealityScan", "Three.js", "React", "RealityCapture", "Blender", "Thinkercad"],
         alias: '3dscanning',
@@ -60,6 +60,13 @@ const projects: Project[] = [
         year: 2024
     },
     {
+        title: "Live Coding",
+        description: "Live coding is a way to create music and visuals in real time. I'm part of a community called AlgoRave where we improvise with code.",
+        alias: 'livecoding',
+        technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
+        year: 2023
+    },
+    {
         title: "EcoBridge",
         description: "An open data project focused on public finances. This project won 1st place at an open data hackathon.",
         technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
@@ -67,15 +74,6 @@ const projects: Project[] = [
         githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
         liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
         year: 2020
-    },
-    {
-        title: "Delivery Calculator",
-        description: "A delivery fee calculator for a food service that helps estimate charges based on location.",
-        technologies: ["React.js", "Typescript", "ChakraUI"],
-        alias: "calculator",
-        githubUrl: "https://github.com/Alejo-end/delivery-calculator",
-        liveUrl: "https://delivery-calculator.vercel.app",
-        year: 2022
     }
 ]
 export default function Projects() {
