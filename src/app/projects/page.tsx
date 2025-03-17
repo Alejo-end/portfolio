@@ -17,7 +17,7 @@ const projects: Project[] = [
     },
     {
         title: "Analog Photography",
-        description: "I have been learning experimenting with analog photography in 35mm and this is what my camera have taken. using a Chinon CE-4 camera and a 50mm f2.0 Pentax lens.",
+        description: "I have been learning more about analog photography in 35mm and this is what my camera have taken. using a Chinon CE-4 camera and a 50mm f2.0 Pentax lens.",
         technologies: ["Photography"],
         alias: 'film',
         year: 2025
