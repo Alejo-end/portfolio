@@ -62,15 +62,15 @@ export default function WorkExperience() {
     return (
         <div className="min-h-screen bg-background">
             <main className="mx-auto px-4 py-4 sm:px-6 md:px-8">
-                <div className="md:grid md:grid-cols-5 gap-8">
-                    <div className="md:col-span-1 mb-6 md:mr-4 md:mb-0">
+                <div className="md:grid md:grid-cols-9 gap-8">
+                    <div className="md:col-span-2 mb-6 md:mr-4 md:mb-0">
                         <ExperienceList
                             experiences={workExperiences}
                             selectedExperience={selectedExperience}
                             onSelectExperience={setSelectedExperience}
                         />
                     </div>
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-7">
                         <ExperienceDetails experience={selectedExperience} />
                     </div>
                 </div>

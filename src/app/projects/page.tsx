@@ -97,15 +97,15 @@ export default function Projects() {
     return (
         <div className="min-h-screen bg-background">
             <main className="mx-auto py-4 px-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <div className="md:col-span-1 mb-2 md:mb-0">
+                <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
+                    <div className="md:col-span-2 mb-2 md:mb-0">
                         <ProjectList
                             projects={projects}
                             selectedProject={selectedProject}
                             onSelectProject={setSelectedProject}
                         />
                     </div>
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-6">
                         <ProjectDetails project={selectedProject} blobs={blobs} />
                     </div>
                 </div>

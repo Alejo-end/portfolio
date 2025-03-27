@@ -37,7 +37,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                             <Button
                                 key={index}
                                 variant="ghost"
-                                className="w-full justify-start text-left p-3 my-3"
+                                className="w-full justify-start text-left p-3 my-5"
                                 onClick={() => {
                                     onSelectProject(project)
                                     setIsOpen(false)
