@@ -32,7 +32,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                     {isOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
                 </Button>
                 {isOpen && (
-                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-zinc-900">
+                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-secondary">
                         {projects.map((project, index) => (
                             <Button
                                 key={index}

@@ -1,7 +1,6 @@
 "use client";
 import localFont from "next/font/local";
 import "./globals.css";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { Providers } from "./Providers";
 import { Footer } from "@/components/Footer";
 import { usePathname } from "next/navigation";
@@ -66,8 +65,7 @@ export default function RootLayout({
         className={`${hostGrotesk.variable} ${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${poppinsBold.variable} ${poppinsRegular.variable} ${poppinsMedium} ${poppinsLight.variable} antialiased`}
       >
         <Providers>
-        <div className="flex flex-row md:gap-2 py-5 pl-5">
-        <DarkModeToggle /> {/* Dark Mode Toggle */}
+        <div className="flex flex-row md:gap-2 pb-5 pt-10 md:pt-16 pl-5">
           {usePathname() === "/" ? null : <Footer />}
         </div>
         {children}
