@@ -10,7 +10,7 @@ export function Footer() {
   const isHomePage = pathname === "/";
   
   if (isHomePage) {
-    // Original full-width layout for home page
+    // Original full-width layout for home page - always show text
     return (
       <div className="flex gap-2 justify-center md:gap-6 flex-wrap font-[family-name:var(--font-poppins-bold)]">
         <Link
@@ -18,14 +18,14 @@ export function Footer() {
           href="/projects"
         >
           <PlaneTakeoff className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:text-blue-500" />
-          <span className="hidden sm:inline">projects</span>
+          <span>projects</span>
         </Link>
         <Link
           className="flex items-center gap-1 md:gap-2 hover:underline hover:underline-offset-4 text-lg sm:text-xl md:text-2xl lg:text-3xl transition-all duration-200 group"
           href="/experience"
         >
           <Globe className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:rotate-[360deg] group-hover:text-green-500" />
-          <span className="hidden sm:inline">work xp</span>
+          <span>work xp</span>
         </Link>
         <Link
           className="flex items-center gap-1 md:gap-2 hover:underline hover:underline-offset-4 text-lg sm:text-xl md:text-2xl lg:text-3xl transition-all duration-200 group"
@@ -34,7 +34,7 @@ export function Footer() {
           rel="noopener noreferrer"
         >
           <PersonStandingIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12 group-hover:text-purple-500" />
-          <span className="hidden sm:inline">persona</span>
+          <span>persona</span>
         </Link>
         <DarkModeToggle />
       </div>

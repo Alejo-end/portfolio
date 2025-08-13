@@ -65,7 +65,7 @@ export default function RootLayout({
         className={`${hostGrotesk.variable} ${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${poppinsBold.variable} ${poppinsRegular.variable} ${poppinsMedium} ${poppinsLight.variable} antialiased`}
       >
         <Providers>
-        <div className="flex flex-row md:gap-2 pb-5 pt-10 md:pt-16 pl-5">
+        <div className="flex flex-row md:gap-2 pb-5 pt-10 sm:pt-16 md:pt-20 pl-5">
           {usePathname() === "/" ? null : <Footer />}
         </div>
         {children}
