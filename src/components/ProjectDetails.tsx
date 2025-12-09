@@ -6,7 +6,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { GithubIcon, Globe, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { GithubIcon, Globe, X, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { Project } from "@/app/types"
 
@@ -24,6 +24,7 @@ interface ProjectDetailsProps {
 export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [copied, setCopied] = useState(false)
 
 
   // Create a slugified version of the project title (e.g. "Norns Studies" becomes "norns-studies")
@@ -52,6 +53,18 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     if (e.key === "Escape") closeCarousel()
     if (e.key === "ArrowRight") nextImage()
     if (e.key === "ArrowLeft") prevImage()
+  }
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/projects/${project.alias}`
+    
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy URL:', err)
+    }
   }
 
   const renderMedia = () => {
@@ -188,6 +201,19 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           ))}
         </div>
         <div className="flex flex-wrap gap-4">
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            {copied ? (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Project
+              </>
+            )}
+          </Button>
           {project.githubUrl && (
             <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">

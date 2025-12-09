@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Project } from "@/app/types"
@@ -32,27 +33,31 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                     {isOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
                 </Button>
                 {isOpen && (
-                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-secondary">
+                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-secondary z-10">
                         {projects.map((project, index) => (
-                            <Button
+                            <Link 
                                 key={index}
-                                variant="ghost"
-                                className="w-full justify-start text-left p-3 my-5"
+                                href={`/projects?project=${project.alias}`}
                                 onClick={() => {
                                     onSelectProject(project)
                                     setIsOpen(false)
                                 }}
                             >
-                                <div className="flex justify-between items-center w-full">
-                                    <div className='w-14'>
-                                        <p className="font-medium font-[family-name:var(--font-poppins-bold)]">{project.title}</p>
-                                        <p className="text-sm text-muted-foreground md:text-wrap hidden md:block">
-                                            {project.technologies.join(', ')}
-                                        </p>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-left p-3 my-5"
+                                >
+                                    <div className="flex justify-between items-center w-full">
+                                        <div className='w-14'>
+                                            <p className="font-medium font-[family-name:var(--font-poppins-bold)]">{project.title}</p>
+                                            <p className="text-sm text-muted-foreground md:text-wrap hidden md:block">
+                                                {project.technologies.join(', ')}
+                                            </p>
+                                        </div>
+                                        <span className="text-sm text-muted-foreground">{project.year}</span>
                                     </div>
-                                    <span className="text-sm text-muted-foreground">{project.year}</span>
-                                </div>
-                            </Button>
+                                </Button>
+                            </Link>
                         ))}
                     </div>
                 )}
@@ -61,19 +66,23 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                 <ScrollArea className="h-[calc(100vh-12rem)]">
                     <div className="">
                         {projects.map((project, index) => (
-                            <Button
+                            <Link 
                                 key={index}
-                                variant={selectedProject === project ? "secondary" : "ghost"}
-                                className="h-32 w-full justify-start text-left p-4 transition-all hover:bg-secondary/50"
+                                href={`/projects?project=${project.alias}`}
                                 onClick={() => onSelectProject(project)}
                             >
-                                <div className="flex flex-col justify-between h-full w-full">
-                                    <div>
-                                        <p className="font-medium text-lg">{project.title}</p>
+                                <Button
+                                    variant={selectedProject === project ? "secondary" : "ghost"}
+                                    className="h-32 w-full justify-start text-left p-4 transition-all hover:bg-secondary/50"
+                                >
+                                    <div className="flex flex-col justify-between h-full w-full">
+                                        <div>
+                                            <p className="font-medium text-lg">{project.title}</p>
+                                        </div>
+                                        <span className="text-sm text-muted-foreground">{project.year}</span>
                                     </div>
-                                    <span className="text-sm text-muted-foreground">{project.year}</span>
-                                </div>
-                            </Button>
+                                </Button>
+                            </Link>
                         ))}
                     </div>
                 </ScrollArea>
