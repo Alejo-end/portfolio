@@ -77,7 +77,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
         {projectBlobs.map((file, index) => {
           const isVideo = file.contentType
             ? file.contentType.toLowerCase().startsWith("video")
@@ -86,18 +86,18 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           return (
             <div
               key={index}
-              className="aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              className="break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => openCarousel(index)}
             >
               {isVideo ? (
-                <video src={file.url} className="w-full h-full object-cover" />
+                <video src={file.url} className="w-full h-auto object-cover rounded-lg" />
               ) : (
                 <Image
                   src={file.url || "/placeholder.svg"}
                   alt={`${project.title} - Media ${index + 1}`}
-                  width={400}
-                  height={400}
-                  className="w-full h-full object-cover"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-cover rounded-lg"
                 />
               )}
             </div>
