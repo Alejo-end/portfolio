@@ -6,7 +6,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { GithubIcon, Globe, X, ChevronLeft, ChevronRight, Share2, Check } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import type { Project } from "@/app/types"
 
@@ -217,16 +217,16 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           {project.githubUrl && (
             <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
-                <GithubIcon className="mr-2 h-4 w-4" />
-                GitHub
+                <CodeIcon className="mr-2 h-4 w-4" />
+                Code
               </Button>
             </a>
           )}
           {project.liveUrl && (
             <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm">
-                <Globe className="mr-2 h-4 w-4" />
-                Live Demo
+                <VideoIcon className="mr-2 h-4 w-4" />
+                Demo
               </Button>
             </a>
           )}

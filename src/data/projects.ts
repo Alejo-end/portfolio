@@ -15,8 +15,9 @@ export const projects: Project[] = [
       "A max4live audio effect that uses weather data (from the WAQI API) to adjust different effects like delay, reverb, echo and distortion. It uses the newly available ABL objects which are an extension of ableton effects and DSP components for MaxMSP. The patch is available for free download on the max4live website.",
     technologies: ["MaxMSP", "Ableton Live", "WAQI API", "Max4Live"],
     alias: "weather",
-    liveUrl:
+    githubUrl:
       "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
+    liveUrl: "https://youtu.be/wVJ3n1L9Egk",
     year: 2025,
   },
   {
