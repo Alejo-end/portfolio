@@ -1,5 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { FabLabAd } from "@/components/FabLabAd";
+import { ThreeDAd } from "@/components/ThreeDAd";
 import { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Alejandro?",
@@ -19,6 +20,7 @@ export default function Home() {
                 <Footer />
             </main>
             <FabLabAd />
+            <ThreeDAd />
         </div>
     );
 }
