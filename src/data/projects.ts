@@ -2,6 +2,25 @@ import { Project } from "@/app/types"
 
 export const projects: Project[] = [
   {
+    title: "MIDI Guitar",
+    description:
+      "My final project for the Aalto Fab Lab (Digital Fabrication) course — a MIDI controller built into a Squier Mustang guitar. A Seeed XIAO ESP32-S3 reads a VL53L1X time-of-flight sensor, turning hand movements above the body into MIDI CC and pitch-bend messages, with an OLED menu, a NeoPixel ring, and a rotary encoder for live tweaking. It transmits wirelessly over ESP-NOW to a custom receiver PCB I designed in KiCad and milled on a Roland SRM-20, which forwards MIDI to Max/MSP and Ableton.",
+    technologies: [
+      "XIAO ESP32-S3",
+      "C++",
+      "KiCad",
+      "VL53L1X ToF",
+      "ESP-NOW",
+      "MIDI",
+      "Max/MSP",
+    ],
+    alias: "midiguitar",
+    githubUrl: "https://github.com/Alejo-end/midiguitar",
+    liveUrl:
+      "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
+    year: 2026,
+  },
+  {
     title: "Analog Photography",
     description:
       "I have been learning more about analog photography in 35mm and this is what my camera have taken. using a Chinon CE-4 camera and a 50mm f2.0 Pentax lens.",
