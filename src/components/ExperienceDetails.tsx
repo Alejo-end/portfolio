@@ -40,27 +40,34 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                     ))}
                 </div>
             </Card>
-            <div className="aspect-video w-full overflow-hidden rounded-xl bg-secondary/10">
-                {experience.videoSrc && (
-                    <video
-                        src={experience.videoSrc}
-                        autoPlay
-                        loop
-                        muted
-                        className="h-full w-full object-cover"
-                    />
-                )}
-                {experience.imageSrc && (
-                    <Image
-                        src={experience.imageSrc}
-                        layout="responsive"
-                        width={1600}
-                        height={900}
-                        objectFit="cover"
-                        alt={experience.company}
-                    />
-                )}
-            </div>
+            {(experience.videoSrc || experience.imageSrc) && (
+                <figure className="space-y-2">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-secondary/10">
+                        {experience.videoSrc ? (
+                            <video
+                                src={experience.videoSrc}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <Image
+                                src={experience.imageSrc!}
+                                width={1600}
+                                height={900}
+                                className="h-full w-full object-cover"
+                                alt={experience.company}
+                            />
+                        )}
+                    </div>
+                    <figcaption className="font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                        {experience.company}
+                        {experience.videoSrc ? ' · demo' : ''}
+                    </figcaption>
+                </figure>
+            )}
         </div>
     )
 }

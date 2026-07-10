@@ -191,7 +191,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
           <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
-            Project · {project.year}
+            {project.year}
           </span>
         </div>
         <h3 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">

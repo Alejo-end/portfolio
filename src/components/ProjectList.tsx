@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Project } from "@/app/types"
 import { ChevronDown } from 'lucide-react'
 import { NavLink } from './NavLink'
@@ -79,7 +78,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
 
             {/* Desktop: index list */}
             <div className="hidden md:block">
-                <ScrollArea className="h-[calc(100vh-14rem)]">
+                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden">
                     <ul className="pr-2">
                         {projects.map((project, index) => {
                             const active = selectedProject === project
@@ -89,32 +88,29 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                                         href={`/projects?project=${project.alias}`}
                                         onClick={() => onSelectProject(project)}
                                         aria-current={active ? 'true' : undefined}
-                                        className={`group relative flex items-start gap-3 border-l-2 py-3 pl-4 pr-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'border-amber-500 bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+                                        className={`group flex items-center gap-3 px-3 py-3.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                                     >
                                         <span
                                             aria-hidden
-                                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.6)]' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
+                                            className={`h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'led-active bg-amber-500' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
                                         />
-                                        <div className="min-w-0 flex-1">
-                                            <p
-                                                className={`truncate font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
-                                            >
-                                                {project.title}
-                                            </p>
-                                            <p className="mt-0.5 truncate font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                                                {project.technologies.slice(0, 3).join(' · ')}
-                                            </p>
-                                        </div>
-                                        <span className={`${eyebrow} shrink-0 pt-0.5 tabular-nums`}>{project.year}</span>
+                                        <span
+                                            className={`min-w-0 flex-1 truncate font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
+                                        >
+                                            {project.title}
+                                        </span>
+                                        <span className="shrink-0 font-[family-name:var(--font-geist-mono)] text-xs tabular-nums text-foreground/55">
+                                            {project.year}
+                                        </span>
                                     </Link>
                                     {index < projects.length - 1 && (
-                                        <div className="ml-4 border-t border-border/60" />
+                                        <div className="mx-3 border-t border-border/60" />
                                     )}
                                 </li>
                             )
                         })}
                     </ul>
-                </ScrollArea>
+                </div>
             </div>
         </div>
     )

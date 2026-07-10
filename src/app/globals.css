@@ -3,7 +3,23 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Active "signal" LED — the one live indicator on the selected channel */
+@keyframes led-pulse {
+  0%, 100% { box-shadow: 0 0 5px 0 rgba(245, 158, 11, 0.45); }
+  50%      { box-shadow: 0 0 9px 2px rgba(245, 158, 11, 0.85); }
+}
+
+.led-active {
+  box-shadow: 0 0 8px 1px rgba(245, 158, 11, 0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .led-active {
+    animation: led-pulse 2.4s ease-in-out infinite;
+  }
 }
 
 @layer base {

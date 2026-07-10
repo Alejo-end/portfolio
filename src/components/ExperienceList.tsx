@@ -90,14 +90,14 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                             >
                                 <span
                                     aria-hidden
-                                    className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border bg-background transition-all ${active ? 'border-amber-500 bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.6)]' : 'border-muted-foreground/50 group-hover:border-foreground'}`}
+                                    className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border bg-background transition-all ${active ? 'led-active border-amber-500 bg-amber-500' : 'border-muted-foreground/50 group-hover:border-foreground'}`}
                                 />
                                 <span className="-mt-0.5 min-w-0 flex-1">
                                     <span className={`${eyebrow} block leading-relaxed`}>
                                         {formatDuration(experience.duration)}
                                     </span>
                                     <span
-                                        className={`mt-1 block font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
+                                        className={`mt-1 block font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'font-medium text-foreground' : 'text-foreground/70 group-hover:text-foreground'}`}
                                     >
                                         {experience.position}
                                     </span>
