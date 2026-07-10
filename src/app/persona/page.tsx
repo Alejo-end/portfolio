@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Metadata } from 'next'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { DotPortrait } from '@/components/DotPortrait'
 
 export const metadata: Metadata = {
     title: 'Persona — Alejandro?',
@@ -36,7 +36,7 @@ const links: LinkItem[] = [
     { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
     { label: 'Art Portfolio', meta: 'alejandro-three.vercel.app', href: 'https://alejandro-three.vercel.app/', external: true },
     { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
-    { label: 'Links', meta: 'bento.me/alejoend', href: 'https://digital-fabrication-1baba0.gitlab.io/', external: true },
+    { label: 'Digital Fabrication', meta: 'Fab Lab course diary', href: 'https://digital-fabrication-1baba0.gitlab.io/', external: true },
 ]
 
 const rowClass =
@@ -107,19 +107,15 @@ export default function Persona() {
                     </header>
 
                     <figure className="boot boot-4 overflow-hidden rounded-xl border border-border bg-card">
-                        <div className="persona-photo">
-                            <Image
-                                src="/images/persona-portrait.jpg"
-                                alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
-                                width={1179}
-                                height={888}
-                                priority
-                                className="h-auto w-full object-cover"
-                            />
-                        </div>
+                        <DotPortrait
+                            src="/images/persona-portrait.jpg"
+                            alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
+                            width={1179}
+                            height={888}
+                        />
                         <figcaption className="flex items-center justify-between border-t border-border px-4 py-2.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
                             <span>Portrait · golden hour</span>
-                            <span aria-hidden className="tabular-nums">1179 × 888</span>
+                            <span>Hover to develop</span>
                         </figcaption>
                     </figure>
                 </div>
