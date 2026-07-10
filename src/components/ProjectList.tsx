@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Project } from "@/app/types"
 import { ChevronDown } from 'lucide-react'
-import { NavLink } from './NavLink'
 
 interface ProjectListProps {
     projects: Project[]
@@ -24,14 +23,11 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
 
     return (
         <div className="p-4 md:p-6">
-            <div className="mb-5 flex items-end justify-between">
-                <div className="space-y-1">
-                    <p className={eyebrow}>Index · {range}</p>
-                    <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
-                        Projects
-                    </h4>
-                </div>
-                <NavLink />
+            <div className="mb-5 space-y-1">
+                <p className={eyebrow}>Index · {range}</p>
+                <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
+                    Projects
+                </h4>
             </div>
 
             {/* Mobile: dropdown */}
