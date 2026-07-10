@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -35,7 +36,7 @@ const links: LinkItem[] = [
     { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
     { label: 'Art Portfolio', meta: 'alejandro-three.vercel.app', href: 'https://alejandro-three.vercel.app/', external: true },
     { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
-    { label: 'Links', meta: 'bento.me/alejoend', href: 'https://bento.me/alejoend', external: true },
+    { label: 'Links', meta: 'bento.me/alejoend', href: 'https://digital-fabrication-1baba0.gitlab.io/', external: true },
 ]
 
 const rowClass =
@@ -80,46 +81,64 @@ function LinkRow({ link, first }: { link: LinkItem; first: boolean }) {
 export default function Persona() {
     return (
         <div className="min-h-screen bg-background">
-            <main className="mx-auto max-w-4xl px-4 py-4">
-                <header className="mb-8">
-                    <p className={eyebrow}>Persona</p>
-                    <h1 className="mt-2 font-[family-name:var(--font-space-grotesk)] text-4xl font-semibold tracking-tight md:text-6xl">
-                        Alejandro?
-                    </h1>
-                    <div className="mt-3 flex items-center gap-2">
-                        <span className="led-active h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-                        <span className={eyebrow}>Helsinki, FI · Software engineer &amp; UX designer</span>
-                    </div>
-                </header>
-
-                <Card className="space-y-6 p-6 md:p-8">
-                    <p className="max-w-2xl text-lg leading-relaxed text-foreground/85 md:text-xl">
-                        I&apos;m a software engineer and UX designer from Panama, based in Helsinki. By day I build
-                        web interfaces for medical AI at MVision; the rest of the time I&apos;m usually soldering
-                        something, milling a PCB, or coaxing sound out of a norns, a Max patch, or a MIDI guitar I
-                        built into a Squier Mustang.
-                    </p>
-                    <p className="max-w-2xl text-lg leading-relaxed text-foreground/85 md:text-xl">
-                        This site is where the two halves meet — shipped software next to instruments, cameras, and
-                        experiments that mostly exist to be played with.
-                    </p>
-
-                    <div>
-                        <p className={`${eyebrow} mb-3`}>Into</p>
-                        <div className="flex flex-wrap gap-2">
-                            {interests.map((tag) => (
-                                <span
-                                    key={tag}
-                                    className="rounded-full border border-border px-3 py-1 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em] text-muted-foreground"
-                                >
-                                    {tag}
-                                </span>
-                            ))}
+            <main className="mx-auto max-w-5xl px-4 py-4">
+                <div className="grid items-start gap-8 md:grid-cols-[1fr_minmax(0,26rem)] md:gap-12">
+                    <header>
+                        <p className={`boot boot-1 ${eyebrow}`}>Persona</p>
+                        <h1 className="boot boot-2 mt-2 font-[family-name:var(--font-space-grotesk)] text-5xl font-semibold tracking-tight md:text-7xl">
+                            Alejandro<span className="text-amber-500">?</span>
+                        </h1>
+                        <div className="boot boot-3 mt-4 flex items-center gap-2">
+                            <span className="led-active led-boot h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                            <span className={eyebrow}>Helsinki, FI · Software engineer &amp; UX designer</span>
                         </div>
+                        <div className="boot boot-4 mt-8 space-y-5">
+                            <p className="max-w-xl text-lg leading-relaxed text-foreground/85">
+                                I&apos;m a software engineer and UX designer from Panama, based in Helsinki. By day I
+                                build web interfaces for medical AI at MVision; the rest of the time I&apos;m usually
+                                soldering something, milling a PCB, or coaxing sound out of a norns, a Max patch, or a
+                                MIDI guitar I built into a Squier Mustang.
+                            </p>
+                            <p className="max-w-xl text-lg leading-relaxed text-foreground/85">
+                                This site is where the two halves meet — shipped software next to instruments,
+                                cameras, and experiments that mostly exist to be played with.
+                            </p>
+                        </div>
+                    </header>
+
+                    <figure className="boot boot-4 overflow-hidden rounded-xl border border-border bg-card">
+                        <div className="persona-photo">
+                            <Image
+                                src="/images/persona-portrait.jpg"
+                                alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
+                                width={1179}
+                                height={888}
+                                priority
+                                className="h-auto w-full object-cover"
+                            />
+                        </div>
+                        <figcaption className="flex items-center justify-between border-t border-border px-4 py-2.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                            <span>Portrait · golden hour</span>
+                            <span aria-hidden className="tabular-nums">1179 × 888</span>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <Card className="boot boot-5 mt-10 p-6 md:p-7">
+                    <p className={`${eyebrow} mb-3`}>Into</p>
+                    <div className="flex flex-wrap gap-2">
+                        {interests.map((tag) => (
+                            <span
+                                key={tag}
+                                className="rounded-full border border-border px-3 py-1 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em] text-muted-foreground"
+                            >
+                                {tag}
+                            </span>
+                        ))}
                     </div>
                 </Card>
 
-                <section className="mt-8">
+                <section className="boot boot-6 mt-8">
                     <p className={`${eyebrow} mb-2 px-1`}>Elsewhere</p>
                     <ul className="overflow-hidden rounded-xl border border-border bg-card">
                         {links.map((link, index) => (
