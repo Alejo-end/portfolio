@@ -3,8 +3,7 @@ import { Project } from "@/app/types"
 export const projects: Project[] = [
   {
     title: "Mangler",
-    description:
-      "A live stereo sampler and mangler for norns, the small open-source sound computer from monome. Plug in a synth or drum machine, record a phrase, and it loops straight back the way you played it — then granulate it, time-stretch it, chop it into playable slices, and run it through filter, delay and reverb. The whole instrument is driven with three keys and three encoders (no grid required), and the sample retunes chromatically over MIDI. Under the hood, softcut handles the tape path while SuperCollider does the granular, stretch and custom FX, and every parameter is mappable to keys, MIDI and an optional grid.",
+    description: "A live stereo sampler and mangler for norns. (norns is a small open sound computer from monome.) It is for anyone who wants to record live gear and warp it on the fly: plug in a synth, a drum machine, or anything else that runs at line level, record a phrase, and it loops straight back the way you played it. From there you can granulate it, time-stretch it, chop it into playable slices, and run it through a filter, delay and reverb.",
     technologies: [
       "Lua",
       "SuperCollider",

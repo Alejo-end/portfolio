@@ -3,88 +3,117 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
 import { Project } from "@/app/types"
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { NavLink } from './NavLink'
+
 interface ProjectListProps {
     projects: Project[]
     selectedProject: Project
     onSelectProject: (project: Project) => void
 }
 
+const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+
 export function ProjectList({ projects, selectedProject, onSelectProject }: ProjectListProps) {
     const [isOpen, setIsOpen] = useState(false)
 
     const toggleDropdown = () => setIsOpen(!isOpen)
 
+    const years = projects.map((p) => p.year)
+    const range = `${Math.min(...years)}–${Math.max(...years)}`
+
     return (
-        <div className="space-y-4 p-4 md:p-6">
-            <div className='flex justify-between items-center'><h4 className="text-2xl md:text-3xl font-semibold font-[family-name:var(--font-poppins-bold)] text-center md:text-left">Projects</h4>
-            <NavLink />
+        <div className="p-4 md:p-6">
+            <div className="mb-5 flex items-end justify-between">
+                <div className="space-y-1">
+                    <p className={eyebrow}>Index · {range}</p>
+                    <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
+                        Projects
+                    </h4>
+                </div>
+                <NavLink />
             </div>
-            <div className="md:hidden">
-                <Button
+
+            {/* Mobile: dropdown */}
+            <div className="relative md:hidden">
+                <button
                     onClick={toggleDropdown}
-                    className="w-full justify-between"
-                    variant="outline"
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/50"
                 >
-                    {selectedProject.title}
-                    {isOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
-                </Button>
+                    <span className="flex min-w-0 items-center gap-2.5">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
+                        <span className="truncate font-[family-name:var(--font-space-grotesk)] font-medium">
+                            {selectedProject.title}
+                        </span>
+                    </span>
+                    <ChevronDown
+                        className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                </button>
                 {isOpen && (
-                    <div className="mt-2 mr-4 border rounded-md shadow-sm absolute bg-secondary z-10">
-                        {projects.map((project, index) => (
-                            <Link 
-                                key={index}
-                                href={`/projects?project=${project.alias}`}
-                                onClick={() => {
-                                    onSelectProject(project)
-                                    setIsOpen(false)
-                                }}
-                            >
-                                <Button
-                                    variant="ghost"
-                                    className="w-full justify-start text-left p-3 my-5"
+                    <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-lg border border-border bg-background shadow-lg">
+                        {projects.map((project, index) => {
+                            const active = selectedProject === project
+                            return (
+                                <Link
+                                    key={index}
+                                    href={`/projects?project=${project.alias}`}
+                                    onClick={() => {
+                                        onSelectProject(project)
+                                        setIsOpen(false)
+                                    }}
+                                    className={`flex items-center justify-between gap-3 border-l-2 px-4 py-3 transition-colors ${active ? 'border-amber-500 bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
                                 >
-                                    <div className="flex justify-between items-center w-full">
-                                        <div className='w-14'>
-                                            <p className="font-medium font-[family-name:var(--font-poppins-bold)]">{project.title}</p>
-                                            <p className="text-sm text-muted-foreground md:text-wrap hidden md:block">
-                                                {project.technologies.join(', ')}
-                                            </p>
-                                        </div>
-                                        <span className="text-sm text-muted-foreground">{project.year}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-                        ))}
+                                    <span className="truncate font-[family-name:var(--font-space-grotesk)] text-sm">
+                                        {project.title}
+                                    </span>
+                                    <span className={`${eyebrow} tabular-nums`}>{project.year}</span>
+                                </Link>
+                            )
+                        })}
                     </div>
                 )}
             </div>
+
+            {/* Desktop: index list */}
             <div className="hidden md:block">
-                <ScrollArea className="h-[calc(100vh-12rem)]">
-                    <div className="">
-                        {projects.map((project, index) => (
-                            <Link 
-                                key={index}
-                                href={`/projects?project=${project.alias}`}
-                                onClick={() => onSelectProject(project)}
-                            >
-                                <Button
-                                    variant={selectedProject === project ? "secondary" : "ghost"}
-                                    className="h-32 w-full justify-start text-left p-4 transition-all hover:bg-secondary/50"
-                                >
-                                    <div className="flex flex-col justify-between h-full w-full">
-                                        <div>
-                                            <p className="font-medium text-lg">{project.title}</p>
+                <ScrollArea className="h-[calc(100vh-14rem)]">
+                    <ul className="pr-2">
+                        {projects.map((project, index) => {
+                            const active = selectedProject === project
+                            return (
+                                <li key={index}>
+                                    <Link
+                                        href={`/projects?project=${project.alias}`}
+                                        onClick={() => onSelectProject(project)}
+                                        aria-current={active ? 'true' : undefined}
+                                        className={`group relative flex items-start gap-3 border-l-2 py-3 pl-4 pr-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'border-amber-500 bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+                                    >
+                                        <span
+                                            aria-hidden
+                                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.6)]' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <p
+                                                className={`truncate font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
+                                            >
+                                                {project.title}
+                                            </p>
+                                            <p className="mt-0.5 truncate font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                                {project.technologies.slice(0, 3).join(' · ')}
+                                            </p>
                                         </div>
-                                        <span className="text-sm text-muted-foreground">{project.year}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-                        ))}
-                    </div>
+                                        <span className={`${eyebrow} shrink-0 pt-0.5 tabular-nums`}>{project.year}</span>
+                                    </Link>
+                                    {index < projects.length - 1 && (
+                                        <div className="ml-4 border-t border-border/60" />
+                                    )}
+                                </li>
+                            )
+                        })}
+                    </ul>
                 </ScrollArea>
             </div>
         </div>

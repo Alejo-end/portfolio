@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState } from "react"
 import Image from "next/image"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
 import { Card } from "@/components/ui/card"
@@ -188,35 +187,53 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-4 p-4 md:p-6">
-        <h3 className="text-2xl md:text-4xl font-semibold font-[family-name:var(--font-space-grotesk)]">
+      <Card className="space-y-5 p-5 md:p-7">
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
+          <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
+            Project · {project.year}
+          </span>
+        </div>
+        <h3 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">
           {project.title}
         </h3>
-        <p className="text-base md:text-lg">{project.description}</p>
+        <p className="max-w-3xl text-base leading-relaxed text-foreground/80 md:text-lg">{project.description}</p>
         <div className="flex flex-wrap gap-2">
           {project.technologies.map((tech, index) => (
-            <Badge key={index} variant="secondary" className="rounded-md px-2 py-1 text-sm md:text-base font-medium">
+            <span
+              key={index}
+              className="rounded-full border border-border px-3 py-1 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em] text-muted-foreground"
+            >
               {tech}
-            </Badge>
+            </span>
           ))}
         </div>
-        <div className="flex flex-wrap gap-4">
-          <Button variant="outline" size="sm" onClick={handleShare}>
+        <div className="flex flex-wrap gap-3 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
+          >
             {copied ? (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                Copied!
+                Copied
               </>
             ) : (
               <>
                 <Share2 className="mr-2 h-4 w-4" />
-                Share Project
+                Share
               </>
             )}
           </Button>
           {project.githubUrl && (
             <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
+              >
                 <CodeIcon className="mr-2 h-4 w-4" />
                 Code
               </Button>
@@ -224,7 +241,11 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           )}
           {project.liveUrl && (
             <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
+              >
                 <VideoIcon className="mr-2 h-4 w-4" />
                 Demo
               </Button>
