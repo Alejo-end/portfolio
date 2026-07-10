@@ -2,6 +2,21 @@ import { Project } from "@/app/types"
 
 export const projects: Project[] = [
   {
+    title: "Mangler",
+    description:
+      "A live stereo sampler and mangler for norns, the small open-source sound computer from monome. Plug in a synth or drum machine, record a phrase, and it loops straight back the way you played it — then granulate it, time-stretch it, chop it into playable slices, and run it through filter, delay and reverb. The whole instrument is driven with three keys and three encoders (no grid required), and the sample retunes chromatically over MIDI. Under the hood, softcut handles the tape path while SuperCollider does the granular, stretch and custom FX, and every parameter is mappable to keys, MIDI and an optional grid.",
+    technologies: [
+      "Lua",
+      "SuperCollider",
+      "norns",
+      "softcut",
+      "MIDI",
+    ],
+    alias: "mangler",
+    githubUrl: "https://github.com/Alejo-end/mangler",
+    year: 2026,
+  },
+  {
     title: "MIDI Guitar",
     description:
       "My final project for the Aalto Fab Lab (Digital Fabrication) course — a MIDI controller built into a Squier Mustang guitar. A Seeed XIAO ESP32-S3 reads a VL53L1X time-of-flight sensor, turning hand movements above the body into MIDI CC and pitch-bend messages, with an OLED menu, a NeoPixel ring, and a rotary encoder for live tweaking. It transmits wirelessly over ESP-NOW to a custom receiver PCB I designed in KiCad and milled on a Roland SRM-20, which forwards MIDI to Max/MSP and Ableton.",
