@@ -64,15 +64,13 @@ export default function WorkExperience() {
             <main className="mx-auto px-4 py-4 sm:px-6 md:px-8">
                 <div className="md:grid md:grid-cols-9 gap-8">
                     <div className="md:col-span-2 mb-6 md:mr-4 md:mb-0 md:border-r md:border-border">
-                        <div className="md:sticky md:top-24">
-                            <ExperienceList
-                                experiences={workExperiences}
-                                selectedExperience={selectedExperience}
-                                onSelectExperience={setSelectedExperience}
-                            />
-                        </div>
+                        <ExperienceList
+                            experiences={workExperiences}
+                            selectedExperience={selectedExperience}
+                            onSelectExperience={setSelectedExperience}
+                        />
                     </div>
-                    <div className="md:col-span-7">
+                    <div className="md:col-span-7 md:h-[calc(100vh-8.5rem)] md:overflow-y-auto md:pr-1">
                         <ExperienceDetails experience={selectedExperience} />
                     </div>
                 </div>

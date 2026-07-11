@@ -74,7 +74,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
 
             {/* Desktop: index list */}
             <div className="hidden md:block">
-                <div className="h-[calc(100vh-14rem)] overflow-y-auto overflow-x-hidden">
+                <div className="h-[calc(100vh-16rem)] overflow-y-auto overflow-x-hidden">
                     <ul className="pr-2">
                         {projects.map((project, index) => {
                             const active = selectedProject === project
