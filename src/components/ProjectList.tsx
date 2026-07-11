@@ -24,19 +24,17 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
     const range = `${Math.min(...years)}–${Math.max(...years)}`
 
     return (
-        // On mobile the wrappers dissolve (display: contents) so the sticky
-        // strip below can pin against the whole page scroll, not just this box.
-        <div className="max-md:contents md:p-6">
-            <div className="mb-4 space-y-1 px-4 pt-4 md:mb-5 md:px-0 md:pt-0">
+        <div className="p-4 md:p-6">
+            <div className="mb-4 space-y-1 md:mb-5">
                 <p className={eyebrow}>Index · {range}</p>
                 <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
                     Projects
                 </h4>
             </div>
 
-            {/* Mobile: horizontal channel strip, pinned while details scroll */}
-            <div className="sticky top-0 z-30 -mx-4 bg-background/90 backdrop-blur-sm md:hidden">
-                <div className="flex snap-x gap-2 overflow-x-auto px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* Mobile: horizontal channel strip */}
+            <div className="-mx-4 md:hidden">
+                <div className="flex snap-x gap-2 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {projects.map((project, index) => {
                         const active = selectedProject === project
                         return (
