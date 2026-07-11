@@ -35,11 +35,6 @@ export default function Home() {
                     <span className="text-foreground">experimental music</span>.
                 </h1>
 
-                <div className="boot boot-3 mt-6 flex items-center gap-2">
-                    <span className="led-active led-boot h-2 w-2 shrink-0 rounded-full bg-foreground" />
-                    <span className={eyebrow}>Online · Helsinki, FI · 60.17°N 24.94°E</span>
-                </div>
-
                 <section className="boot boot-4 mt-12">
                     <p className={`${eyebrow} mb-2 px-1`}>Channels</p>
                     <ul className="overflow-hidden rounded-xl border border-border bg-card">
