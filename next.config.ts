@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "kskxrvod79sqlfxd.public.blob.vercel-storage.com",
-        pathname: "/Images/**",
+        pathname: "/**",
       },
     ],
   },
