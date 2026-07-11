@@ -16,6 +16,15 @@ export const projects: Project[] = [
     year: 2026,
   },
   {
+    title: "snu",
+    description:
+      "A multi-track 8-step sequencer for monome norns and an 8x8 grid. Four tracks run in parallel, each sequencing either notes from a scale or MIDI CC values, with per-step velocity, note length, mute and skip, per-track octave, pattern chaining, live grid editing, and an animated screen UI. The UI snapshots here are rendered straight from the real script by a headless simulator I built for the docs.",
+    technologies: ["Lua", "norns", "monome grid", "MIDI", "PolyPerc"],
+    alias: "snu",
+    githubUrl: "https://github.com/absurd-turtle/snu",
+    year: 2026,
+  },
+  {
     title: "MIDI Guitar",
     description:
       "My final project for the Aalto Fab Lab (Digital Fabrication) course — a MIDI controller built into a Squier Mustang guitar. A Seeed XIAO ESP32-S3 reads a VL53L1X time-of-flight sensor, turning hand movements above the body into MIDI CC and pitch-bend messages, with an OLED menu, a NeoPixel ring, and a rotary encoder for live tweaking. It transmits wirelessly over ESP-NOW to a custom receiver PCB I designed in KiCad and milled on a Roland SRM-20, which forwards MIDI to Max/MSP and Ableton.",
