@@ -89,13 +89,21 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
               onClick={() => openCarousel(index)}
             >
               {isVideo ? (
-                <video src={file.url} className="w-full h-auto object-cover rounded-lg" />
+                <video
+                  src={file.url}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-auto object-cover rounded-lg"
+                />
               ) : (
                 <Image
                   src={file.url || "/placeholder.svg"}
                   alt={`${project.title} - Media ${index + 1}`}
                   width={800}
                   height={600}
+                  quality={60}
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
                   className="w-full h-auto object-cover rounded-lg"
                 />
               )}
@@ -171,6 +179,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
                   src={currentFile.url || "/placeholder.svg"}
                   alt={`${project.title} - Media ${currentIndex + 1}`}
                   fill
+                  sizes="100vw"
                   className="object-contain"
                 />
               </div>
