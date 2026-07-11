@@ -36,7 +36,7 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                     className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/50"
                 >
                     <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
                         <span className="truncate font-[family-name:var(--font-space-grotesk)] font-medium">
                             {selectedExperience.position}
                         </span>
@@ -56,7 +56,7 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                                         onSelectExperience(experience)
                                         setIsOpen(false)
                                     }}
-                                    className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${active ? 'border-amber-500 bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+                                    className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${active ? 'border-foreground bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
                                 >
                                     <span className="min-w-0">
                                         <span className="block truncate font-[family-name:var(--font-space-grotesk)] text-sm">
@@ -90,7 +90,7 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                             >
                                 <span
                                     aria-hidden
-                                    className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border bg-background transition-all ${active ? 'led-active border-amber-500 bg-amber-500' : 'border-muted-foreground/50 group-hover:border-foreground'}`}
+                                    className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border bg-background transition-all ${active ? 'led-active border-foreground bg-foreground' : 'border-muted-foreground/50 group-hover:border-foreground'}`}
                                 />
                                 <span className="-mt-0.5 min-w-0 flex-1">
                                     <span className={`${eyebrow} block leading-relaxed`}>

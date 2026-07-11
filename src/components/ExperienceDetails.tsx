@@ -13,7 +13,7 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
         <div className="space-y-4 p-4">
             <Card className="space-y-5 p-5 md:p-7">
                 <div className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
                     <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                         {formatDuration(experience.duration)}
                     </span>

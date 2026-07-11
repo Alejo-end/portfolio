@@ -38,7 +38,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                     className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/50"
                 >
                     <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500 shadow-[0_0_8px_1px_rgba(245,158,11,0.55)]" />
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
                         <span className="truncate font-[family-name:var(--font-space-grotesk)] font-medium">
                             {selectedProject.title}
                         </span>
@@ -59,7 +59,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                                         onSelectProject(project)
                                         setIsOpen(false)
                                     }}
-                                    className={`flex items-center justify-between gap-3 border-l-2 px-4 py-3 transition-colors ${active ? 'border-amber-500 bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+                                    className={`flex items-center justify-between gap-3 border-l-2 px-4 py-3 transition-colors ${active ? 'border-foreground bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
                                 >
                                     <span className="truncate font-[family-name:var(--font-space-grotesk)] text-sm">
                                         {project.title}
@@ -88,7 +88,7 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                                     >
                                         <span
                                             aria-hidden
-                                            className={`h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'led-active bg-amber-500' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
+                                            className={`h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'led-active bg-foreground' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
                                         />
                                         <span
                                             className={`min-w-0 flex-1 truncate font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}

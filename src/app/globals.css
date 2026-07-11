@@ -8,12 +8,12 @@ body {
 
 /* Active "signal" LED — the one live indicator on the selected channel */
 @keyframes led-pulse {
-  0%, 100% { box-shadow: 0 0 5px 0 rgba(245, 158, 11, 0.45); }
-  50%      { box-shadow: 0 0 9px 2px rgba(245, 158, 11, 0.85); }
+  0%, 100% { box-shadow: 0 0 5px 0 hsl(var(--foreground) / 0.45); }
+  50%      { box-shadow: 0 0 9px 2px hsl(var(--foreground) / 0.85); }
 }
 
 .led-active {
-  box-shadow: 0 0 8px 1px rgba(245, 158, 11, 0.6);
+  box-shadow: 0 0 8px 1px hsl(var(--foreground) / 0.6);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -153,13 +153,13 @@ body {
 .fab-shape {
   animation: fab-morph 7s ease-in-out infinite, fab-float 4.5s ease-in-out infinite;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 0 1.5px rgba(255,145,0,0.45), 0 6px 24px rgba(255,100,0,0.35), inset 0 0 16px rgba(255,100,0,0.08);
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.4), 0 6px 24px rgba(0,0,0,0.45), inset 0 0 16px rgba(255,255,255,0.06);
 }
 
 .fab-shape:hover {
   animation: fab-float 4.5s ease-in-out infinite;
   transform: scale(1.07);
-  box-shadow: 0 0 0 2px #ff9100, 0 8px 32px rgba(255,130,0,0.55), inset 0 0 20px rgba(255,100,0,0.12);
+  box-shadow: 0 0 0 2px #ffffff, 0 8px 32px rgba(0,0,0,0.55), inset 0 0 20px rgba(255,255,255,0.1);
 }
 
 .fab-scanline {
@@ -176,7 +176,7 @@ body {
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  border: 2px solid rgba(255,145,0,0.6);
+  border: 2px solid rgba(255,255,255,0.6);
   animation: fab-pulse-ring 2.2s cubic-bezier(0.4,0,0.6,1) infinite;
   pointer-events: none;
 }

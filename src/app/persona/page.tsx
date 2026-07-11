@@ -16,10 +16,15 @@ const eyebrow =
 const interests = [
     'Electronics',
     'Experimental music',
-    'PCB design',
-    'norns',
+    'PCB Design',
+    'New media art',
     'Max/MSP',
-    'Analog photography',
+    'Photography',
+    'C++',
+    'JS/TS',
+    'React',
+    'Node.js',
+    'WebGL',
     'Live coding',
     '3D & photogrammetry',
 ]
@@ -47,7 +52,7 @@ function LinkRow({ link, first }: { link: LinkItem; first: boolean }) {
         <>
             <span
                 aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full border border-muted-foreground/40 transition-colors group-hover:border-amber-500 group-hover:bg-amber-500"
+                className="h-2 w-2 shrink-0 rounded-full border border-muted-foreground/40 transition-colors group-hover:border-foreground group-hover:bg-foreground"
             />
             <span className="min-w-0 flex-1 font-[family-name:var(--font-space-grotesk)] text-base text-foreground">
                 {link.label}
@@ -86,18 +91,17 @@ export default function Persona() {
                     <header>
                         <p className={`boot boot-1 ${eyebrow}`}>Persona</p>
                         <h1 className="boot boot-2 mt-2 font-[family-name:var(--font-space-grotesk)] text-5xl font-semibold tracking-tight md:text-7xl">
-                            Alejandro<span className="text-amber-500">?</span>
+                            Alejandro<span className="text-muted-foreground">?</span>
                         </h1>
                         <div className="boot boot-3 mt-4 flex items-center gap-2">
-                            <span className="led-active led-boot h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                            <span className="led-active led-boot h-2 w-2 shrink-0 rounded-full bg-foreground" />
                             <span className={eyebrow}>Helsinki, FI · Software engineer &amp; UX designer</span>
                         </div>
                         <div className="boot boot-4 mt-8 space-y-5">
                             <p className="max-w-xl text-lg leading-relaxed text-foreground/85">
                                 I&apos;m a software engineer and UX designer from Panama, based in Helsinki. By day I
                                 build web interfaces for medical AI at MVision; the rest of the time I&apos;m usually
-                                soldering something, milling a PCB, or making sound out of a norns, a Max patch, or a
-                                my Syntakt.
+                                soldering something, milling a PCB, or making sound or code.
                             </p>
                         </div>
                     </header>

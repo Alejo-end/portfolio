@@ -46,7 +46,7 @@ export function Footer() {
         className="flex items-center gap-1 md:gap-2 hover:underline hover:underline-offset-4 text-lg sm:text-xl md:text-2xl lg:text-3xl transition-all duration-200 group"
         href="/"
       >
-        <Home className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1 group-hover:text-orange-500" />
+        <Home className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1" />
         <span className="hidden sm:inline">home</span>
       </Link>
       
