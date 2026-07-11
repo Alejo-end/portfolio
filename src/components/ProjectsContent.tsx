@@ -57,11 +57,13 @@ export function ProjectsContent() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
                     <div className="md:col-span-2 mb-2 md:mb-0 md:border-r md:border-border">
-                        <ProjectList
-                            projects={projects}
-                            selectedProject={selectedProject}
-                            onSelectProject={setSelectedProject}
-                        />
+                        <div className="md:sticky md:top-24">
+                            <ProjectList
+                                projects={projects}
+                                selectedProject={selectedProject}
+                                onSelectProject={setSelectedProject}
+                            />
+                        </div>
                     </div>
                     <div className="md:col-span-6">
                         <ProjectDetails project={selectedProject} blobs={blobs} />
