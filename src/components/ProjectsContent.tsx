@@ -42,7 +42,7 @@ export function ProjectsContent() {
     }, [projectParam])
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="bg-background">
             <main className="mx-auto py-4 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
                     <div className="md:col-span-2 mb-2 md:mb-0 md:border-r md:border-border">
