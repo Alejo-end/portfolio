@@ -2,6 +2,16 @@ import { Project } from "@/app/types"
 
 export const projects: Project[] = [
   {
+    title: "MIDI Host-to-Host Bridge",
+    description:
+      "A PCB designed in KiCad during the Aalto Fab Lab electronics design week that bridges two USB MIDI hosts that can't talk to each other directly — like a laptop running Max and a norns. Two Seeed XIAO RP2040s share one board, joined over UART with crossed TX/RX lines, shared power, and decoupling capacitors close to their power pins. The schematic passed ERC, the layout places the two USB-C ports on opposite edges with short, wide power traces, and the exported Gerbers passed JLCPCB's design checks.",
+    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design"],
+    alias: "midihost",
+    githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
+    liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
+    year: 2026,
+  },
+  {
     title: "Mangler",
     description: "A live stereo sampler and mangler for norns. (norns is a small open sound computer from monome.) It is for anyone who wants to record live gear and warp it on the fly: plug in a synth, a drum machine, or anything else that runs at line level, record a phrase, and it loops straight back the way you played it. From there you can granulate it, time-stretch it, chop it into playable slices, and run it through a filter, delay and reverb.",
     technologies: [
