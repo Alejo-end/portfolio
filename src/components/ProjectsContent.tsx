@@ -42,19 +42,9 @@ export function ProjectsContent() {
         }
     }, [projectParam])
 
-    const breadcrumbItems = selectedProject 
-        ? [
-            { label: 'Projects', href: '/projects' },
-            { label: selectedProject.title, href: `/projects?project=${selectedProject.alias}` }
-          ]
-        : [{ label: 'Projects', href: '/projects' }]
-
     return (
         <div className="min-h-screen bg-background">
             <main className="mx-auto py-4 px-4">
-                <div className="mb-4 px-4">
-                    <Breadcrumb items={breadcrumbItems} />
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-8 gap-3">
                     <div className="md:col-span-2 mb-2 md:mb-0 md:border-r md:border-border">
                         <div className="md:sticky md:top-24">
