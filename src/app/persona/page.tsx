@@ -1,8 +1,7 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { DotPortrait } from '@/components/DotPortrait'
+import { LinkRow, type LinkItem } from '@/components/LinkRow'
 
 export const metadata: Metadata = {
     title: 'Persona — Alejandro?',
@@ -29,13 +28,6 @@ const interests = [
     '3D & photogrammetry',
 ]
 
-interface LinkItem {
-    label: string
-    meta: string
-    href: string
-    external: boolean
-}
-
 const links: LinkItem[] = [
     { label: 'Projects', meta: 'Things I build', href: '/projects', external: false },
     { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
@@ -43,45 +35,6 @@ const links: LinkItem[] = [
     { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
     { label: 'Digital Fabrication', meta: 'Fab Lab course diary', href: 'https://digital-fabrication-1baba0.gitlab.io/', external: true },
 ]
-
-const rowClass =
-    'group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring'
-
-function LinkRow({ link, first }: { link: LinkItem; first: boolean }) {
-    const inner = (
-        <>
-            <span
-                aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full border border-muted-foreground/40 transition-colors group-hover:border-foreground group-hover:bg-foreground"
-            />
-            <span className="min-w-0 flex-1 font-[family-name:var(--font-space-grotesk)] text-base text-foreground">
-                {link.label}
-            </span>
-            <span className="hidden shrink-0 font-[family-name:var(--font-geist-mono)] text-xs text-foreground/55 sm:block">
-                {link.meta}
-            </span>
-            {link.external ? (
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
-            ) : (
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
-            )}
-        </>
-    )
-
-    return (
-        <li className={first ? '' : 'border-t border-border/60'}>
-            {link.external ? (
-                <a href={link.href} target="_blank" rel="noopener noreferrer" className={rowClass}>
-                    {inner}
-                </a>
-            ) : (
-                <Link href={link.href} className={rowClass}>
-                    {inner}
-                </Link>
-            )}
-        </li>
-    )
-}
 
 export default function Persona() {
     return (
