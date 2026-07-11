@@ -102,7 +102,6 @@ export const projects: Project[] = [
       "MaxMSP",
       "Jitter",
     ],
-    githubUrl: "https://github.com/yourusername/rnbo-studies",
     alias: "max",
     year: 2024,
   },
