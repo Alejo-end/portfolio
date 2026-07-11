@@ -96,12 +96,8 @@ export default function Persona() {
                             <p className="max-w-xl text-lg leading-relaxed text-foreground/85">
                                 I&apos;m a software engineer and UX designer from Panama, based in Helsinki. By day I
                                 build web interfaces for medical AI at MVision; the rest of the time I&apos;m usually
-                                soldering something, milling a PCB, or coaxing sound out of a norns, a Max patch, or a
-                                MIDI guitar I built into a Squier Mustang.
-                            </p>
-                            <p className="max-w-xl text-lg leading-relaxed text-foreground/85">
-                                This site is where the two halves meet — shipped software next to instruments,
-                                cameras, and experiments that mostly exist to be played with.
+                                soldering something, milling a PCB, or making sound out of a norns, a Max patch, or a
+                                my Syntakt.
                             </p>
                         </div>
                     </header>
@@ -114,7 +110,7 @@ export default function Persona() {
                             height={888}
                         />
                         <figcaption className="flex items-center justify-between border-t border-border px-4 py-2.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-                            <span>Portrait · golden hour</span>
+                            <span>Portrait · Golden Horn, Türkiye</span>
                             <span>Hover to develop</span>
                         </figcaption>
                     </figure>
