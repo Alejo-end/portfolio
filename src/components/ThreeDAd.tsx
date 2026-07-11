@@ -8,89 +8,24 @@ export function ThreeDAd() {
   if (dismissed) return null
 
   return (
-    <a
-      href="https://alejandro-three.vercel.app/"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fab-shape three-shape"
-      aria-label="Visit my 3D & photogrammetry portfolio"
-      style={{
-        position: 'fixed',
-        bottom: '2rem',
-        left: '2rem',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '130px',
-        height: '130px',
-        background: 'linear-gradient(145deg, #001519 0%, #00222d 40%, #001015 100%)',
-        textDecoration: 'none',
-        color: 'white',
-        cursor: 'pointer',
-        overflow: 'hidden',
-        padding: '0.9rem',
-        textAlign: 'center',
-      }}
-    >
-      {/* Pulse ring */}
-      <div className="three-pulse-ring" />
-
-      {/* Grid texture */}
-      <div className="fab-grid" />
-
-      {/* Scanline effect */}
-      <div className="fab-scanline" />
-
-      {/* Dismiss button */}
+    <div className="fixed bottom-5 left-5 z-40 flex items-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm">
+      <a
+        href="https://alejandro-three.vercel.app/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Visit my 3D & photogrammetry portfolio"
+        className="flex items-center gap-2 py-2 pl-3.5 pr-1.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+        3D Portfolio ↗
+      </a>
       <button
-        className="fab-dismiss"
-        onClick={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          setDismissed(true)
-        }}
-        title="Dismiss"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss"
+        className="py-2 pl-1 pr-3 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
       >
         ✕
       </button>
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
-        {/* Spinning wireframe cube icon */}
-        <svg
-          className="three-cube"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#22d3ee"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ marginBottom: '6px', filter: 'drop-shadow(0 0 4px rgba(34,211,238,0.7))' }}
-        >
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-          <line x1="12" y1="22.08" x2="12" y2="12" />
-        </svg>
-
-        <div className="fab-new-badge">3D · WebGL</div>
-
-        <div
-          className="fab-label"
-          style={{ fontSize: '10px', fontWeight: 700, color: '#22d3ee', textShadow: '0 0 8px rgba(34,211,238,0.6)' }}
-        >
-          Three.js
-        </div>
-        <div
-          className="fab-label"
-          style={{ fontSize: '8px', color: 'rgba(150,230,240,0.85)', marginTop: '2px' }}
-        >
-          Photogrammetry ↗
-        </div>
-      </div>
-    </a>
+    </div>
   )
 }

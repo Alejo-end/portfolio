@@ -8,88 +8,24 @@ export function FabLabAd() {
   if (dismissed) return null
 
   return (
-    <a
-      href="https://digital-fabrication-1baba0.gitlab.io/assignments/index.html"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fab-shape"
-      style={{
-        position: 'fixed',
-        bottom: '2rem',
-        right: '2rem',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '130px',
-        height: '130px',
-        background: 'linear-gradient(145deg, #0a0a0a 0%, #1d1d1d 40%, #101010 100%)',
-        textDecoration: 'none',
-        color: 'white',
-        cursor: 'pointer',
-        overflow: 'hidden',
-        padding: '0.9rem',
-        textAlign: 'center',
-      }}
-    >
-      {/* Pulse ring */}
-      <div className="fab-pulse-ring" />
-
-      {/* Grid texture */}
-      <div className="fab-grid" />
-
-      {/* Scanline effect */}
-      <div className="fab-scanline" />
-
-      {/* Dismiss button */}
+    <div className="fixed bottom-5 right-5 z-40 flex items-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm">
+      <a
+        href="https://digital-fabrication-1baba0.gitlab.io/assignments/index.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Visit my Aalto Fab Lab course diary"
+        className="flex items-center gap-2 py-2 pl-3.5 pr-1.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+        Aalto Fab Lab ↗
+      </a>
       <button
-        className="fab-dismiss"
-        onClick={(e) => {
-          e.stopPropagation()
-          setDismissed(true)
-        }}
-        title="Dismiss"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss"
+        className="py-2 pl-1 pr-3 text-[10px] text-muted-foreground/60 transition-colors hover:text-foreground"
       >
         ✕
       </button>
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
-        {/* Crosshair icon */}
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          style={{ marginBottom: '6px', filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.7))' }}
-        >
-          <circle cx="12" cy="12" r="9" />
-          <line x1="12" y1="3" x2="12" y2="7" />
-          <line x1="12" y1="17" x2="12" y2="21" />
-          <line x1="3" y1="12" x2="7" y2="12" />
-          <line x1="17" y1="12" x2="21" y2="12" />
-          <circle cx="12" cy="12" r="2" fill="#ffffff" />
-        </svg>
-
-        <div className="fab-new-badge">new</div>
-
-        <div
-          className="fab-label"
-          style={{ fontSize: '10px', fontWeight: 700, color: '#ffffff', textShadow: '0 0 8px rgba(255,255,255,0.6)' }}
-        >
-          Aalto
-        </div>
-        <div
-          className="fab-label"
-          style={{ fontSize: '8px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}
-        >
-          Fab Lab ↗
-        </div>
-      </div>
-    </a>
+    </div>
   )
 }
