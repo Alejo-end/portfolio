@@ -63,7 +63,7 @@ export default function WorkExperience() {
         <div className="bg-background">
             <main className="mx-auto px-4 py-4 sm:px-6 md:px-8">
                 <div className="md:grid md:grid-cols-9 gap-8">
-                    <div className="md:col-span-2 mb-6 md:mr-4 md:mb-0 md:border-r md:border-border">
+                    <div className="max-md:contents md:col-span-2 md:mr-4 md:border-r md:border-border">
                         <ExperienceList
                             experiences={workExperiences}
                             selectedExperience={selectedExperience}

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Project } from "@/app/types"
-import { ChevronDown } from 'lucide-react'
 
 interface ProjectListProps {
     projects: Project[]
@@ -14,62 +13,56 @@ interface ProjectListProps {
 const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
 
 export function ProjectList({ projects, selectedProject, onSelectProject }: ProjectListProps) {
-    const [isOpen, setIsOpen] = useState(false)
+    const activeChipRef = useRef<HTMLAnchorElement>(null)
 
-    const toggleDropdown = () => setIsOpen(!isOpen)
+    // Keep the selected chip visible in the mobile strip (e.g. on deep links)
+    useEffect(() => {
+        activeChipRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    }, [selectedProject])
 
     const years = projects.map((p) => p.year)
     const range = `${Math.min(...years)}–${Math.max(...years)}`
 
     return (
-        <div className="p-4 md:p-6">
-            <div className="mb-5 space-y-1">
+        // On mobile the wrappers dissolve (display: contents) so the sticky
+        // strip below can pin against the whole page scroll, not just this box.
+        <div className="max-md:contents md:p-6">
+            <div className="mb-4 space-y-1 px-4 pt-4 md:mb-5 md:px-0 md:pt-0">
                 <p className={eyebrow}>Index · {range}</p>
                 <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
                     Projects
                 </h4>
             </div>
 
-            {/* Mobile: dropdown */}
-            <div className="relative md:hidden">
-                <button
-                    onClick={toggleDropdown}
-                    aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/50"
-                >
-                    <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
-                        <span className="truncate font-[family-name:var(--font-space-grotesk)] font-medium">
-                            {selectedProject.title}
-                        </span>
-                    </span>
-                    <ChevronDown
-                        className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                </button>
-                {isOpen && (
-                    <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-lg border border-border bg-background shadow-lg">
-                        {projects.map((project, index) => {
-                            const active = selectedProject === project
-                            return (
-                                <Link
-                                    key={index}
-                                    href={`/projects?project=${project.alias}`}
-                                    onClick={() => {
-                                        onSelectProject(project)
-                                        setIsOpen(false)
-                                    }}
-                                    className={`flex items-center justify-between gap-3 border-l-2 px-4 py-3 transition-colors ${active ? 'border-foreground bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+            {/* Mobile: horizontal channel strip, pinned while details scroll */}
+            <div className="sticky top-0 z-30 -mx-4 bg-background/90 backdrop-blur-sm md:hidden">
+                <div className="flex snap-x gap-2 overflow-x-auto px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {projects.map((project, index) => {
+                        const active = selectedProject === project
+                        return (
+                            <Link
+                                key={index}
+                                href={`/projects?project=${project.alias}`}
+                                onClick={() => onSelectProject(project)}
+                                aria-current={active ? 'true' : undefined}
+                                ref={active ? activeChipRef : undefined}
+                                className={`flex shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 py-2 transition-colors ${active ? 'border-foreground bg-secondary' : 'border-border hover:bg-secondary/50'}`}
+                            >
+                                {active && (
+                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+                                )}
+                                <span
+                                    className={`whitespace-nowrap font-[family-name:var(--font-space-grotesk)] text-sm ${active ? 'text-foreground' : 'text-muted-foreground'}`}
                                 >
-                                    <span className="truncate font-[family-name:var(--font-space-grotesk)] text-sm">
-                                        {project.title}
-                                    </span>
-                                    <span className={`${eyebrow} tabular-nums`}>{project.year}</span>
-                                </Link>
-                            )
-                        })}
-                    </div>
-                )}
+                                    {project.title}
+                                </span>
+                                <span className="font-[family-name:var(--font-geist-mono)] text-[10px] tabular-nums text-foreground/50">
+                                    {project.year}
+                                </span>
+                            </Link>
+                        )
+                    })}
+                </div>
             </div>
 
             {/* Desktop: index list */}

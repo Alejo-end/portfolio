@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { WorkExperience } from '@/app/types'
 
 interface ExperienceListProps {
@@ -15,62 +14,49 @@ const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase
 const formatDuration = (d: string) => d.replace(/\s*-\s*/, ' — ')
 
 export function ExperienceList({ experiences, selectedExperience, onSelectExperience }: ExperienceListProps) {
-    const [isOpen, setIsOpen] = useState(false)
+    const activeChipRef = useRef<HTMLButtonElement>(null)
 
-    const toggleDropdown = () => setIsOpen(!isOpen)
+    // Keep the selected chip visible in the mobile strip
+    useEffect(() => {
+        activeChipRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    }, [selectedExperience])
 
     return (
-        <div className="p-4 md:p-6">
-            <div className="mb-5 space-y-1">
+        // On mobile the wrappers dissolve (display: contents) so the sticky
+        // strip below can pin against the whole page scroll, not just this box.
+        <div className="max-md:contents md:p-6">
+            <div className="mb-4 space-y-1 px-4 pt-4 md:mb-5 md:px-0 md:pt-0">
                 <p className={eyebrow}>Timeline</p>
                 <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
                     Work Experience
                 </h4>
             </div>
 
-            {/* Mobile: dropdown */}
-            <div className="relative md:hidden">
-                <button
-                    onClick={toggleDropdown}
-                    aria-expanded={isOpen}
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/50"
-                >
-                    <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
-                        <span className="truncate font-[family-name:var(--font-space-grotesk)] font-medium">
-                            {selectedExperience.position}
-                        </span>
-                    </span>
-                    <ChevronDown
-                        className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                </button>
-                {isOpen && (
-                    <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-lg border border-border bg-background shadow-lg">
-                        {experiences.map((experience, index) => {
-                            const active = selectedExperience === experience
-                            return (
-                                <button
-                                    key={index}
-                                    onClick={() => {
-                                        onSelectExperience(experience)
-                                        setIsOpen(false)
-                                    }}
-                                    className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${active ? 'border-foreground bg-secondary' : 'border-transparent hover:bg-secondary/50'}`}
+            {/* Mobile: horizontal channel strip, pinned while details scroll */}
+            <div className="sticky top-0 z-30 -mx-4 bg-background/90 backdrop-blur-sm md:hidden">
+                <div className="flex snap-x gap-2 overflow-x-auto px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {experiences.map((experience, index) => {
+                        const active = selectedExperience === experience
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => onSelectExperience(experience)}
+                                aria-current={active ? 'true' : undefined}
+                                ref={active ? activeChipRef : undefined}
+                                className={`flex shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 py-2 text-left transition-colors ${active ? 'border-foreground bg-secondary' : 'border-border hover:bg-secondary/50'}`}
+                            >
+                                {active && (
+                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+                                )}
+                                <span
+                                    className={`whitespace-nowrap font-[family-name:var(--font-space-grotesk)] text-sm ${active ? 'text-foreground' : 'text-muted-foreground'}`}
                                 >
-                                    <span className="min-w-0">
-                                        <span className="block truncate font-[family-name:var(--font-space-grotesk)] text-sm">
-                                            {experience.position}
-                                        </span>
-                                        <span className="block truncate text-xs text-muted-foreground">
-                                            {experience.company}
-                                        </span>
-                                    </span>
-                                </button>
-                            )
-                        })}
-                    </div>
-                )}
+                                    {experience.company}
+                                </span>
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
             {/* Desktop: timeline */}
