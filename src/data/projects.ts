@@ -1,26 +1,12 @@
 import { Project } from "@/app/types"
+import { midihostFirmware } from "./code/midihost"
 
 export const projects: Project[] = [
   {
-    title: "MIDI Host-to-Host Bridge",
-    description:
-      "A PCB designed in KiCad during the Aalto Fab Lab electronics design week that bridges two USB MIDI hosts that can't talk to each other directly — like a laptop running Max and a norns. Two Seeed XIAO RP2040s share one board, joined over UART with crossed TX/RX lines, shared power, and decoupling capacitors close to their power pins. The schematic passed ERC, the layout places the two USB-C ports on opposite edges with short, wide power traces, and the exported Gerbers passed JLCPCB's design checks.",
-    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design"],
-    alias: "midihost",
-    githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
-    liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
-    year: 2026,
-  },
-  {
     title: "Mangler",
-    description: "A live stereo sampler and mangler for norns. (norns is a small open sound computer from monome.) It is for anyone who wants to record live gear and warp it on the fly: plug in a synth, a drum machine, or anything else that runs at line level, record a phrase, and it loops straight back the way you played it. From there you can granulate it, time-stretch it, chop it into playable slices, and run it through a filter, delay and reverb.",
-    technologies: [
-      "Lua",
-      "SuperCollider",
-      "norns",
-      "softcut",
-      "MIDI",
-    ],
+    description:
+      "A live stereo sampler and mangler for norns. (norns is a small open sound computer from monome.) It is for anyone who wants to record live gear and warp it on the fly: plug in a synth, a drum machine, or anything else that runs at line level, record a phrase, and it loops straight back the way you played it. From there you can granulate it, time-stretch it, chop it into playable slices, and run it through a filter, delay and reverb.",
+    technologies: ["Lua", "SuperCollider", "norns", "softcut", "MIDI"],
     alias: "mangler",
     githubUrl: "https://github.com/Alejo-end/mangler",
     year: 2026,
@@ -51,6 +37,21 @@ export const projects: Project[] = [
     githubUrl: "https://github.com/Alejo-end/midiguitar",
     liveUrl:
       "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
+    year: 2026,
+  },
+  {
+    title: "MIDI Host-to-Host Bridge",
+    description:
+      "A PCB designed in KiCad during the Aalto Fab Lab electronics design week that bridges two USB MIDI hosts that can't talk to each other directly — like a laptop running Max and a norns. Two Seeed XIAO RP2040s share one board, joined over UART with crossed TX/RX lines, shared power, and decoupling capacitors close to their power pins. I milled the board on a Roland SRM-20, soldered the SMD resistors and pin headers, and designed a 3D-printed case in FreeCAD via KiCad StepUp. The TinyUSB firmware runs on both XIAOs and forwards MIDI between USB and hardware serial — bridging my norns running snu straight into Ableton, with the onboard RGB LED flashing as messages pass through.",
+    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB"],
+    codeSnippets: [
+      { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
+    ],
+    alias: "midihost",
+    githubUrl:
+      "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
+    liveUrl:
+      "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
     year: 2026,
   },
   {

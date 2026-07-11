@@ -10,6 +10,12 @@ export interface WorkExperience {
     githubUrl?: string
 }
 
+export interface CodeSnippet {
+  filename: string;
+  language?: string;
+  code: string;
+}
+
 export interface Project {
   title: string;
   alias: string;
@@ -19,5 +25,6 @@ export interface Project {
   githubUrl?: string;
   liveUrl?: string;
   reactComponent?: React.ReactNode;
+  codeSnippets?: CodeSnippet[];
   year: number;
 }

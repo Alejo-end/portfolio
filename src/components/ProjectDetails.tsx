@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { CodeBox } from "@/components/CodeBox"
 import type { Project } from "@/app/types"
 
 export interface BlobFile {
@@ -67,7 +68,9 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   }
 
   const renderMedia = () => {
-    if (projectBlobs.length === 0) {
+    const snippets = project.codeSnippets ?? []
+
+    if (projectBlobs.length === 0 && snippets.length === 0) {
       return (
         <div className="w-full h-64 flex items-center justify-center">
           <p className="text-muted-foreground">No media available</p>
@@ -77,6 +80,11 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
 
     return (
       <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+        {snippets.map((snippet) => (
+          <div key={snippet.filename} className="break-inside-avoid mb-4">
+            <CodeBox snippet={snippet} />
+          </div>
+        ))}
         {projectBlobs.map((file, index) => {
           const isVideo = file.contentType
             ? file.contentType.toLowerCase().startsWith("video")
