@@ -18,6 +18,7 @@ const channels: LinkItem[] = [
     { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
     { label: 'Persona', meta: 'Who is Alejandro?', href: '/persona', external: false },
     { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
+    { label: 'LinkedIn', meta: 'linkedin.com/in/alejo-end', href: 'https://www.linkedin.com/in/alejo-end', external: true },
 ];
 
 export default function Home() {
