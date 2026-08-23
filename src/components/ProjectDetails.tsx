@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
@@ -21,43 +19,58 @@ interface ProjectDetailsProps {
   blobs?: BlobFile[]
 }
 
+const isVideoFile = (file: BlobFile) =>
+  file.contentType
+    ? file.contentType.toLowerCase().startsWith("video")
+    : /\.(mp4|mov)$/i.test(file.url)
+
+// "mangler/02-take-rec.png" -> "take rec": the filename is the only caption we have.
+const mediaName = (file: BlobFile) => {
+  const base = (file.pathname ?? file.url).split("/").pop() ?? ""
+  return decodeURIComponent(base)
+    .replace(/\.[^.]+$/, "")
+    .replace(/^\d+[-_]/, "")
+    .replace(/[-_]+/g, " ")
+    .trim()
+}
+
 export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
-
-
-  // Create a slugified version of the project title (e.g. "Norns Studies" becomes "norns-studies")
-  const projectSlug = project.alias.toLowerCase().replace(/\s+/g, '-')
-  // Filter the blobs to include only those relevant to the current project
-  const projectBlobs = blobs.filter(blob => blob.url.includes(projectSlug))
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   const openCarousel = (index: number) => {
     setCurrentIndex(index)
     setCarouselOpen(true)
   }
 
-  const closeCarousel = () => {
-    setCarouselOpen(false)
-  }
+  const closeCarousel = useCallback(() => setCarouselOpen(false), [])
 
-  const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % projectBlobs.length)
-  }
+  const nextImage = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % blobs.length)
+  }, [blobs.length])
 
-  const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + projectBlobs.length) % projectBlobs.length)
-  }
+  const prevImage = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + blobs.length) % blobs.length)
+  }, [blobs.length])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") closeCarousel()
-    if (e.key === "ArrowRight") nextImage()
-    if (e.key === "ArrowLeft") prevImage()
-  }
+  // The lightbox answers the keyboard no matter what has focus while it's open.
+  useEffect(() => {
+    if (!carouselOpen) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeCarousel()
+      if (e.key === "ArrowRight") nextImage()
+      if (e.key === "ArrowLeft") prevImage()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    dialogRef.current?.focus()
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [carouselOpen, closeCarousel, nextImage, prevImage])
 
   const handleShare = async () => {
     const url = `${window.location.origin}/projects/${project.alias}`
-    
+
     try {
       await navigator.clipboard.writeText(url)
       setCopied(true)
@@ -70,7 +83,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   const renderMedia = () => {
     const snippets = project.codeSnippets ?? []
 
-    if (projectBlobs.length === 0 && snippets.length === 0) {
+    if (blobs.length === 0 && snippets.length === 0) {
       return (
         <div className="w-full h-64 flex items-center justify-center">
           <p className="text-muted-foreground">No media available</p>
@@ -78,23 +91,31 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
       )
     }
 
+    // Sequential UI screenshots read left-to-right in a grid; mixed-ratio
+    // photo sets pack better as masonry columns (which reorder top-to-bottom).
+    const layoutClass =
+      project.galleryLayout === "grid"
+        ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+
     return (
-      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+      <div className={layoutClass}>
         {snippets.map((snippet) => (
           <div key={snippet.filename} className="break-inside-avoid mb-4">
             <CodeBox snippet={snippet} />
           </div>
         ))}
-        {projectBlobs.map((file, index) => {
-          const isVideo = file.contentType
-            ? file.contentType.toLowerCase().startsWith("video")
-            : file.url.endsWith(".mp4") || file.url.endsWith(".mov") || file.url.endsWith(".MP4")
+        {blobs.map((file, index) => {
+          const isVideo = isVideoFile(file)
+          const name = mediaName(file)
 
           return (
-            <div
-              key={index}
-              className="break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+            <button
+              key={file.url}
+              type="button"
               onClick={() => openCarousel(index)}
+              aria-label={`Open ${name || "media"} (${index + 1} of ${blobs.length})`}
+              className="block w-full break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo ? (
                 <video
@@ -107,7 +128,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
               ) : (
                 <Image
                   src={file.url || "/placeholder.svg"}
-                  alt={`${project.title} - Media ${index + 1}`}
+                  alt={`${project.title} — ${name}`}
                   width={800}
                   height={600}
                   quality={60}
@@ -115,7 +136,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
                   className="w-full h-auto object-cover rounded-lg"
                 />
               )}
-            </div>
+            </button>
           )
         })}
       </div>
@@ -123,19 +144,21 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   }
 
   const renderCarousel = () => {
-    if (!carouselOpen || projectBlobs.length === 0) return null
+    if (!carouselOpen || blobs.length === 0) return null
 
-    const currentFile = projectBlobs[currentIndex]
-    const isVideo = currentFile.contentType
-      ? currentFile.contentType.toLowerCase().startsWith("video")
-      : currentFile.url.endsWith(".mp4") || currentFile.url.endsWith(".mov") || currentFile.url.endsWith(".MP4")
+    const currentFile = blobs[currentIndex]
+    const isVideo = isVideoFile(currentFile)
+    const name = mediaName(currentFile)
 
     return (
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${project.title} media viewer`}
         className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
         onClick={closeCarousel}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
+        tabIndex={-1}
       >
         <div
           className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
@@ -144,17 +167,19 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Close viewer"
             className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
             onClick={closeCarousel}
           >
             <X className="h-6 w-6" />
           </Button>
 
-          {projectBlobs.length > 1 && (
+          {blobs.length > 1 && (
             <>
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Previous"
                 className="absolute left-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -167,6 +192,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Next"
                 className="absolute right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -185,7 +211,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
               <div className="relative w-full h-full">
                 <Image
                   src={currentFile.url || "/placeholder.svg"}
-                  alt={`${project.title} - Media ${currentIndex + 1}`}
+                  alt={`${project.title} — ${name}`}
                   fill
                   sizes="100vw"
                   className="object-contain"
@@ -194,8 +220,9 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
             )}
           </div>
 
-          <div className="absolute bottom-4 left-0 right-0 text-center text-white">
-            {currentIndex + 1} / {projectBlobs.length}
+          <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-geist-mono)] text-xs uppercase tracking-[0.15em] text-white/80">
+            {currentIndex + 1} / {blobs.length}
+            {name ? ` · ${name}` : ""}
           </div>
         </div>
       </div>
@@ -277,4 +304,3 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     </div>
   )
 }
-

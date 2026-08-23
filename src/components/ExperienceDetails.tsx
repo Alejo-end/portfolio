@@ -22,7 +22,7 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                     <h3 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">
                         {experience.position}
                     </h3>
-                    <p className="font-[family-name:var(--font-host-grotesk)] text-xl text-muted-foreground md:text-2xl">
+                    <p className="font-[family-name:var(--font-space-grotesk)] text-xl text-muted-foreground md:text-2xl">
                         {experience.company}
                     </p>
                 </div>

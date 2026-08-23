@@ -4,28 +4,34 @@ import { useTheme } from 'next-themes'
 import { Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-export function DarkModeToggle() {
+export function DarkModeToggle({ showLabel = false }: { showLabel?: boolean }) {
     const [mounted, setMounted] = useState(false)
-    const { theme, setTheme } = useTheme()
+    const { resolvedTheme, setTheme } = useTheme()
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
+    const dark = resolvedTheme === 'dark'
+
+    // Reserve the footprint before mount so the nav doesn't shift on hydration.
     if (!mounted) {
-        return null
+        return <span aria-hidden className="inline-block h-3.5 w-3.5" />
     }
 
     return (
         <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex items-center gap-1 md:gap-2 hover:underline hover:underline-offset-4 text-lg sm:text-xl md:text-2xl lg:text-3xl transition-all duration-200 group font-[family-name:var(--font-poppins-bold)]"
+            type="button"
+            onClick={() => setTheme(dark ? 'light' : 'dark')}
+            aria-label={`Switch to ${dark ? 'light' : 'dark'} theme`}
+            className="group flex items-center gap-2 rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-            {theme === 'dark' ? 
-                <Sun className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:rotate-180" /> : 
-                <Moon className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12 group-hover:text-blue-400" />
-            }
-            <span className="hidden sm:inline">theme</span>
+            {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            {showLabel && (
+                <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.15em]">
+                    Theme
+                </span>
+            )}
         </button>
     )
 }

@@ -5,7 +5,7 @@ import { DotPortrait } from '@/components/DotPortrait'
 import { LinkRow, type LinkItem } from '@/components/LinkRow'
 
 export const metadata: Metadata = {
-    title: 'Persona — Alejandro?',
+    title: 'Persona',
     description:
         'Software engineer and UX designer from Panama, based in Helsinki — electronics, experimental music, and instruments.',
 }

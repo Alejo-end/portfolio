@@ -1,9 +1,8 @@
-"use client";
+import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./Providers";
-import { Footer } from "@/components/Footer";
-import { usePathname } from "next/navigation";
+import { SiteNav } from "@/components/SiteNav";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,44 +14,25 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
-
-const hostGrotesk = localFont({
-  src: "./fonts/Host_Grotesk/HostGrotesk-VariableFont_wght.ttf",
-  variable: "--font-host-grotesk",
-  weight: "100 900",
-});
-
 const spaceGrotesk = localFont({
   src: "./fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf",
   variable: "--font-space-grotesk",
   weight: "100 900",
 });
 
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
 
-const poppinsMedium = localFont({
-  src: "./fonts/Poppins/Poppins-Medium.ttf",
-  variable: "--font-poppins-medium",
-  weight: "400",
-});
-
-const poppinsRegular = localFont({
-  src: "./fonts/Poppins/Poppins-Regular.ttf",
-  variable: "--font-poppins-regular",
-  weight: "600",
-});
-
-const poppinsLight = localFont({
-  src: "./fonts/Poppins/Poppins-Light.ttf",
-  variable: "--font-poppins-light",
-  weight: "100",
-}); 
-
-const poppinsBold = localFont({
-  src: "./fonts/Poppins/Poppins-Bold.ttf",
-  variable: "--font-poppins-bold",
-  weight: "800",
-});
-
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Alejandro?",
+    template: "%s — Alejandro?",
+  },
+  description:
+    "Software engineer and UX designer from Panama, based in Helsinki — electronics, experimental music, and instruments.",
+};
 
 export default function RootLayout({
   children,
@@ -60,15 +40,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${hostGrotesk.variable} ${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${poppinsBold.variable} ${poppinsRegular.variable} ${poppinsMedium} ${poppinsLight.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} antialiased`}
       >
         <Providers>
-        <div className="flex flex-row md:gap-2 pb-5 pt-10 sm:pt-16 md:pt-20 pl-5">
-          {usePathname() === "/" ? null : <Footer />}
-        </div>
-        {children}
+          <SiteNav />
+          {children}
         </Providers>
       </body>
     </html>

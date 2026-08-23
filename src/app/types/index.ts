@@ -27,4 +27,6 @@ export interface Project {
   reactComponent?: React.ReactNode;
   codeSnippets?: CodeSnippet[];
   year: number;
+  /** 'grid' keeps sequential UI screenshots in reading order; 'columns' (default) is masonry for mixed-ratio photos. */
+  galleryLayout?: "grid" | "columns";
 }

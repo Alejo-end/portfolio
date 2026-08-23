@@ -6,19 +6,18 @@ import { Project } from "@/app/types"
 
 interface ProjectListProps {
     projects: Project[]
-    selectedProject: Project
-    onSelectProject: (project: Project) => void
+    selectedAlias: string
 }
 
 const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
 
-export function ProjectList({ projects, selectedProject, onSelectProject }: ProjectListProps) {
+export function ProjectList({ projects, selectedAlias }: ProjectListProps) {
     const activeChipRef = useRef<HTMLAnchorElement>(null)
 
     // Keep the selected chip visible in the mobile strip (e.g. on deep links)
     useEffect(() => {
         activeChipRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
-    }, [selectedProject])
+    }, [selectedAlias])
 
     const years = projects.map((p) => p.year)
     const range = `${Math.min(...years)}–${Math.max(...years)}`
@@ -35,14 +34,13 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
             {/* Mobile: horizontal channel strip */}
             <div className="-mx-4 md:hidden">
                 <div className="flex snap-x gap-2 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {projects.map((project, index) => {
-                        const active = selectedProject === project
+                    {projects.map((project) => {
+                        const active = project.alias === selectedAlias
                         return (
                             <Link
-                                key={index}
-                                href={`/projects?project=${project.alias}`}
-                                onClick={() => onSelectProject(project)}
-                                aria-current={active ? 'true' : undefined}
+                                key={project.alias}
+                                href={`/projects/${project.alias}`}
+                                aria-current={active ? 'page' : undefined}
                                 ref={active ? activeChipRef : undefined}
                                 className={`flex shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 py-2 transition-colors ${active ? 'border-foreground bg-secondary' : 'border-border hover:bg-secondary/50'}`}
                             >
@@ -68,13 +66,12 @@ export function ProjectList({ projects, selectedProject, onSelectProject }: Proj
                 <div className="h-[calc(100vh-16rem)] overflow-y-auto overflow-x-hidden">
                     <ul className="pr-2">
                         {projects.map((project, index) => {
-                            const active = selectedProject === project
+                            const active = project.alias === selectedAlias
                             return (
-                                <li key={index}>
+                                <li key={project.alias}>
                                     <Link
-                                        href={`/projects?project=${project.alias}`}
-                                        onClick={() => onSelectProject(project)}
-                                        aria-current={active ? 'true' : undefined}
+                                        href={`/projects/${project.alias}`}
+                                        aria-current={active ? 'page' : undefined}
                                         className={`group flex items-center gap-3 px-3 py-3.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                                     >
                                         <span
