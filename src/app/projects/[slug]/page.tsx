@@ -11,11 +11,9 @@ export function generateStaticParams() {
     return projects.map((p) => ({ slug: p.alias }))
 }
 
-export async function generateMetadata({
-    params,
-}: {
-    params: Promise<{ slug: string }>
-}): Promise<Metadata> {
+export async function generateMetadata(
+    { params }: PageProps<'/projects/[slug]'>
+): Promise<Metadata> {
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) return {}
@@ -32,11 +30,7 @@ export async function generateMetadata({
     }
 }
 
-export default async function ProjectPage({
-    params,
-}: {
-    params: Promise<{ slug: string }>
-}) {
+export default async function ProjectPage({ params }: PageProps<'/projects/[slug]'>) {
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) notFound()

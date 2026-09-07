@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useEffectEvent, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
@@ -45,28 +45,24 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     setCarouselOpen(true)
   }
 
-  const closeCarousel = useCallback(() => setCarouselOpen(false), [])
+  const closeCarousel = () => setCarouselOpen(false)
+  const nextImage = () => setCurrentIndex((prev) => (prev + 1) % blobs.length)
+  const prevImage = () => setCurrentIndex((prev) => (prev - 1 + blobs.length) % blobs.length)
 
-  const nextImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % blobs.length)
-  }, [blobs.length])
-
-  const prevImage = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + blobs.length) % blobs.length)
-  }, [blobs.length])
+  const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (e.key === "Escape") closeCarousel()
+    if (e.key === "ArrowRight") nextImage()
+    if (e.key === "ArrowLeft") prevImage()
+  })
 
   // The lightbox answers the keyboard no matter what has focus while it's open.
   useEffect(() => {
     if (!carouselOpen) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeCarousel()
-      if (e.key === "ArrowRight") nextImage()
-      if (e.key === "ArrowLeft") prevImage()
-    }
-    document.addEventListener("keydown", onKeyDown)
+    const handler = (e: KeyboardEvent) => onKeyDown(e)
+    document.addEventListener("keydown", handler)
     dialogRef.current?.focus()
-    return () => document.removeEventListener("keydown", onKeyDown)
-  }, [carouselOpen, closeCarousel, nextImage, prevImage])
+    return () => document.removeEventListener("keydown", handler)
+  }, [carouselOpen])
 
   const handleShare = async () => {
     const url = `${window.location.origin}/projects/${project.alias}`

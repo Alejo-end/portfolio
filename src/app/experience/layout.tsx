@@ -5,6 +5,6 @@ export const metadata: Metadata = {
     description: 'UX engineering and full stack roles across Finland and Panama.',
 }
 
-export default function ExperienceLayout({ children }: { children: React.ReactNode }) {
+export default function ExperienceLayout({ children }: LayoutProps<'/experience'>) {
     return children
 }

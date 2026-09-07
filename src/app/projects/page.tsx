@@ -9,13 +9,10 @@ export const metadata: Metadata = {
     description: 'Instruments, PCBs, norns scripts, and web experiments.',
 }
 
-export default async function ProjectsPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ project?: string }>
-}) {
+export default async function ProjectsPage({ searchParams }: PageProps<'/projects'>) {
     // Old deep links used /projects?project=<alias>; send them to the canonical URL.
-    const { project: legacyAlias } = await searchParams
+    const { project } = await searchParams
+    const legacyAlias = Array.isArray(project) ? project[0] : project
     if (legacyAlias && getProjectByAlias(legacyAlias)) {
         redirect(`/projects/${legacyAlias}`)
     }
