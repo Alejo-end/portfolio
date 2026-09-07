@@ -12,6 +12,11 @@ interface DotPortraitProps {
 
 const COLS = 72
 
+// The dot grid only samples COLS columns, so the canvas never needs the
+// full-size original. Local sources go through the image optimizer.
+const gridSource = (src: string) =>
+    src.startsWith('/') ? `/_next/image?url=${encodeURIComponent(src)}&w=384&q=60` : src
+
 /**
  * Renders a photo as a halftone dot grid on canvas — the same dot-matrix
  * language as a norns screen. Dots are drawn in the current foreground color
@@ -106,7 +111,7 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
         img.onerror = () => {
             if (!cancelled) setRevealed(true)
         }
-        img.src = src
+        img.src = gridSource(src)
 
         const ro = new ResizeObserver(() => draw())
         ro.observe(canvas)
@@ -132,6 +137,7 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
                 alt={alt}
                 width={width}
                 height={height}
+                sizes="(min-width: 768px) 26rem, 100vw"
                 priority
                 className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${revealed ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100`}
             />
