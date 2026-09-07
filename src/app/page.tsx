@@ -6,7 +6,7 @@ import { LinkRow, type LinkItem } from "@/components/LinkRow";
 
 export const metadata: Metadata = {
     description:
-        "Alejandro? — software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and the web.",
+        "Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and the web.",
 };
 
 const eyebrow =

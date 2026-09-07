@@ -6,7 +6,7 @@ import { ProjectsView } from '@/components/ProjectsView'
 
 export const metadata: Metadata = {
     title: 'Projects',
-    description: 'Things Alejandro builds — instruments, PCBs, norns scripts, and web experiments.',
+    description: 'Instruments, PCBs, norns scripts, and web experiments.',
 }
 
 export default async function ProjectsPage({

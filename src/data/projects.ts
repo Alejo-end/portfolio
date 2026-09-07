@@ -89,7 +89,6 @@ export const projects: Project[] = [
       "I soldered together a norns shield and have been scripting it in Lua and SuperCollider since.",
     technologies: ["Lua", "SuperCollider", "Norns"],
     alias: "norns",
-    githubUrl: "",
     year: 2024,
   },
   {

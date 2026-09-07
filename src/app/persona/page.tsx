@@ -7,7 +7,7 @@ import { LinkRow, type LinkItem } from '@/components/LinkRow'
 export const metadata: Metadata = {
     title: 'Persona',
     description:
-        'Software engineer and UX designer from Panama, based in Helsinki — electronics, experimental music, and instruments.',
+        'Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and instruments.',
 }
 
 const eyebrow =
@@ -25,7 +25,7 @@ interface Param {
 const params: Param[] = [
     { key: 'origin', value: 'Panama City, PA' },
     { key: 'base', value: 'Helsinki, FI · 60.17°N' },
-    { key: 'day job', value: 'frontend at MVision, medical AI' },
+    { key: 'day job', value: 'UX engineer at MVision, medical AI' },
     { key: 'after hours', value: 'norns scripts · PCBs · 35mm film' },
     { key: 'now building', value: 'Mangler, a sampler for norns', href: '/projects/mangler' },
 ]

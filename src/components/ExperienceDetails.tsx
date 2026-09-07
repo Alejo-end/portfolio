@@ -19,9 +19,9 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                     </span>
                 </div>
                 <div className="space-y-1">
-                    <h3 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">
+                    <h2 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">
                         {experience.position}
-                    </h3>
+                    </h2>
                     <p className="font-[family-name:var(--font-space-grotesk)] text-xl text-muted-foreground md:text-2xl">
                         {experience.company}
                     </p>

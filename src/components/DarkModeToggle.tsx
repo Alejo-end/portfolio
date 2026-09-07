@@ -2,15 +2,21 @@
 
 import { useTheme } from 'next-themes'
 import { Moon, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
+
+// next-themes only knows the resolved theme on the client, so hold the
+// server markup until hydration. Snapshot pair stands in for a real store.
+const noopSubscribe = () => () => {}
+const useMounted = () =>
+    useSyncExternalStore(
+        noopSubscribe,
+        () => true,
+        () => false,
+    )
 
 export function DarkModeToggle({ showLabel = false }: { showLabel?: boolean }) {
-    const [mounted, setMounted] = useState(false)
+    const mounted = useMounted()
     const { resolvedTheme, setTheme } = useTheme()
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
 
     const dark = resolvedTheme === 'dark'
 

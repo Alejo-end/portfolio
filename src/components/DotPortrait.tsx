@@ -82,9 +82,10 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
             if (settling) raf = requestAnimationFrame(draw)
         }
 
+        // onload rather than decode(): a detached Image's decode() promise can
+        // silently die in Chrome, leaving the canvas blank.
         const img = new window.Image()
-        img.src = src
-        img.decode().then(() => {
+        img.onload = () => {
             if (cancelled) return
             const off = document.createElement('canvas')
             off.width = COLS
@@ -100,7 +101,12 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
             delays = lum.map(() => Math.random() * 700)
             start = performance.now()
             draw()
-        }).catch(() => { /* image failed to load; the plain <Image> still shows on hover */ })
+        }
+        // If the dot grid can't be built, show the plain photo instead of an empty box.
+        img.onerror = () => {
+            if (!cancelled) setRevealed(true)
+        }
+        img.src = src
 
         const ro = new ResizeObserver(() => draw())
         ro.observe(canvas)

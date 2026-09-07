@@ -25,9 +25,9 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
         <div className="p-4 md:p-6">
             <div className="mb-4 space-y-1 md:mb-5">
                 <p className={eyebrow}>Timeline</p>
-                <h4 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
+                <h1 className="font-[family-name:var(--font-space-grotesk)] text-2xl font-semibold tracking-tight md:text-3xl">
                     Work Experience
-                </h4>
+                </h1>
             </div>
 
             {/* Mobile: horizontal channel strip */}

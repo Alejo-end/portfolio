@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s — Alejandro?",
   },
   description:
-    "Software engineer and UX designer from Panama, based in Helsinki — electronics, experimental music, and instruments.",
+    "Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and instruments.",
 };
 
 export default function RootLayout({
