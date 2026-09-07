@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { projects, getProjectByAlias } from '@/data/projects'
 import { getGalleryBlobs } from '@/lib/blobs'
-import { ProjectsView } from '@/components/ProjectsView'
+import { ProjectDetails } from '@/components/ProjectDetails'
 
 export const metadata: Metadata = {
     title: 'Projects',
@@ -19,5 +19,5 @@ export default async function ProjectsPage({ searchParams }: PageProps<'/project
 
     const first = projects[0]
     const blobs = await getGalleryBlobs(first.alias)
-    return <ProjectsView project={first} blobs={blobs} />
+    return <ProjectDetails project={first} blobs={blobs} />
 }

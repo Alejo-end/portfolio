@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { projects, getProjectByAlias } from '@/data/projects'
 import { getGalleryBlobs } from '@/lib/blobs'
-import { ProjectsView } from '@/components/ProjectsView'
+import { ProjectDetails } from '@/components/ProjectDetails'
 
 // The blob store is mutable; refresh the static pages every 5 minutes.
 export const revalidate = 300
@@ -35,5 +35,5 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const project = getProjectByAlias(slug)
     if (!project) notFound()
     const blobs = await getGalleryBlobs(slug)
-    return <ProjectsView project={project} blobs={blobs} />
+    return <ProjectDetails project={project} blobs={blobs} />
 }

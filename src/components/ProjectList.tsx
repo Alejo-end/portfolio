@@ -2,16 +2,18 @@
 
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Project } from "@/app/types"
 
 interface ProjectListProps {
     projects: Project[]
-    selectedAlias: string
 }
 
 const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
 
-export function ProjectList({ projects, selectedAlias }: ProjectListProps) {
+export function ProjectList({ projects }: ProjectListProps) {
+    // /projects shows the newest project, /projects/<alias> shows that one.
+    const selectedAlias = usePathname().split('/')[2] ?? projects[0].alias
     const activeChipRef = useRef<HTMLAnchorElement>(null)
 
     // Keep the selected chip visible in the mobile strip (e.g. on deep links)
