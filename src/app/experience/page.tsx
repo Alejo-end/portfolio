@@ -12,6 +12,7 @@ interface WorkExperience {
     skills: string[]
     imageSrc?: string
     videoSrc?: string
+    posterSrc?: string
 }
 
 const workExperiences: WorkExperience[] = [
@@ -21,7 +22,8 @@ const workExperiences: WorkExperience[] = [
         duration: "March 2022 - Present",
         description: "I design and build the UI for radiotherapy treatment planning: AI models predict organ contours, dose and synthetic images, and clinicians review the results before they go into a plan. React and TypeScript on Azure, regulated medical device software. I've also built a contouring trainer for physicians and a configuration tool for clinics.",
         skills: ["React", "TypeScript", "Azure", "Figma", "UI Design"],
-        videoSrc: "/videos/mvision.mp4"
+        videoSrc: "/videos/mvision.mp4",
+        posterSrc: "/videos/mvision-poster.webp"
     },
     {
         company: "National Innovation Office of Panama",
@@ -45,6 +47,7 @@ const workExperiences: WorkExperience[] = [
         description: "An open data portal for Panama's national budget. It took first place at a hackathon and won our team a grant from the Trust for the Americas and the OAS to build it for real. It also led to a grant from my home university for an Erasmus semester at Aalto University.",
         skills: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
         videoSrc: "/videos/stp.mp4",
+        posterSrc: "/videos/stp-poster.webp",
     },
     {
         company: "Merkadoo.com",

@@ -44,12 +44,16 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                 <figure className="space-y-2">
                     <div className="aspect-video w-full overflow-hidden rounded-xl bg-secondary/10">
                         {experience.videoSrc ? (
+                            // The poster keeps the frame meaningful when a browser
+                            // blocks autoplay (Brave shields, iOS low power mode).
                             <video
                                 src={experience.videoSrc}
+                                poster={experience.posterSrc}
                                 autoPlay
                                 loop
                                 muted
                                 playsInline
+                                preload="metadata"
                                 className="h-full w-full object-cover"
                             />
                         ) : (

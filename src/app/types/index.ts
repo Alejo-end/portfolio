@@ -6,6 +6,7 @@ export interface WorkExperience {
     description: string
     skills: string[]
     videoSrc?: string
+    posterSrc?: string
     imageSrc?: string
     githubUrl?: string
 }
