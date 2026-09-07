@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        // Old deep links used /projects?project=<alias>.
+        source: "/projects",
+        has: [{ type: "query", key: "project", value: "(?<alias>.+)" }],
+        destination: "/projects/:alias",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
