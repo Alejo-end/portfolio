@@ -5,17 +5,17 @@ import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
 
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: "./fonts/GeistVF.woff2",
   variable: "--font-geist-sans",
   weight: "100 900",
 });
 const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+  src: "./fonts/GeistMonoVF.woff2",
   variable: "--font-geist-mono",
   weight: "100 900",
 });
 const spaceGrotesk = localFont({
-  src: "./fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.ttf",
+  src: "./fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.woff2",
   variable: "--font-space-grotesk",
   weight: "100 900",
 });
