@@ -17,12 +17,20 @@ export interface CodeSnippet {
   code: string;
 }
 
+export interface ProjectVideo {
+  src: string;
+  poster?: string;
+  caption?: string;
+}
+
 export interface Project {
   title: string;
   alias: string;
   description: string;
   technologies: string[];
   videoSrc?: string;
+  /** Autoplaying loops shown above the title, for the shots the page leads with. */
+  videos?: ProjectVideo[];
   githubUrl?: string;
   liveUrl?: string;
   reactComponent?: React.ReactNode;

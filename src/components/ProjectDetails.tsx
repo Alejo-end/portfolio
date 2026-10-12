@@ -226,8 +226,41 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     )
   }
 
+  const renderVideos = () => {
+    const videos = project.videos ?? []
+    if (videos.length === 0) return null
+
+    return (
+      <div className={videos.length > 1 ? "grid gap-4 md:grid-cols-2" : undefined}>
+        {videos.map((video) => (
+          <figure key={video.src} className="space-y-2">
+            <div className="overflow-hidden rounded-xl bg-secondary/10">
+              {/* The poster keeps the frame meaningful when a browser blocks autoplay. */}
+              <video
+                src={video.src}
+                poster={video.poster}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                className="h-auto w-full"
+              />
+            </div>
+            {video.caption && (
+              <figcaption className="font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                {video.caption}
+              </figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {renderVideos()}
       <Card className="space-y-5 p-5 md:p-7">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />

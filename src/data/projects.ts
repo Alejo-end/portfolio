@@ -3,6 +3,18 @@ import { midihostFirmware } from "./code/midihost"
 
 export const projects: Project[] = [
   {
+    title: "Reins",
+    description:
+      "Every Mustang needs reins. The MIDI Guitar rebuilt as open hardware. Guitar side: a battery board with a ToF sensor, LED ring, OLED and encoder. Pedal side: wireless receiver with MIDI out, expression and footswitch jacks. Rev A.",
+    technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
+    alias: "reins",
+    videos: [
+      { src: "/videos/reins-pedal.mp4", poster: "/videos/reins-pedal-poster.jpg", caption: "pedal" },
+      { src: "/videos/reins-guitar.mp4", poster: "/videos/reins-guitar-poster.jpg", caption: "guitar side" },
+    ],
+    year: 2026,
+  },
+  {
     title: "Mangler",
     description:
       "Live stereo sampler for norns. Record a phrase and mangle it: granular, time-stretch, slices, filter, delay, reverb. Scenes capture whole sounds, orbit drifts between them, erosion wears the loop down on every pass.",
@@ -25,7 +37,7 @@ export const projects: Project[] = [
   {
     title: "MIDI Guitar",
     description:
-      "A Squier Mustang turned MIDI controller. A time-of-flight sensor tracks hand movement above the body for CC and pitch bend, sent wirelessly over ESP-NOW to a receiver PCB I designed and milled myself. Final project for the Aalto Fab Lab course.",
+      "A Squier Mustang turned MIDI controller. A time-of-flight sensor tracks hand movement above the body for CC and pitch bend, sent wirelessly over ESP-NOW to a receiver PCB I designed and milled myself. Final project for the Aalto Fab Lab course. Continued as Reins.",
     technologies: [
       "XIAO ESP32-S3",
       "C++",
