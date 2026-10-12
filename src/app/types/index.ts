@@ -8,7 +8,7 @@ export interface WorkExperience {
     videoSrc?: string
     posterSrc?: string
     imageSrc?: string
-    /** Product shots shown under the main video or image. */
+    /** Product shots, shown before the main video or image. */
     gallery?: { src: string; alt: string; caption: string; width: number; height: number }[]
     githubUrl?: string
 }
@@ -25,9 +25,34 @@ export interface ProjectVideo {
   caption?: string;
 }
 
+/** One "label ..... value" line on a spec sheet. */
+export interface Spec {
+  label: string;
+  value: string;
+  /** Internal link for the value. */
+  href?: string;
+}
+
+/** An earlier build shown on a project's page, with its own media folder. */
+export interface Prototype {
+  title: string;
+  /** Blob folder for its media, as with a project alias. */
+  alias: string;
+  year: number;
+  description: string;
+  specs?: Spec[];
+  technologies: string[];
+  githubUrl?: string;
+  liveUrl?: string;
+}
+
 export interface Project {
   title: string;
   alias: string;
+  /** Hardware facts, shown as label and value lines under the description. */
+  specs?: Spec[];
+  /** An earlier build folded into this page, under the main gallery. */
+  prototype?: Prototype;
   description: string;
   technologies: string[];
   videoSrc?: string;

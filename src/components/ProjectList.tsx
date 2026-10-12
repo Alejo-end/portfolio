@@ -44,10 +44,10 @@ export function ProjectList({ projects }: ProjectListProps) {
                                 href={`/projects/${project.alias}`}
                                 aria-current={active ? 'page' : undefined}
                                 ref={active ? activeChipRef : undefined}
-                                className={`flex shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 py-2 transition-colors ${active ? 'border-foreground bg-secondary' : 'border-border hover:bg-secondary/50'}`}
+                                className={`flex shrink-0 snap-start items-center gap-2 rounded-md px-3 py-1.5 transition-colors ${active ? 'bg-secondary' : 'hover:bg-secondary/60'}`}
                             >
                                 {active && (
-                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full" />
                                 )}
                                 <span
                                     className={`whitespace-nowrap font-[family-name:var(--font-space-grotesk)] text-sm ${active ? 'text-foreground' : 'text-muted-foreground'}`}
@@ -67,18 +67,18 @@ export function ProjectList({ projects }: ProjectListProps) {
             <div className="hidden md:block">
                 <div className="h-[calc(100vh-16rem)] overflow-y-auto overflow-x-hidden">
                     <ul className="pr-2">
-                        {projects.map((project, index) => {
+                        {projects.map((project) => {
                             const active = project.alias === selectedAlias
                             return (
                                 <li key={project.alias}>
                                     <Link
                                         href={`/projects/${project.alias}`}
                                         aria-current={active ? 'page' : undefined}
-                                        className={`group flex items-center gap-3 px-3 py-3.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
+                                        className={`group flex items-center gap-3 rounded-md px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                                     >
                                         <span
                                             aria-hidden
-                                            className={`h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'led-active bg-foreground' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
+                                            className={`h-2 w-2 shrink-0 rounded-full transition-all ${active ? 'led-active' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
                                         />
                                         <span
                                             className={`min-w-0 flex-1 truncate font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
@@ -89,9 +89,6 @@ export function ProjectList({ projects }: ProjectListProps) {
                                             {project.year}
                                         </span>
                                     </Link>
-                                    {index < projects.length - 1 && (
-                                        <div className="mx-3 border-t border-border/60" />
-                                    )}
                                 </li>
                             )
                         })}

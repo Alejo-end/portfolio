@@ -16,7 +16,8 @@ const listAllowed = cache(
             const token = process.env.BLOB_READ_WRITE_TOKEN
             const found: GalleryBlob[] = []
             // Only expose files the site actually displays, not the whole store.
-            const allowedPrefixes = ['Images/', ...projects.map((p) => `${p.alias}/`)]
+            const aliases = projects.flatMap((p) => (p.prototype ? [p.alias, p.prototype.alias] : [p.alias]))
+            const allowedPrefixes = ['Images/', ...aliases.map((alias) => `${alias}/`)]
             let cursor: string | undefined
             do {
                 const page = await list({ token, cursor })
@@ -36,9 +37,10 @@ const listAllowed = cache(
 )
 
 // Older projects keep media under Images/<alias>*, newer ones under <alias>/.
+// Once a project has an <alias>/ folder, that folder replaces its Images/ files.
 export const getGalleryBlobs = cache(async (alias: string): Promise<GalleryBlob[]> => {
     const blobs = await listAllowed()
-    return blobs.filter(
-        ({ pathname }) => pathname.startsWith(`${alias}/`) || pathname.startsWith(`Images/${alias}`)
-    )
+    const current = blobs.filter(({ pathname }) => pathname.startsWith(`${alias}/`))
+    if (current.length > 0) return current
+    return blobs.filter(({ pathname }) => pathname.startsWith(`Images/${alias}`))
 })

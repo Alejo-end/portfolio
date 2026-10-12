@@ -49,8 +49,11 @@ export default function Home() {
                     <span className={eyebrow}>Panama → Helsinki</span>
                 </footer>
             </main>
-            <FabLabAd />
-            <ThreeDAd />
+            {/* Phones get the pills in the page flow under the footer; wider screens pin them to the corners. */}
+            <div className="flex flex-wrap gap-2 px-6 pb-8 sm:contents">
+                <ThreeDAd />
+                <FabLabAd />
+            </div>
         </div>
     );
 }

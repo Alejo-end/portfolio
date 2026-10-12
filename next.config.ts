@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
         destination: "/projects/:alias",
         permanent: true,
       },
+      {
+        // The MIDI Guitar now lives on the Reins page as its prototype.
+        source: "/projects/midiguitar",
+        destination: "/projects/reins",
+        permanent: true,
+      },
     ];
   },
   async headers() {

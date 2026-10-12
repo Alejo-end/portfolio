@@ -20,6 +20,13 @@ const spaceGrotesk = localFont({
   weight: "100 900",
 });
 
+// norns-style bitmap face, kept to small screen moments (404, counters).
+const silkscreen = localFont({
+  src: "./fonts/Silkscreen/Silkscreen-Regular.woff2",
+  variable: "--font-pixel",
+  weight: "400",
+});
+
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : "http://localhost:3000";
@@ -42,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} antialiased`}
+        className={`${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >
         <Providers>
           <SiteNav />

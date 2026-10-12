@@ -6,20 +6,9 @@ body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Active "signal" LED — the one live indicator on the selected channel */
-@keyframes led-pulse {
-  0%, 100% { box-shadow: 0 0 5px 0 hsl(var(--foreground) / 0.45); }
-  50%      { box-shadow: 0 0 9px 2px hsl(var(--foreground) / 0.85); }
-}
-
+/* Active indicator: a flat dot in the text color on the selected item */
 .led-active {
-  box-shadow: 0 0 8px 1px hsl(var(--foreground) / 0.6);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .led-active {
-    animation: led-pulse 2.4s ease-in-out infinite;
-  }
+  background-color: hsl(var(--foreground));
 }
 
 /* Persona page — power-on boot sequence */
@@ -48,11 +37,25 @@ body {
   .boot-5 { animation-delay: 0.5s; }
   .boot-6 { animation-delay: 0.65s; }
 
-  /* LED flickers on, then settles into the resting pulse */
+  /* LED flickers on once, then stays lit */
   .led-boot {
-    animation:
-      led-flicker 0.9s linear 0.25s both,
-      led-pulse 2.4s ease-in-out 1.2s infinite;
+    animation: led-flicker 0.9s linear 0.25s both;
+  }
+}
+
+/* 404 screen: a heartbeat crossing a flat line. Units are SVG user units. */
+@keyframes blip-run {
+  from { transform: translateX(-24px); }
+  to   { transform: translateX(136px); }
+}
+
+.blip {
+  transform: translateX(54px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .blip {
+    animation: blip-run 2.8s steps(40) infinite;
   }
 }
 

@@ -5,13 +5,34 @@ export const projects: Project[] = [
   {
     title: "Reins",
     description:
-      "The MIDI Guitar, rebuilt as open hardware. Two parts. Guitar side reads your hand: ToF sensor, LED ring, OLED, encoder, battery. Pedal receives it wirelessly and turns it into MIDI: DIN out, expression and footswitch jacks.",
+      "The MIDI Guitar, rebuilt as open hardware. Two parts: the guitar side reads your hand, the pedal turns it into MIDI.",
     technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
     alias: "reins",
+    specs: [
+      { label: "guitar side", value: "ToF · LED ring · OLED · encoder · battery" },
+      { label: "pedal", value: "MIDI DIN out · EXP · FOOT · OLED · LED bar" },
+      { label: "link", value: "wireless" },
+    ],
     videos: [
       { src: "/videos/reins-pedal.mp4", poster: "/videos/reins-pedal-poster.jpg", caption: "pedal" },
       { src: "/videos/reins-guitar.mp4", poster: "/videos/reins-guitar-poster.jpg", caption: "guitar side" },
     ],
+    prototype: {
+      title: "MIDI Guitar",
+      alias: "midiguitar",
+      year: 2026,
+      description:
+        "A Squier Mustang turned MIDI controller. Hand movement above the body becomes CC and pitch bend, sent wirelessly to a receiver PCB. Routed the body, milled the boards, fitted it all inside. Aalto Fab Lab final project.",
+      specs: [
+        { label: "sensor", value: "VL53L1X ToF" },
+        { label: "mcu", value: "XIAO ESP32-S3" },
+        { label: "link", value: "ESP-NOW" },
+        { label: "output", value: "CC · pitch bend" },
+      ],
+      technologies: ["XIAO ESP32-S3", "C++", "KiCad", "VL53L1X ToF", "ESP-NOW", "MIDI", "Max/MSP"],
+      githubUrl: "https://github.com/Alejo-end/midiguitar",
+      liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
+    },
     year: 2026,
   },
   {
@@ -35,33 +56,20 @@ export const projects: Project[] = [
     galleryLayout: "grid",
   },
   {
-    title: "MIDI Guitar",
-    description:
-      "A Squier Mustang turned MIDI controller. A time-of-flight sensor tracks hand movement above the body for CC and pitch bend, sent wirelessly over ESP-NOW to a receiver PCB I designed and milled myself. Final project for the Aalto Fab Lab course. Continued as Reins.",
-    technologies: [
-      "XIAO ESP32-S3",
-      "C++",
-      "KiCad",
-      "VL53L1X ToF",
-      "ESP-NOW",
-      "MIDI",
-      "Max/MSP",
-    ],
-    alias: "midiguitar",
-    githubUrl: "https://github.com/Alejo-end/midiguitar",
-    liveUrl:
-      "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
-    year: 2026,
-  },
-  {
     title: "MIDI Host-to-Host Bridge",
     description:
-      "A small PCB that lets two USB MIDI hosts talk, like a laptop and a norns. Two RP2040s bridged over UART, TinyUSB firmware forwarding MIDI both ways. Designed in KiCad, milled, soldered, printed a case. It now runs my norns into Ableton.",
+      "A small PCB that lets two USB MIDI hosts talk, like a laptop and a norns. MIDI goes both ways. Designed in KiCad, milled, soldered, printed a case. It now runs my norns into Ableton.",
     technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB"],
     codeSnippets: [
       { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
     ],
     alias: "midihost",
+    specs: [
+      { label: "mcu", value: "2 × XIAO RP2040" },
+      { label: "link", value: "UART" },
+      { label: "firmware", value: "TinyUSB" },
+      { label: "board", value: "milled on a Roland SRM-20" },
+    ],
     githubUrl:
       "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
     liveUrl:

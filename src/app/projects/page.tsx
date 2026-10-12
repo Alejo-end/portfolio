@@ -14,6 +14,9 @@ export const metadata: Metadata = {
 
 export default async function ProjectsPage() {
     const first = projects[0]
-    const blobs = await getGalleryBlobs(first.alias)
-    return <ProjectDetails project={first} blobs={blobs} />
+    const [blobs, prototypeBlobs] = await Promise.all([
+        getGalleryBlobs(first.alias),
+        first.prototype ? getGalleryBlobs(first.prototype.alias) : [],
+    ])
+    return <ProjectDetails project={first} blobs={blobs} prototypeBlobs={prototypeBlobs} />
 }

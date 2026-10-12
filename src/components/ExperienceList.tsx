@@ -11,7 +11,12 @@ interface ExperienceListProps {
 
 const eyebrow = "font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
 
-const formatDuration = (d: string) => d.replace(/\s*-\s*/, ' — ')
+// "December 2020 - March 2021" -> "2020–21", "March 2022 - Present" -> "2022–now".
+const shortYears = (duration: string) => {
+    const [start, end] = duration.split(/\s*-\s*/).map((part) => part.match(/\d{4}/)?.[0])
+    if (!end) return `${start}–now`
+    return start === end ? start : `${start}–${end.slice(2)}`
+}
 
 export function ExperienceList({ experiences, selectedExperience, onSelectExperience }: ExperienceListProps) {
     const activeChipRef = useRef<HTMLButtonElement>(null)
@@ -41,10 +46,10 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                                 onClick={() => onSelectExperience(experience)}
                                 aria-current={active ? 'true' : undefined}
                                 ref={active ? activeChipRef : undefined}
-                                className={`flex shrink-0 snap-start items-center gap-2 rounded-full border px-3.5 py-2 text-left transition-colors ${active ? 'border-foreground bg-secondary' : 'border-border hover:bg-secondary/50'}`}
+                                className={`flex shrink-0 snap-start items-center gap-2 rounded-md px-3 py-1.5 text-left transition-colors ${active ? 'bg-secondary' : 'hover:bg-secondary/60'}`}
                             >
                                 {active && (
-                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+                                    <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full" />
                                 )}
                                 <span
                                     className={`whitespace-nowrap font-[family-name:var(--font-space-grotesk)] text-sm ${active ? 'text-foreground' : 'text-muted-foreground'}`}
@@ -57,43 +62,40 @@ export function ExperienceList({ experiences, selectedExperience, onSelectExperi
                 </div>
             </div>
 
-            {/* Desktop: timeline */}
-            <ol className="relative hidden md:block">
-                <span
-                    aria-hidden
-                    className="pointer-events-none absolute bottom-3 left-[5px] top-3 w-px bg-border"
-                />
+            {/* Desktop: index list, same rows as the projects index */}
+            <ul className="hidden md:block">
                 {experiences.map((experience, index) => {
                     const active = selectedExperience === experience
                     return (
-                        <li key={index} className="relative">
+                        <li key={index}>
                             <button
                                 onClick={() => onSelectExperience(experience)}
                                 aria-current={active ? 'true' : undefined}
-                                className="group flex w-full items-start gap-4 rounded-sm py-3 pr-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                className={`group flex w-full items-start gap-3 rounded-md px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${active ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                             >
                                 <span
                                     aria-hidden
-                                    className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border bg-background transition-all ${active ? 'led-active border-foreground bg-foreground' : 'border-muted-foreground/50 group-hover:border-foreground'}`}
+                                    className={`mt-2 h-2 w-2 shrink-0 rounded-full ${active ? 'led-active' : 'border border-muted-foreground/40 group-hover:border-foreground/60'}`}
                                 />
-                                <span className="-mt-0.5 min-w-0 flex-1">
-                                    <span className={`${eyebrow} block leading-relaxed`}>
-                                        {formatDuration(experience.duration)}
-                                    </span>
+                                <span className="min-w-0 flex-1">
                                     <span
-                                        className={`mt-1 block font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'font-medium text-foreground' : 'text-foreground/70 group-hover:text-foreground'}`}
+                                        className={`block font-[family-name:var(--font-space-grotesk)] text-base transition-colors ${active ? 'text-foreground' : 'text-foreground/80 group-hover:text-foreground'}`}
                                     >
-                                        {experience.position}
+                                        {experience.company}
                                     </span>
                                     <span className="block text-sm text-muted-foreground">
-                                        {experience.company}
+                                        {experience.position}
+                                        <span className="whitespace-nowrap font-[family-name:var(--font-geist-mono)] text-xs tabular-nums text-foreground/55">
+                                            {' · '}
+                                            {shortYears(experience.duration)}
+                                        </span>
                                     </span>
                                 </span>
                             </button>
                         </li>
                     )
                 })}
-            </ol>
+            </ul>
         </div>
     )
 }

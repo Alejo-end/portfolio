@@ -8,7 +8,7 @@ export function FabLabAd() {
   if (dismissed) return null
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex items-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm">
+    <div className="z-40 flex items-center sm:fixed sm:bottom-5 sm:right-5 rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm">
       <a
         href="https://digital-fabrication-1baba0.gitlab.io/assignments/index.html"
         target="_blank"
@@ -16,7 +16,7 @@ export function FabLabAd() {
         aria-label="Visit my Aalto Fab Lab course diary"
         className="flex items-center gap-2 py-2 pl-3.5 pr-1.5 font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground transition-colors hover:text-foreground"
       >
-        <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" />
+        <span aria-hidden className="led-active h-1.5 w-1.5 shrink-0 rounded-full" />
         Aalto Fab Lab ↗
       </a>
       <button

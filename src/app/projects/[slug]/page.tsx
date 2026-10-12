@@ -35,6 +35,9 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) notFound()
-    const blobs = await getGalleryBlobs(slug)
-    return <ProjectDetails project={project} blobs={blobs} />
+    const [blobs, prototypeBlobs] = await Promise.all([
+        getGalleryBlobs(slug),
+        project.prototype ? getGalleryBlobs(project.prototype.alias) : [],
+    ])
+    return <ProjectDetails project={project} blobs={blobs} prototypeBlobs={prototypeBlobs} />
 }

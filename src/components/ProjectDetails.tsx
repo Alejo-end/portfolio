@@ -3,10 +3,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon } from "lucide-react"
-import { Card } from "@/components/ui/card"
+import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
+import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
-import type { Project } from "@/app/types"
+import type { CodeSnippet, Project } from "@/app/types"
 
 export interface BlobFile {
   url: string
@@ -17,6 +17,8 @@ export interface BlobFile {
 interface ProjectDetailsProps {
   project: Project
   blobs?: BlobFile[]
+  /** Media of the project's prototype, shown in its own section under the main gallery. */
+  prototypeBlobs?: BlobFile[]
 }
 
 const isVideoFile = (file: BlobFile) =>
@@ -34,11 +36,27 @@ const mediaName = (file: BlobFile) => {
     .trim()
 }
 
-export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
+// Quiet filled buttons, like a page toolbar.
+const pill = "h-8 rounded-md bg-secondary/70 px-2.5 font-normal shadow-none hover:bg-secondary"
+
+function LinkButton({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      <Button variant="ghost" size="sm" className={pill}>
+        {icon}
+        {label}
+      </Button>
+    </a>
+  )
+}
+
+export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: ProjectDetailsProps) {
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
+  // One lightbox steps through the main gallery and then the prototype's.
+  const media = [...blobs, ...prototypeBlobs]
 
   const openCarousel = (index: number) => {
     setCurrentIndex(index)
@@ -46,8 +64,8 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   }
 
   const closeCarousel = () => setCarouselOpen(false)
-  const nextImage = () => setCurrentIndex((prev) => (prev + 1) % blobs.length)
-  const prevImage = () => setCurrentIndex((prev) => (prev - 1 + blobs.length) % blobs.length)
+  const nextImage = () => setCurrentIndex((prev) => (prev + 1) % media.length)
+  const prevImage = () => setCurrentIndex((prev) => (prev - 1 + media.length) % media.length)
 
   const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
     if (e.key === "Escape") closeCarousel()
@@ -76,10 +94,14 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     }
   }
 
-  const renderMedia = () => {
-    const snippets = project.codeSnippets ?? []
-
-    if (blobs.length === 0 && snippets.length === 0) {
+  // `offset` is where these files start in the shared lightbox sequence.
+  const renderGallery = (
+    files: BlobFile[],
+    offset: number,
+    snippets: CodeSnippet[] = [],
+    layout: Project["galleryLayout"] = "columns",
+  ) => {
+    if (files.length === 0 && snippets.length === 0) {
       return (
         <div className="w-full h-64 flex items-center justify-center">
           <p className="text-muted-foreground">No media available</p>
@@ -90,7 +112,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
     // Sequential UI screenshots read left-to-right in a grid; mixed-ratio
     // photo sets pack better as masonry columns (which reorder top-to-bottom).
     const layoutClass =
-      project.galleryLayout === "grid"
+      layout === "grid"
         ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
         : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
 
@@ -101,7 +123,8 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
             <CodeBox snippet={snippet} />
           </div>
         ))}
-        {blobs.map((file, index) => {
+        {files.map((file, i) => {
+          const index = offset + i
           const isVideo = isVideoFile(file)
           const name = mediaName(file)
 
@@ -110,12 +133,13 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
               key={file.url}
               type="button"
               onClick={() => openCarousel(index)}
-              aria-label={`Open ${name || "media"} (${index + 1} of ${blobs.length})`}
+              aria-label={`Open ${name || "media"} (${index + 1} of ${media.length})`}
               className="block w-full break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo ? (
+                // "#t=0.1" makes the browser paint a first frame instead of an empty box.
                 <video
-                  src={file.url}
+                  src={`${file.url}#t=0.1`}
                   preload="metadata"
                   muted
                   playsInline
@@ -141,9 +165,9 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
   }
 
   const renderCarousel = () => {
-    if (!carouselOpen || blobs.length === 0) return null
+    if (!carouselOpen || media.length === 0) return null
 
-    const currentFile = blobs[currentIndex]
+    const currentFile = media[currentIndex]
     const isVideo = isVideoFile(currentFile)
     const name = mediaName(currentFile)
 
@@ -171,7 +195,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
             <X className="h-6 w-6" />
           </Button>
 
-          {blobs.length > 1 && (
+          {media.length > 1 && (
             <>
               <Button
                 variant="ghost"
@@ -217,8 +241,8 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
             )}
           </div>
 
-          <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-geist-mono)] text-xs uppercase tracking-[0.15em] text-white/80">
-            {currentIndex + 1} / {blobs.length}
+          <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">
+            {currentIndex + 1} / {media.length}
             {name ? ` · ${name}` : ""}
           </div>
         </div>
@@ -232,8 +256,8 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
 
     return (
       <div className={videos.length > 1 ? "grid gap-4 md:grid-cols-2" : undefined}>
-        {videos.map((video) => (
-          <figure key={video.src} className="space-y-2">
+        {videos.map((video, i) => (
+          <Figure key={video.src} index={i + 1} caption={video.caption}>
             <div className="overflow-hidden rounded-xl bg-secondary/10">
               {/* The poster keeps the frame meaningful when a browser blocks autoplay. */}
               <video
@@ -247,46 +271,30 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
                 className="h-auto w-full"
               />
             </div>
-            {video.caption && (
-              <figcaption className="font-[family-name:var(--font-geist-mono)] text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-                {video.caption}
-              </figcaption>
-            )}
-          </figure>
+          </Figure>
         ))}
       </div>
     )
   }
 
+  const prototype = project.prototype
+
   return (
-    <div className="space-y-6">
-      <Card className="space-y-5 p-5 md:p-7">
-        <div className="flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
-          <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground tabular-nums">
-            {project.year}
-          </span>
-        </div>
-        <h2 className="font-[family-name:var(--font-space-grotesk)] text-3xl font-semibold tracking-tight md:text-5xl">
-          {project.title}
-        </h2>
-        <p className="max-w-3xl text-base leading-relaxed text-foreground/80 md:text-lg">{project.description}</p>
-        <div className="flex flex-wrap gap-2">
-          {project.technologies.map((tech, index) => (
-            <span
-              key={index}
-              className="rounded-full border border-border px-3 py-1 font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em] text-muted-foreground"
-            >
-              {tech}
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-3 pt-1">
+    <div className="space-y-6 md:px-6 md:py-6">
+      <SpecSheet
+        meta={[String(project.year)]}
+        title={project.title}
+        description={project.description}
+        specs={project.specs}
+        stack={project.technologies}
+        stackLabel="materials"
+      >
+        <div className="flex flex-wrap gap-3">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleShare}
-            className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
+            className={pill}
           >
             {copied ? (
               <>
@@ -301,35 +309,43 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
             )}
           </Button>
           {project.githubUrl && (
-            <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-              <Button
-                variant="outline"
-                size="sm"
-                className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
-              >
-                <CodeIcon className="mr-2 h-4 w-4" />
-                Code
-              </Button>
-            </a>
+            <LinkButton href={project.githubUrl} icon={<CodeIcon className="mr-2 h-4 w-4" />} label="Code" />
           )}
           {project.liveUrl && (
-            <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-              <Button
-                variant="outline"
-                size="sm"
-                className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.1em]"
-              >
-                <VideoIcon className="mr-2 h-4 w-4" />
-                Demo
-              </Button>
-            </a>
+            <LinkButton href={project.liveUrl} icon={<VideoIcon className="mr-2 h-4 w-4" />} label="Demo" />
           )}
         </div>
-      </Card>
+      </SpecSheet>
       {renderVideos()}
       <div className="w-full rounded-lg overflow-hidden bg-secondary/10">
-        {project.reactComponent ? project.reactComponent : renderMedia()}
+        {project.reactComponent
+          ? project.reactComponent
+          : renderGallery(blobs, 0, project.codeSnippets, project.galleryLayout)}
       </div>
+      {prototype && (
+        <section className="space-y-6 pt-6">
+          <SpecSheet
+            meta={["Prototype", String(prototype.year)]}
+            title={prototype.title}
+            description={prototype.description}
+            specs={prototype.specs}
+            stack={prototype.technologies}
+            stackLabel="materials"
+          >
+            {(prototype.githubUrl || prototype.liveUrl) && (
+              <div className="flex flex-wrap gap-3">
+                {prototype.githubUrl && (
+                  <LinkButton href={prototype.githubUrl} icon={<CodeIcon className="mr-2 h-4 w-4" />} label="Code" />
+                )}
+                {prototype.liveUrl && (
+                  <LinkButton href={prototype.liveUrl} icon={<BookOpen className="mr-2 h-4 w-4" />} label="Build log" />
+                )}
+              </div>
+            )}
+          </SpecSheet>
+          {renderGallery(prototypeBlobs, blobs.length)}
+        </section>
+      )}
       {renderCarousel()}
     </div>
   )

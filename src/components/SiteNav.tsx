@@ -37,7 +37,7 @@ export function SiteNav() {
                                 aria-hidden
                                 className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
                                     active
-                                        ? 'led-active bg-foreground'
+                                        ? 'led-active'
                                         : 'border border-muted-foreground/40 group-hover:border-foreground/70'
                                 }`}
                             />
