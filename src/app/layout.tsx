@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff2",
@@ -14,9 +15,10 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
-const spaceGrotesk = localFont({
-  src: "./fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.woff2",
-  variable: "--font-space-grotesk",
+// Soft, slightly wonky serif for headings (see .display in globals.css).
+const fraunces = localFont({
+  src: "./fonts/Fraunces/Fraunces-Variable.woff2",
+  variable: "--font-display",
   weight: "100 900",
 });
 
@@ -49,11 +51,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
+        className={`${fraunces.variable} ${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >
         <Providers>
-          <SiteNav />
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <SiteNav />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+          </div>
         </Providers>
       </body>
     </html>

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { DotPortrait } from '@/components/DotPortrait'
-import { LinkRow, type LinkItem } from '@/components/LinkRow'
 import { SpecList } from '@/components/SpecList'
+import { Flower } from '@/components/koivu/Flower'
 import type { Spec } from '@/app/types'
 
 export const metadata: Metadata = {
@@ -9,9 +10,6 @@ export const metadata: Metadata = {
     description:
         'Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and instruments.',
 }
-
-const eyebrow =
-    'font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground'
 
 const params: Spec[] = [
     { label: 'origin', value: 'Panama City, PA' },
@@ -28,36 +26,34 @@ const into: Spec[] = [
     { label: 'image', value: '35mm film · pinhole cameras · photogrammetry · new media art' },
 ]
 
-const links: LinkItem[] = [
-    { label: 'Projects', meta: 'Things I build', href: '/projects', external: false },
-    { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
-    { label: 'Art Portfolio', meta: 'alejandro-three.vercel.app', href: 'https://alejandro-three.vercel.app/', external: true },
+const links = [
+    { label: 'Projects', meta: 'things I build', href: '/projects', external: false },
+    { label: 'Work', meta: 'where I have worked', href: '/experience', external: false },
+    { label: 'Art portfolio', meta: 'alejandro-three.vercel.app', href: 'https://alejandro-three.vercel.app/', external: true },
     { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
     { label: 'Digital Fabrication', meta: 'Fab Lab course diary', href: 'https://digital-fabrication-1baba0.gitlab.io/', external: true },
 ]
 
 export default function Persona() {
     return (
-        <div className="min-h-screen bg-background">
-            <main className="mx-auto max-w-3xl px-4 pb-16 pt-4">
-                <header className="grid items-end gap-8 border-b border-border pb-8 sm:grid-cols-[minmax(0,1fr)_13rem]">
-                    <div>
-                        <p className={`boot boot-1 ${eyebrow}`}>Persona</p>
-                        <h1 className="boot boot-2 mt-2 font-[family-name:var(--font-space-grotesk)] text-5xl font-semibold tracking-tight md:text-7xl">
-                            Alejandro<span className="text-muted-foreground">?</span>
-                        </h1>
-                        <div className="boot boot-3 mt-4 flex items-center gap-2">
-                            <span className="led-active led-boot h-2 w-2 shrink-0 rounded-full" />
-                            <span className={eyebrow}>Helsinki, FI · Software engineer &amp; UX designer</span>
-                        </div>
-                        <p className="boot boot-4 mt-6 max-w-md text-lg leading-relaxed text-foreground/85">
-                            Interfaces for medical AI by day. Instruments the rest of the time: PCBs, norns
-                            scripts, and the odd camera.
-                        </p>
-                    </div>
+        <main className="mx-auto max-w-5xl px-4">
+            <header className="grid items-center gap-10 py-8 md:grid-cols-[minmax(0,1fr)_22rem]">
+                <div>
+                    <p className="label rise rise-1">persona</p>
+                    <h1 className="display rise rise-2 mt-2 text-7xl font-semibold leading-[0.9] md:text-8xl">
+                        Alejandro<span className="text-poppy">?</span>
+                    </h1>
+                    <p className="rise rise-3 mt-6 max-w-md text-xl leading-snug">
+                        Interfaces for medical AI by day. Instruments the rest of the time: PCBs, norns scripts, and the
+                        odd camera.
+                    </p>
+                </div>
 
-                    <figure className="boot boot-4 space-y-2">
-                        <div className="overflow-hidden rounded-lg bg-secondary/40">
+                <figure className="rise rise-3 relative">
+                    <Flower className="absolute -right-6 -top-8 z-10 w-20 rotate-12 text-berry" centerClassName="fill-sun" />
+                    {/* A photo print in a plywood frame, slightly askew. */}
+                    <div className="ply -rotate-2 overflow-hidden rounded-xl bg-card p-3">
+                        <div className="overflow-hidden rounded-md">
                             <DotPortrait
                                 src="/images/persona-portrait.jpg"
                                 alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
@@ -65,29 +61,52 @@ export default function Persona() {
                                 height={888}
                             />
                         </div>
-                        <figcaption className={`${eyebrow} text-[10px]`}>Hover to develop</figcaption>
-                    </figure>
-                </header>
+                        <figcaption className="label px-1 pt-2">Golden Horn, Türkiye · hover to develop</figcaption>
+                    </div>
+                </figure>
+            </header>
 
-                <section className="boot boot-5 space-y-4 border-b border-border py-8">
-                    <p className={eyebrow}>Params</p>
-                    <SpecList specs={params} className="max-w-none" />
+            <div className="grid gap-8 md:grid-cols-2">
+                <section className="ply space-y-4 rounded-xl bg-card p-5 md:p-7">
+                    <h2 className="display text-3xl font-semibold">Params</h2>
+                    <SpecList specs={params} />
                 </section>
+                <section className="ply space-y-4 rounded-xl bg-card p-5 md:p-7">
+                    <h2 className="display text-3xl font-semibold">Into</h2>
+                    <SpecList specs={into} />
+                </section>
+            </div>
 
-                <section className="boot boot-5 space-y-4 border-b border-border py-8">
-                    <p className={eyebrow}>Into</p>
-                    <SpecList specs={into} className="max-w-none" />
-                </section>
-
-                <section className="boot boot-6 space-y-2 pt-8">
-                    <p className={eyebrow}>Elsewhere</p>
-                    <ul className="-mx-4">
-                        {links.map((link, index) => (
-                            <LinkRow key={link.label} link={link} first={index === 0} />
-                        ))}
-                    </ul>
-                </section>
-            </main>
-        </div>
+            <section className="mt-12 space-y-3">
+                <h2 className="display text-3xl font-semibold">Elsewhere</h2>
+                <ul className="divide-y-[1.5px] divide-dashed divide-foreground/25 border-y-[1.5px] border-dashed border-foreground/25">
+                    {links.map((link) => {
+                        const inner = (
+                            <>
+                                <span className="flex-1 text-lg underline decoration-1 underline-offset-[3px] group-hover:decoration-poppy group-hover:decoration-2">
+                                    {link.label}
+                                </span>
+                                <span className="hidden font-mono text-xs text-muted-foreground sm:block">{link.meta}</span>
+                                <span aria-hidden>{link.external ? '↗' : '→'}</span>
+                            </>
+                        )
+                        const className = 'plain group flex items-center gap-4 py-3.5'
+                        return (
+                            <li key={link.href}>
+                                {link.external ? (
+                                    <a href={link.href} target="_blank" rel="noopener noreferrer" className={className}>
+                                        {inner}
+                                    </a>
+                                ) : (
+                                    <Link href={link.href} className={className}>
+                                        {inner}
+                                    </Link>
+                                )}
+                            </li>
+                        )
+                    })}
+                </ul>
+            </section>
+        </main>
     )
 }

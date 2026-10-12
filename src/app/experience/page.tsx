@@ -1,8 +1,4 @@
-'use client'
-
-import { useState } from 'react'
-import { ExperienceList } from '@/components/ExperienceList'
-import { ExperienceDetails } from '@/components/ExperienceDetails'
+import { ExperienceDetails, experienceId } from '@/components/ExperienceDetails'
 import type { WorkExperience } from '@/app/types'
 
 const workExperiences: WorkExperience[] = [
@@ -53,25 +49,44 @@ const workExperiences: WorkExperience[] = [
     }
 ]
 
-export default function WorkExperience() {
-    const [selectedExperience, setSelectedExperience] = useState<WorkExperience>(workExperiences[0])
+// "December 2020 - March 2021" -> "2020–21", "March 2022 - Present" -> "2022–now".
+const shortYears = (duration: string) => {
+    const [start, end] = duration.split(/\s*-\s*/).map((part) => part.match(/\d{4}/)?.[0])
+    if (!end) return `${start}–now`
+    return start === end ? start : `${start}–${end.slice(2)}`
+}
 
+export default function WorkExperience() {
     return (
-        <div className="bg-background">
-            <main className="mx-auto px-4 py-4 sm:px-6 md:px-8">
-                <div className="gap-8 md:grid md:grid-cols-[20rem_minmax(0,1fr)]">
-                    <div className="mb-6 md:mb-0 md:border-r md:border-border">
-                        <ExperienceList
-                            experiences={workExperiences}
-                            selectedExperience={selectedExperience}
-                            onSelectExperience={setSelectedExperience}
-                        />
-                    </div>
-                    <div className="md:h-[calc(100vh-8.5rem)] md:overflow-y-auto md:pr-1">
-                        <ExperienceDetails experience={selectedExperience} />
-                    </div>
+        <main className="mx-auto max-w-6xl px-4">
+            <header className="rise space-y-6 py-8">
+                <div className="space-y-2">
+                    <p className="label">timeline · 2019–now</p>
+                    <h1 className="display text-6xl font-semibold md:text-8xl">Work</h1>
                 </div>
-            </main>
-        </div>
+                {/* An old-fashioned table of contents: jump links to each job. */}
+                <nav aria-label="On this page">
+                    <p className="label mb-2">on this page</p>
+                    <ol className="space-y-1 text-[15px]">
+                        {workExperiences.map((experience) => (
+                            <li key={experience.company} className="flex items-baseline gap-3">
+                                <span className="w-16 shrink-0 font-mono text-xs text-muted-foreground">
+                                    {shortYears(experience.duration)}
+                                </span>
+                                <a href={`#${experienceId(experience)}`} className="underline underline-offset-[3px] hover:decoration-lake hover:decoration-2">
+                                    {experience.company}
+                                </a>
+                                <span className="text-muted-foreground">{experience.position}</span>
+                            </li>
+                        ))}
+                    </ol>
+                </nav>
+            </header>
+            <div className="space-y-20">
+                {workExperiences.map((experience) => (
+                    <ExperienceDetails key={experience.company} experience={experience} />
+                ))}
+            </div>
+        </main>
     )
 }

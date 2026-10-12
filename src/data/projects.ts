@@ -8,6 +8,7 @@ export const projects: Project[] = [
       "The MIDI Guitar, rebuilt as open hardware. Two parts: the guitar side reads your hand, the pedal turns it into MIDI.",
     technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
     alias: "reins",
+    kind: "hardware",
     specs: [
       { label: "guitar side", value: "ToF · LED ring · OLED · encoder · battery" },
       { label: "pedal", value: "MIDI DIN out · EXP · FOOT · OLED · LED bar" },
@@ -41,6 +42,7 @@ export const projects: Project[] = [
       "Live stereo sampler for norns. Record a phrase and mangle it: granular, time-stretch, slices, filter, delay, reverb. Scenes capture whole sounds, orbit drifts between them, erosion wears the loop down on every pass.",
     technologies: ["Lua", "SuperCollider", "norns", "softcut", "MIDI"],
     alias: "mangler",
+    kind: "sound",
     githubUrl: "https://github.com/Alejo-end/mangler",
     year: 2026,
     galleryLayout: "grid",
@@ -51,6 +53,7 @@ export const projects: Project[] = [
       "8-step sequencer for norns and grid. Four tracks, notes or CC, per-step velocity, length, mute and skip, pattern chaining, live editing. The UI shots are rendered from the real script by a headless simulator I built.",
     technologies: ["Lua", "norns", "monome grid", "MIDI", "PolyPerc"],
     alias: "snu",
+    kind: "sound",
     githubUrl: "https://github.com/absurd-turtle/snu",
     year: 2026,
     galleryLayout: "grid",
@@ -64,6 +67,7 @@ export const projects: Project[] = [
       { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
     ],
     alias: "midihost",
+    kind: "hardware",
     specs: [
       { label: "mcu", value: "2 × XIAO RP2040" },
       { label: "link", value: "UART" },
@@ -82,6 +86,7 @@ export const projects: Project[] = [
       "Learning 35mm film on a Chinon CE-4 with a 50mm f/2 Pentax lens.",
     technologies: ["Photography"],
     alias: "film",
+    kind: "image",
     year: 2025,
   },
   {
@@ -90,6 +95,7 @@ export const projects: Project[] = [
       "A Max for Live effect driven by the weather. Live air quality data steers delay, reverb, echo and distortion. Free on maxforlive.com.",
     technologies: ["MaxMSP", "Ableton Live", "WAQI API", "Max4Live"],
     alias: "weather",
+    kind: "sound",
     githubUrl:
       "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
     liveUrl: "https://youtu.be/wVJ3n1L9Egk",
@@ -101,6 +107,7 @@ export const projects: Project[] = [
       "A 3D printed pinhole camera. Different pinhole diameters, different films, improvised developing.",
     technologies: ["3D Printing", "Photography", "Pinhole"],
     alias: "photo",
+    kind: "image",
     year: 2024,
   },
   {
@@ -109,6 +116,7 @@ export const projects: Project[] = [
       "I soldered together a norns shield and have been scripting it in Lua and SuperCollider since.",
     technologies: ["Lua", "SuperCollider", "Norns"],
     alias: "norns",
+    kind: "sound",
     year: 2024,
   },
   {
@@ -124,6 +132,7 @@ export const projects: Project[] = [
       "Jitter",
     ],
     alias: "max",
+    kind: "sound",
     year: 2024,
   },
   {
@@ -139,6 +148,7 @@ export const projects: Project[] = [
       "Thinkercad",
     ],
     alias: "3dscanning",
+    kind: "image",
     year: 2024,
   },
   {
@@ -153,6 +163,7 @@ export const projects: Project[] = [
       "Norns",
     ],
     alias: "music",
+    kind: "sound",
     year: 2024,
   },
   {
@@ -160,6 +171,7 @@ export const projects: Project[] = [
     description:
       "Music and visuals coded live at algoraves, improvised with Hydra, Strudel and SuperCollider.",
     alias: "livecoding",
+    kind: "sound",
     technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
     year: 2023,
   },
@@ -169,6 +181,7 @@ export const projects: Project[] = [
       "An open data project on public finances. React, Node, MongoDB. Global finalist at IBM's Call for Code 2021.",
     technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
     alias: "ecobridge",
+    kind: "web",
     githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
     liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
     year: 2020,

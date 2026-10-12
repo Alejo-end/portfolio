@@ -46,9 +46,13 @@ export interface Prototype {
   liveUrl?: string;
 }
 
+export type ProjectKind = "hardware" | "sound" | "image" | "web";
+
 export interface Project {
   title: string;
   alias: string;
+  /** Picks the project's palette color and its filter tab on the index. */
+  kind: ProjectKind;
   /** Hardware facts, shown as label and value lines under the description. */
   specs?: Spec[];
   /** An earlier build folded into this page, under the main gallery. */

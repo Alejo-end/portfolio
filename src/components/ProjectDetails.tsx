@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
+import { KindTag } from "@/components/koivu/kinds"
 import type { CodeSnippet, Project } from "@/app/types"
 
 export interface BlobFile {
@@ -36,16 +37,11 @@ const mediaName = (file: BlobFile) => {
     .trim()
 }
 
-// Quiet filled buttons, like a page toolbar.
-const pill = "h-8 rounded-md bg-secondary/70 px-2.5 font-normal shadow-none hover:bg-secondary"
-
 function LinkButton({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      <Button variant="ghost" size="sm" className={pill}>
-        {icon}
-        {label}
-      </Button>
+    <a href={href} target="_blank" rel="noopener noreferrer" className="plain btn-chunky">
+      {icon}
+      {label}
     </a>
   )
 }
@@ -134,7 +130,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
               type="button"
               onClick={() => openCarousel(index)}
               aria-label={`Open ${name || "media"} (${index + 1} of ${media.length})`}
-              className="block w-full break-inside-avoid mb-4 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="block w-full break-inside-avoid mb-4 rounded-lg overflow-hidden border-[1.5px] border-foreground cursor-pointer transition-transform hover:-rotate-1 hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
@@ -177,7 +173,8 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
         role="dialog"
         aria-modal="true"
         aria-label={`${project.title} media viewer`}
-        className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+        // !mt-0: the dialog is a child of a space-y stack, which would push it down.
+        className="fixed inset-0 !mt-0 bg-black/80 z-50 flex items-center justify-center p-4"
         onClick={closeCarousel}
         tabIndex={-1}
       >
@@ -280,8 +277,10 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
   const prototype = project.prototype
 
   return (
-    <div className="space-y-6 md:px-6 md:py-6">
+    <div className="space-y-10">
       <SpecSheet
+        heading="h1"
+        tag={<KindTag kind={project.kind} />}
         meta={[String(project.year)]}
         title={project.title}
         description={project.description}
@@ -290,29 +289,24 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
         stackLabel="materials"
       >
         <div className="flex flex-wrap gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleShare}
-            className={pill}
-          >
+          <button type="button" onClick={handleShare} className="btn-chunky">
             {copied ? (
               <>
-                <Check className="mr-2 h-4 w-4" />
+                <Check className="h-4 w-4" />
                 Copied
               </>
             ) : (
               <>
-                <Share2 className="mr-2 h-4 w-4" />
+                <Share2 className="h-4 w-4" />
                 Share
               </>
             )}
-          </Button>
+          </button>
           {project.githubUrl && (
-            <LinkButton href={project.githubUrl} icon={<CodeIcon className="mr-2 h-4 w-4" />} label="Code" />
+            <LinkButton href={project.githubUrl} icon={<CodeIcon className="h-4 w-4" />} label="Code" />
           )}
           {project.liveUrl && (
-            <LinkButton href={project.liveUrl} icon={<VideoIcon className="mr-2 h-4 w-4" />} label="Demo" />
+            <LinkButton href={project.liveUrl} icon={<VideoIcon className="h-4 w-4" />} label="Demo" />
           )}
         </div>
       </SpecSheet>
@@ -323,9 +317,10 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
           : renderGallery(blobs, 0, project.codeSnippets, project.galleryLayout)}
       </div>
       {prototype && (
-        <section className="space-y-6 pt-6">
+        <section className="space-y-6 border-t-2 border-dashed border-foreground/30 pt-10">
           <SpecSheet
-            meta={["Prototype", String(prototype.year)]}
+            tag={<KindTag kind={project.kind} />}
+            meta={["prototype", String(prototype.year)]}
             title={prototype.title}
             description={prototype.description}
             specs={prototype.specs}
@@ -335,10 +330,10 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
             {(prototype.githubUrl || prototype.liveUrl) && (
               <div className="flex flex-wrap gap-3">
                 {prototype.githubUrl && (
-                  <LinkButton href={prototype.githubUrl} icon={<CodeIcon className="mr-2 h-4 w-4" />} label="Code" />
+                  <LinkButton href={prototype.githubUrl} icon={<CodeIcon className="h-4 w-4" />} label="Code" />
                 )}
                 {prototype.liveUrl && (
-                  <LinkButton href={prototype.liveUrl} icon={<BookOpen className="mr-2 h-4 w-4" />} label="Build log" />
+                  <LinkButton href={prototype.liveUrl} icon={<BookOpen className="h-4 w-4" />} label="Build log" />
                 )}
               </div>
             )}
