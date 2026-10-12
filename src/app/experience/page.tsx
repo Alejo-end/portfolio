@@ -3,17 +3,7 @@
 import { useState } from 'react'
 import { ExperienceList } from '@/components/ExperienceList'
 import { ExperienceDetails } from '@/components/ExperienceDetails'
-
-interface WorkExperience {
-    company: string
-    position: string
-    duration: string
-    description: string
-    skills: string[]
-    imageSrc?: string
-    videoSrc?: string
-    posterSrc?: string
-}
+import type { WorkExperience } from '@/app/types'
 
 const workExperiences: WorkExperience[] = [
     {
@@ -23,7 +13,11 @@ const workExperiences: WorkExperience[] = [
         description: "I design and build the UI for radiotherapy treatment planning: AI models predict organ contours, dose and synthetic images, and clinicians review the results before they go into a plan. React and TypeScript on Azure, regulated medical device software. I've also built a contouring trainer for physicians and a configuration tool for clinics.",
         skills: ["React", "TypeScript", "Azure", "Figma", "UI Design"],
         videoSrc: "/videos/mvision.mp4",
-        posterSrc: "/videos/mvision-poster.webp"
+        posterSrc: "/videos/mvision-poster.webp",
+        gallery: [
+            { src: "/images/mvision-workstations.png", alt: "MVision on four workstations", width: 1024, height: 357 },
+            { src: "/images/mvision-laptop.png", alt: "MVision dose view on a laptop", width: 1024, height: 669 },
+        ],
     },
     {
         company: "National Innovation Office of Panama",

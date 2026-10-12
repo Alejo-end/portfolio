@@ -8,6 +8,8 @@ export interface WorkExperience {
     videoSrc?: string
     posterSrc?: string
     imageSrc?: string
+    /** Product shots shown under the main video or image. */
+    gallery?: { src: string; alt: string; width: number; height: number }[]
     githubUrl?: string
 }
 

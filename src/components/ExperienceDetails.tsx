@@ -72,6 +72,21 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                     </figcaption>
                 </figure>
             )}
+            {experience.gallery && (
+                <div className="grid items-center gap-4 md:grid-cols-2">
+                    {experience.gallery.map((image) => (
+                        <Image
+                            key={image.src}
+                            src={image.src}
+                            alt={image.alt}
+                            width={image.width}
+                            height={image.height}
+                            sizes="(min-width: 768px) 40vw, 100vw"
+                            className="h-auto w-full"
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
