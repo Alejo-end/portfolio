@@ -5,7 +5,7 @@ export const projects: Project[] = [
   {
     title: "Reins",
     description:
-      "Every Mustang needs reins. The MIDI Guitar rebuilt as open hardware. Guitar side: a battery board with a ToF sensor, LED ring, OLED and encoder. Pedal side: wireless receiver with MIDI out, expression and footswitch jacks. Rev A.",
+      "The MIDI Guitar, rebuilt as open hardware. Two parts. Guitar side reads your hand: ToF sensor, LED ring, OLED, encoder, battery. Pedal receives it wirelessly and turns it into MIDI: DIN out, expression and footswitch jacks.",
     technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
     alias: "reins",
     videos: [

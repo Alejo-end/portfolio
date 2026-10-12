@@ -260,7 +260,6 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
 
   return (
     <div className="space-y-6">
-      {renderVideos()}
       <Card className="space-y-5 p-5 md:p-7">
         <div className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-foreground shadow-[0_0_8px_1px_hsl(var(--foreground)/0.55)]" />
@@ -327,6 +326,7 @@ export function ProjectDetails({ project, blobs = [] }: ProjectDetailsProps) {
           )}
         </div>
       </Card>
+      {renderVideos()}
       <div className="w-full rounded-lg overflow-hidden bg-secondary/10">
         {project.reactComponent ? project.reactComponent : renderMedia()}
       </div>

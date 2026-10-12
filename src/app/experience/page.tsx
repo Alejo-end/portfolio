@@ -15,8 +15,8 @@ const workExperiences: WorkExperience[] = [
         videoSrc: "/videos/mvision.mp4",
         posterSrc: "/videos/mvision-poster.webp",
         gallery: [
-            { src: "/images/mvision-workstations.png", alt: "MVision on four workstations", width: 1024, height: 357 },
-            { src: "/images/mvision-laptop.png", alt: "MVision dose view on a laptop", width: 1024, height: 669 },
+            { src: "/images/mvision-workstations.png", alt: "MVision on four workstations", caption: "workstations", width: 1024, height: 357 },
+            { src: "/images/mvision-laptop.png", alt: "MVision dose view on a laptop", caption: "dose view", width: 1024, height: 669 },
         ],
     },
     {

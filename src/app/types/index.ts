@@ -9,7 +9,7 @@ export interface WorkExperience {
     posterSrc?: string
     imageSrc?: string
     /** Product shots shown under the main video or image. */
-    gallery?: { src: string; alt: string; width: number; height: number }[]
+    gallery?: { src: string; alt: string; caption: string; width: number; height: number }[]
     githubUrl?: string
 }
 
@@ -31,7 +31,7 @@ export interface Project {
   description: string;
   technologies: string[];
   videoSrc?: string;
-  /** Autoplaying loops shown above the title, for the shots the page leads with. */
+  /** Autoplaying loops shown between the title card and the gallery. */
   videos?: ProjectVideo[];
   githubUrl?: string;
   liveUrl?: string;
