@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { DotPortrait } from '@/components/DotPortrait'
 import { SpecList } from '@/components/SpecList'
+import { Module } from '@/components/koivu/Module'
 import type { Spec } from '@/app/types'
 
 export const metadata: Metadata = {
@@ -30,8 +31,6 @@ const links = [
     { label: 'Digital Fabrication', meta: 'Fab Lab course diary', href: 'https://digital-fabrication-1baba0.gitlab.io/' },
 ]
 
-const heading = 'border-b border-foreground pb-2 font-mono text-xs'
-
 export default function Persona() {
     return (
         <main className="mx-auto max-w-6xl space-y-16 px-4">
@@ -52,18 +51,15 @@ export default function Persona() {
             </header>
 
             <div className="grid gap-12 md:grid-cols-2">
-                <section className="space-y-4">
-                    <h2 className={heading}>params</h2>
+                <Module no="01" title="params">
                     <SpecList specs={params} />
-                </section>
-                <section className="space-y-4">
-                    <h2 className={heading}>into</h2>
+                </Module>
+                <Module no="02" title="into">
                     <SpecList specs={into} />
-                </section>
+                </Module>
             </div>
 
-            <section>
-                <h2 className={heading}>elsewhere</h2>
+            <Module no="03" title="elsewhere">
                 <ul>
                     {links.map((link) => (
                         <li key={link.href}>
@@ -82,7 +78,7 @@ export default function Persona() {
                         </li>
                     ))}
                 </ul>
-            </section>
+            </Module>
         </main>
     )
 }

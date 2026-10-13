@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
-import { kindLabels } from './kinds'
+import { kinds } from './kinds'
 
 export interface ProjectCard {
     no: string
@@ -65,7 +65,7 @@ export function ProjectGrid({ cards }: { cards: ProjectCard[] }) {
                                         />
                                     ) : (
                                         <span className="absolute inset-0 grid place-items-center font-pixel text-2xl uppercase text-muted-foreground">
-                                            {kindLabels[card.kind]}
+                                            {kinds[card.kind].label}
                                         </span>
                                     )}
                                 </div>

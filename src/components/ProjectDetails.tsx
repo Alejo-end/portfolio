@@ -17,7 +17,7 @@ export interface BlobFile {
 
 interface ProjectDetailsProps {
   project: Project
-  /** Catalog number, e.g. "013". */
+  /** Catalog number, e.g. "13". */
   no: string
   blobs?: BlobFile[]
   /** Media of the project's prototype, shown in its own section under the main gallery. */

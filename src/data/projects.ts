@@ -188,9 +188,9 @@ export const projects: Project[] = [
   },
 ];
 
-/** Catalog number, newest highest: "013". */
+/** Catalog number, newest highest: "13". */
 export function projectNo(project: Project): string {
-    return String(projects.length - projects.indexOf(project)).padStart(3, "0")
+    return String(projects.length - projects.indexOf(project))
 }
 
 export function getProjectByAlias(alias: string): Project | undefined {

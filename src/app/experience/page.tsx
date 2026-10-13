@@ -11,7 +11,7 @@ export default function WorkExperience() {
                     heading="index"
                     count={workExperiences.length}
                     rows={workExperiences.map((experience, i) => ({
-                        no: String(workExperiences.length - i).padStart(3, '0'),
+                        no: String(workExperiences.length - i),
                         title: experience.company,
                         href: `#${experienceId(experience)}`,
                         tag: experience.position,

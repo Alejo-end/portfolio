@@ -199,7 +199,7 @@ export function Matopeli() {
                 </div>
             </div>
             <figcaption className="label">
-                matopeli · <span className="[@media(pointer:coarse)]:hidden">click, then arrow keys</span>
+                <span className="[@media(pointer:coarse)]:hidden">click, then arrow keys</span>
                 <span className="hidden [@media(pointer:coarse)]:inline">tap, then swipe</span>
             </figcaption>
         </figure>
