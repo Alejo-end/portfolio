@@ -3,74 +3,54 @@
 @tailwind utilities;
 
 /*
- * Koivu (birch). Warm paper, ink, and five flat colors. Panels are bent
- * plywood: a hard stacked shadow shows the laminated edge, and pressing a
- * panel pushes it down into its own thickness.
+ * Black on white, like a record label's catalog. One weight of rule, square
+ * corners, heavy tight headings. The only color on the site is the LCD.
  */
 
 @layer base {
   :root {
-    --background: 38 50% 92%;
-    --foreground: 33 17% 10%;
-    --card: 38 60% 96%;
-    --card-foreground: 33 17% 10%;
-    --popover: 38 60% 96%;
-    --popover-foreground: 33 17% 10%;
-    --primary: 33 17% 10%;
-    --primary-foreground: 38 60% 96%;
-    --secondary: 38 40% 86%;
-    --secondary-foreground: 33 17% 10%;
-    --muted: 38 40% 86%;
-    --muted-foreground: 33 14% 36%;
-    --accent: 38 40% 86%;
-    --accent-foreground: 33 17% 10%;
-    --destructive: 7 74% 45%;
-    --destructive-foreground: 38 60% 96%;
-    --border: 37 30% 76%;
-    --input: 37 30% 76%;
-    --ring: 215 56% 40%;
-    --radius: 0.75rem;
-
-    /* Plywood edge: the light layer is birch, the dark layer is glue line. */
-    --ply-light: 38 55% 80%;
-    --ply-dark: 33 25% 40%;
-
-    --poppy: 7 74% 53%;
-    --sun: 39 87% 59%;
-    --lake: 215 56% 40%;
-    --moss: 138 33% 36%;
-    --berry: 339 69% 71%;
+    --background: 0 0% 99%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 99%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 0 0% 4%;
+    --primary-foreground: 0 0% 99%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 99%;
+    --border: 0 0% 86%;
+    --input: 0 0% 86%;
+    --ring: 0 0% 4%;
+    --radius: 0rem;
   }
 
   .dark {
-    --background: 36 21% 7%;
-    --foreground: 38 52% 89%;
-    --card: 33 21% 10%;
-    --card-foreground: 38 52% 89%;
-    --popover: 33 21% 10%;
-    --popover-foreground: 38 52% 89%;
-    --primary: 38 52% 89%;
-    --primary-foreground: 36 21% 7%;
-    --secondary: 34 19% 15%;
-    --secondary-foreground: 38 52% 89%;
-    --muted: 34 19% 15%;
-    --muted-foreground: 35 15% 62%;
-    --accent: 34 19% 15%;
-    --accent-foreground: 38 52% 89%;
-    --destructive: 7 80% 60%;
-    --destructive-foreground: 36 21% 7%;
-    --border: 33 18% 20%;
-    --input: 33 18% 20%;
-    --ring: 215 60% 62%;
-
-    --ply-light: 35 30% 30%;
-    --ply-dark: 36 25% 4%;
-
-    --poppy: 7 80% 60%;
-    --sun: 39 90% 62%;
-    --lake: 215 60% 62%;
-    --moss: 138 35% 52%;
-    --berry: 339 69% 74%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 11%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 4%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 95%;
   }
 }
 
@@ -93,30 +73,16 @@
 }
 
 @layer components {
-  .ply {
-    border: 1.5px solid hsl(var(--foreground));
-    box-shadow:
-      1px 1px 0 hsl(var(--ply-light)),
-      2px 2px 0 hsl(var(--ply-dark)),
-      3px 3px 0 hsl(var(--ply-light)),
-      4px 4px 0 hsl(var(--ply-dark)),
-      5px 5px 0 hsl(var(--ply-light)),
-      6px 6px 0 hsl(var(--foreground));
-    transition:
-      transform 120ms ease,
-      box-shadow 120ms ease;
+  .frame {
+    border: 1px solid hsl(var(--foreground));
   }
 
-  /* A panel you can press: it sinks into its edge. */
-  .ply-press:hover {
-    transform: translate(-1px, -1px) rotate(-0.4deg);
+  .frame-press {
+    transition: background-color 120ms ease;
   }
 
-  .ply-press:active {
-    transform: translate(4px, 4px);
-    box-shadow:
-      1px 1px 0 hsl(var(--ply-light)),
-      2px 2px 0 hsl(var(--foreground));
+  .frame-press:hover {
+    background-color: hsl(var(--secondary));
   }
 
   /* Display type: a heavy, tightly set grotesque, the way 90s posters did it. */
@@ -165,34 +131,27 @@
 }
 
 @layer components {
-  /* A chunky 90s button with a hard shadow; it clicks down flat. */
-  .btn-chunky {
+  /* A plain black-edged button that inverts on hover. */
+  .btn {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     height: 2.25rem;
     padding: 0 0.875rem;
-    border-radius: 0.5rem;
-    border: 1.5px solid hsl(var(--foreground));
-    background: hsl(var(--background));
+    border: 1px solid hsl(var(--foreground));
+    background: transparent;
     color: hsl(var(--foreground));
-    box-shadow: 3px 3px 0 hsl(var(--foreground));
     font-size: 14px;
     text-decoration: none;
-    transition: transform 80ms ease, box-shadow 80ms ease, background-color 120ms ease;
+    transition: background-color 80ms ease, color 80ms ease;
   }
 
-  .btn-chunky:hover {
-    background: hsl(var(--sun));
-    color: hsl(33 17% 10%);
+  .btn:hover {
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
   }
 
-  .btn-chunky:active {
-    transform: translate(3px, 3px);
-    box-shadow: none;
-  }
-
-  .btn-chunky:focus-visible {
+  .btn:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }

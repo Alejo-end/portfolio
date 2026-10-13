@@ -43,12 +43,7 @@ export default {
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			poppy: 'hsl(var(--poppy) / <alpha-value>)',
-  			sun: 'hsl(var(--sun) / <alpha-value>)',
-  			lake: 'hsl(var(--lake) / <alpha-value>)',
-  			moss: 'hsl(var(--moss) / <alpha-value>)',
-  			berry: 'hsl(var(--berry) / <alpha-value>)'
+  			ring: 'hsl(var(--ring))'
   		},
   		fontFamily: {
   			mono: ['var(--font-geist-mono)', 'ui-monospace', 'monospace'],

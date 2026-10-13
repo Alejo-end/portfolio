@@ -5,10 +5,10 @@ interface PagerLink {
     title: string
 }
 
-// Webring style: previous, back to the index, next.
+// Previous, back to the index, next.
 export function Pager({ prev, next, index }: { prev: PagerLink; next: PagerLink; index: PagerLink }) {
     return (
-        <nav aria-label="More projects" className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t-[1.5px] border-foreground pt-6 font-mono text-[13px]">
+        <nav aria-label="More projects" className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-foreground pt-6 font-mono text-[13px]">
             <Link href={prev.href} className="justify-self-start">
                 ← {prev.title}
             </Link>

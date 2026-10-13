@@ -32,8 +32,8 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                 <div className={`grid gap-6 pt-6 ${gallery.length > 0 ? 'sm:grid-cols-2' : ''}`}>
                     {gallery.map((image, i) => (
                         <Figure key={image.src} index={i + 1} caption={image.caption}>
-                            {/* Product shots are cut-out PNGs: a tinted tile gives them a common frame in both themes. */}
-                            <div className="flex aspect-[3/2] items-center justify-center rounded-xl border-[1.5px] border-foreground bg-card p-5">
+                            {/* Product shots are cut-out PNGs: a gray tile gives them a common frame in both themes. */}
+                            <div className="flex aspect-[3/2] items-center justify-center bg-secondary p-5">
                                 <Image
                                     src={image.src}
                                     alt={image.alt}
@@ -48,7 +48,7 @@ export function ExperienceDetails({ experience }: ExperienceDetailsProps) {
                     {hasLead && (
                         <Figure index={gallery.length + 1} caption={experience.videoSrc ? 'demo' : 'screen'}>
                             <div
-                                className={`w-full overflow-hidden rounded-xl border-[1.5px] border-foreground bg-card ${gallery.length > 0 ? 'aspect-[3/2]' : 'aspect-video'}`}
+                                className={`w-full overflow-hidden bg-secondary ${gallery.length > 0 ? 'aspect-[3/2]' : 'aspect-video'}`}
                             >
                                 {experience.videoSrc ? (
                                     // The poster keeps the frame meaningful when a browser

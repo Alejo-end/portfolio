@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { projects } from '@/data/projects'
+import { projects, projectNo } from '@/data/projects'
 import { getGalleryBlobs } from '@/lib/blobs'
 import { ProjectGrid, type ProjectCard } from '@/components/koivu/ProjectGrid'
 
@@ -19,17 +19,13 @@ export default async function ProjectsPage() {
         projects.map(async (project) => {
             const blobs = await getGalleryBlobs(project.alias)
             const cover = project.videos?.[0]?.poster ?? blobs.find((b) => isImage(b.pathname))?.url
-            return { alias: project.alias, title: project.title, year: project.year, kind: project.kind, cover }
+            return { no: projectNo(project), alias: project.alias, title: project.title, year: project.year, kind: project.kind, cover }
         })
     )
-    const years = projects.map((p) => p.year)
 
     return (
         <main className="mx-auto max-w-6xl px-4">
-            <header className="rise space-y-2 py-8">
-                <p className="label">
-                    index · {Math.min(...years)}–{Math.max(...years)}
-                </p>
+            <header className="rise py-8">
                 <h1 className="display text-6xl md:text-8xl">Projects</h1>
             </header>
             <div className="rise rise-2">

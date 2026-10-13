@@ -41,7 +41,7 @@ export function NoSignal() {
             <div
                 role="img"
                 aria-label="404. No signal. Key 2 goes back, key 3 goes home."
-                className={`${pixel} aspect-[2/1] w-full select-none ply rounded-xl bg-black p-[3%] text-white`}
+                className={`${pixel} aspect-[2/1] w-full select-none frame bg-black p-[3%] text-white`}
             >
                 <div className="flex h-full flex-col justify-between text-[clamp(8px,2.6vw,16px)] leading-none">
                     <div className="flex items-center justify-between">
@@ -82,7 +82,7 @@ export function NoSignal() {
                         className="group flex flex-col items-center gap-2 focus-visible:outline-none"
                     >
                         <span
-                            className={`h-11 w-11 rounded-full border-[1.5px] border-foreground bg-sun shadow-[2px_2px_0_hsl(var(--foreground))] transition-transform group-focus-visible:ring-1 group-focus-visible:ring-ring ${pressed === key ? 'translate-y-px shadow-none' : 'group-active:translate-y-px'}`}
+                            className={`h-11 w-11 rounded-full border border-foreground bg-background shadow-[2px_2px_0_hsl(var(--foreground))] transition-transform group-focus-visible:ring-1 group-focus-visible:ring-ring ${pressed === key ? 'translate-y-px shadow-none' : 'group-active:translate-y-px'}`}
                         />
                         <span className="label">
                             {key}

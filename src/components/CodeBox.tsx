@@ -37,7 +37,7 @@ export function CodeBox({ snippet }: { snippet: CodeSnippet }) {
             <button
                 onClick={() => setOpen(true)}
                 aria-label={`View code: ${snippet.filename}`}
-                className="group relative block w-full overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-foreground/40"
+                className="group relative block w-full overflow-hidden border border-border bg-card text-left transition-colors hover:border-foreground/40"
             >
                 <span className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
                     <span className={`${mono} truncate text-[10px] uppercase tracking-[0.15em] text-muted-foreground`}>
@@ -62,7 +62,7 @@ export function CodeBox({ snippet }: { snippet: CodeSnippet }) {
                     <div
                         role="dialog"
                         aria-label={snippet.filename}
-                        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-background"
+                        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden border border-border bg-background"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">

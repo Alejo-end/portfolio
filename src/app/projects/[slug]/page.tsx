@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { projects, getProjectByAlias } from '@/data/projects'
+import { projects, getProjectByAlias, projectNo } from '@/data/projects'
 import { getGalleryBlobs } from '@/lib/blobs'
 import { ProjectDetails } from '@/components/ProjectDetails'
 import { Pager } from '@/components/koivu/Pager'
@@ -45,7 +45,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const next = projects[(i + 1) % projects.length]
     return (
         <main className="mx-auto max-w-6xl space-y-12 px-4 pt-4">
-            <ProjectDetails project={project} blobs={blobs} prototypeBlobs={prototypeBlobs} />
+            <ProjectDetails project={project} no={projectNo(project)} blobs={blobs} prototypeBlobs={prototypeBlobs} />
             <Pager
                 prev={{ href: `/projects/${prev.alias}`, title: prev.title }}
                 index={{ href: '/projects', title: 'all projects' }}

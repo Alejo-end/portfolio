@@ -17,6 +17,8 @@ export interface BlobFile {
 
 interface ProjectDetailsProps {
   project: Project
+  /** Catalog number, e.g. "013". */
+  no: string
   blobs?: BlobFile[]
   /** Media of the project's prototype, shown in its own section under the main gallery. */
   prototypeBlobs?: BlobFile[]
@@ -39,14 +41,14 @@ const mediaName = (file: BlobFile) => {
 
 function LinkButton({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="plain btn-chunky">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="plain btn">
       {icon}
       {label}
     </a>
   )
 }
 
-export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: ProjectDetailsProps) {
+export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }: ProjectDetailsProps) {
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
@@ -130,7 +132,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
               type="button"
               onClick={() => openCarousel(index)}
               aria-label={`Open ${name || "media"} (${index + 1} of ${media.length})`}
-              className="block w-full break-inside-avoid mb-4 rounded-lg overflow-hidden border-[1.5px] border-foreground cursor-pointer transition-transform hover:-rotate-1 hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
@@ -139,7 +141,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
                   preload="metadata"
                   muted
                   playsInline
-                  className="w-full h-auto object-cover rounded-lg"
+                  className="w-full h-auto object-cover"
                 />
               ) : (
                 <Image
@@ -150,7 +152,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
                   quality={60}
                   priority={index < 3}
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  className="w-full h-auto object-cover rounded-lg"
+                  className="w-full h-auto object-cover"
                 />
               )}
             </button>
@@ -255,7 +257,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
       <div className={videos.length > 1 ? "grid gap-4 md:grid-cols-2" : undefined}>
         {videos.map((video, i) => (
           <Figure key={video.src} index={i + 1} caption={video.caption}>
-            <div className="overflow-hidden rounded-xl bg-secondary/10">
+            <div className="overflow-hidden bg-secondary">
               {/* The poster keeps the frame meaningful when a browser blocks autoplay. */}
               <video
                 src={video.src}
@@ -281,7 +283,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
       <SpecSheet
         heading="h1"
         tag={<KindTag kind={project.kind} />}
-        meta={[String(project.year)]}
+        meta={[no, String(project.year)]}
         title={project.title}
         description={project.description}
         specs={project.specs}
@@ -289,7 +291,7 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
         stackLabel="materials"
       >
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={handleShare} className="btn-chunky">
+          <button type="button" onClick={handleShare} className="btn">
             {copied ? (
               <>
                 <Check className="h-4 w-4" />
@@ -311,13 +313,13 @@ export function ProjectDetails({ project, blobs = [], prototypeBlobs = [] }: Pro
         </div>
       </SpecSheet>
       {renderVideos()}
-      <div className="w-full rounded-lg overflow-hidden bg-secondary/10">
+      <div className="w-full overflow-hidden">
         {project.reactComponent
           ? project.reactComponent
           : renderGallery(blobs, 0, project.codeSnippets, project.galleryLayout)}
       </div>
       {prototype && (
-        <section className="space-y-6 border-t-2 border-dashed border-foreground/30 pt-10">
+        <section className="space-y-6 pt-10">
           <SpecSheet
             tag={<KindTag kind={project.kind} />}
             meta={["prototype", String(prototype.year)]}

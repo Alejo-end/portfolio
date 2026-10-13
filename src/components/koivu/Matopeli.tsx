@@ -178,7 +178,7 @@ export function Matopeli() {
                     steer(Math.abs(dx) > Math.abs(dy) ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) })
                 }}
                 style={{ touchAction: mode === 'play' ? 'none' : 'manipulation' }}
-                className="ply cursor-pointer select-none rounded-2xl bg-[#1f2a44] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="cursor-pointer select-none rounded-2xl border border-foreground/20 bg-[#161616] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
                 <div className="rounded-md p-2" style={{ background: LCD, color: INK }}>
                     <div className="flex justify-between px-0.5 pb-1.5 font-pixel text-[11px] uppercase leading-none">
@@ -199,8 +199,8 @@ export function Matopeli() {
                 </div>
             </div>
             <figcaption className="label">
-                matopeli. <span className="[@media(pointer:coarse)]:hidden">click, then steer with the arrows.</span>
-                <span className="hidden [@media(pointer:coarse)]:inline">tap, then swipe to steer.</span>
+                matopeli · <span className="[@media(pointer:coarse)]:hidden">click, then arrow keys</span>
+                <span className="hidden [@media(pointer:coarse)]:inline">tap, then swipe</span>
             </figcaption>
         </figure>
     )

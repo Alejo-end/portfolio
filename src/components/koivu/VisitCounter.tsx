@@ -26,10 +26,10 @@ export function VisitCounter() {
 
     return (
         <p className="label flex items-center gap-2">
-            your visit no.
+            visit no.
             <span className="flex gap-px" aria-label={count === null ? undefined : String(count)}>
                 {digits.split('').map((d, i) => (
-                    <span key={i} className="rounded-[2px] bg-foreground px-1 py-0.5 font-pixel text-[11px] leading-none text-background">
+                    <span key={i} className="bg-foreground px-1 py-0.5 font-pixel text-[11px] leading-none text-background">
                         {d}
                     </span>
                 ))}

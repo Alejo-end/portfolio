@@ -5,7 +5,7 @@ export const projects: Project[] = [
   {
     title: "Reins",
     description:
-      "The MIDI Guitar, rebuilt as open hardware. Two parts: the guitar side reads your hand, the pedal turns it into MIDI.",
+      "The MIDI Guitar as open hardware. A board on the guitar reads your hand. A pedal turns it into MIDI.",
     technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
     alias: "reins",
     kind: "hardware",
@@ -23,7 +23,7 @@ export const projects: Project[] = [
       alias: "midiguitar",
       year: 2026,
       description:
-        "A Squier Mustang turned MIDI controller. Hand movement above the body becomes CC and pitch bend, sent wirelessly to a receiver PCB. Routed the body, milled the boards, fitted it all inside. Aalto Fab Lab final project.",
+        "A Squier Mustang that sends MIDI. A distance sensor turns hand height into CC and pitch bend, sent wirelessly to a receiver board. Routed body, milled boards. Aalto Fab Lab final project.",
       specs: [
         { label: "sensor", value: "VL53L1X ToF" },
         { label: "mcu", value: "XIAO ESP32-S3" },
@@ -39,7 +39,7 @@ export const projects: Project[] = [
   {
     title: "Mangler",
     description:
-      "Live stereo sampler for norns. Record a phrase and mangle it: granular, time-stretch, slices, filter, delay, reverb. Scenes capture whole sounds, orbit drifts between them, erosion wears the loop down on every pass.",
+      "Live stereo sampler for norns. Record a phrase, then granular, time-stretch, slice, filter, delay, reverb. Scenes store settings, orbit morphs between them, erosion degrades the loop on each pass.",
     technologies: ["Lua", "SuperCollider", "norns", "softcut", "MIDI"],
     alias: "mangler",
     kind: "sound",
@@ -50,7 +50,7 @@ export const projects: Project[] = [
   {
     title: "snu",
     description:
-      "8-step sequencer for norns and grid. Four tracks, notes or CC, per-step velocity, length, mute and skip, pattern chaining, live editing. The UI shots are rendered from the real script by a headless simulator I built.",
+      "8-step sequencer for norns and grid. Four tracks, notes or CC, per-step velocity, length, mute and skip, pattern chaining. Screenshots come from a headless simulator I wrote.",
     technologies: ["Lua", "norns", "monome grid", "MIDI", "PolyPerc"],
     alias: "snu",
     kind: "sound",
@@ -61,7 +61,7 @@ export const projects: Project[] = [
   {
     title: "MIDI Host-to-Host Bridge",
     description:
-      "A small PCB that lets two USB MIDI hosts talk, like a laptop and a norns. MIDI goes both ways. Designed in KiCad, milled, soldered, printed a case. It now runs my norns into Ableton.",
+      "Connects two USB MIDI hosts, for example a laptop and a norns, in both directions. Milled, soldered, printed case. In daily use between my norns and Ableton.",
     technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB"],
     codeSnippets: [
       { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
@@ -83,8 +83,8 @@ export const projects: Project[] = [
   {
     title: "Analog Photography",
     description:
-      "Learning 35mm film on a Chinon CE-4 with a 50mm f/2 Pentax lens.",
-    technologies: ["Photography"],
+      "35mm on a Chinon CE-4 with a Pentax 50mm f/2.",
+    technologies: ["35mm film", "Chinon CE-4"],
     alias: "film",
     kind: "image",
     year: 2025,
@@ -92,7 +92,7 @@ export const projects: Project[] = [
   {
     title: "Sounds of the Weather Turning",
     description:
-      "A Max for Live effect driven by the weather. Live air quality data steers delay, reverb, echo and distortion. Free on maxforlive.com.",
+      "Max for Live effect. Live air quality data controls delay, reverb, echo and distortion. Free on maxforlive.com.",
     technologies: ["MaxMSP", "Ableton Live", "WAQI API", "Max4Live"],
     alias: "weather",
     kind: "sound",
@@ -104,7 +104,7 @@ export const projects: Project[] = [
   {
     title: "3D Printed Pinhole Photography",
     description:
-      "A 3D printed pinhole camera. Different pinhole diameters, different films, improvised developing.",
+      "3D printed pinhole camera. Several pinhole sizes and films, developed at home.",
     technologies: ["3D Printing", "Photography", "Pinhole"],
     alias: "photo",
     kind: "image",
@@ -113,7 +113,7 @@ export const projects: Project[] = [
   {
     title: "Norns Studies",
     description:
-      "I soldered together a norns shield and have been scripting it in Lua and SuperCollider since.",
+      "Soldered a norns shield. Scripts in Lua and SuperCollider since.",
     technologies: ["Lua", "SuperCollider", "Norns"],
     alias: "norns",
     kind: "sound",
@@ -122,14 +122,14 @@ export const projects: Project[] = [
   {
     title: "MaxMSP Studies",
     description:
-      "Sketches in MaxMSP. Some stay patches, some get exported with RNBO and run in the browser.",
+      "MaxMSP patches. A few exported with RNBO to run in the browser.",
     technologies: [
+      "MaxMSP",
+      "RNBO",
+      "Jitter",
       "React",
       "TypeScript",
-      "RNBO",
       "Next.js",
-      "MaxMSP",
-      "Jitter",
     ],
     alias: "max",
     kind: "sound",
@@ -138,7 +138,7 @@ export const projects: Project[] = [
   {
     title: "3D & Photogrammetry",
     description:
-      "3D scans, models and prints. Photogrammetry in RealityScan, cleanup in Blender, some end up on the web in Three.js.",
+      "Scans in RealityScan, cleanup in Blender, a few shown on the web with Three.js.",
     technologies: [
       "RealityScan",
       "Three.js",
@@ -154,7 +154,7 @@ export const projects: Project[] = [
   {
     title: "Music Experiments",
     description:
-      "Generative sketches with MaxMSP, norns and SuperCollider, routed into Ableton when one turns into a track.",
+      "Generative sketches in MaxMSP, norns and SuperCollider. Finished in Ableton.",
     technologies: [
       "MaxMSP",
       "SuperCollider",
@@ -169,7 +169,7 @@ export const projects: Project[] = [
   {
     title: "Live Coding",
     description:
-      "Music and visuals coded live at algoraves, improvised with Hydra, Strudel and SuperCollider.",
+      "Sets at algoraves. Music and visuals written live.",
     alias: "livecoding",
     kind: "sound",
     technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
@@ -178,7 +178,7 @@ export const projects: Project[] = [
   {
     title: "EcoBridge",
     description:
-      "An open data project on public finances. React, Node, MongoDB. Global finalist at IBM's Call for Code 2021.",
+      "Open data on public finances. Global finalist, IBM Call for Code 2021.",
     technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
     alias: "ecobridge",
     kind: "web",
@@ -187,6 +187,11 @@ export const projects: Project[] = [
     year: 2020,
   },
 ];
+
+/** Catalog number, newest highest: "013". */
+export function projectNo(project: Project): string {
+    return String(projects.length - projects.indexOf(project)).padStart(3, "0")
+}
 
 export function getProjectByAlias(alias: string): Project | undefined {
     return projects.find(project => project.alias === alias)

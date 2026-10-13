@@ -1,5 +1,4 @@
 import { DarkModeToggle } from './DarkModeToggle'
-import { Wave } from './koivu/Wave'
 import { VisitCounter } from './koivu/VisitCounter'
 
 const elsewhere = [
@@ -14,32 +13,24 @@ const updated = new Date().toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsi
 
 export function SiteFooter() {
     return (
-        <footer className="mt-24">
-            <Wave className="block h-8 w-full text-secondary md:h-12" />
-            <div className="bg-secondary">
-                <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-6 ">
-                    <div className="space-y-4">
-                        <p className="display text-3xl">Kiitos käynnistä.</p>
-                        <p className="label">thanks for visiting · last updated {updated}</p>
-                        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-[15px]">
-                            {elsewhere.map((link) => (
-                                <li key={link.href}>
-                                    <a
-                                        href={link.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="underline decoration-1 underline-offset-[3px] hover:decoration-poppy hover:decoration-2"
-                                    >
-                                        {link.label} ↗
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="flex flex-wrap items-center gap-5">
-                            <VisitCounter />
-                            <DarkModeToggle showLabel />
-                        </div>
-                    </div>
+        <footer className="mx-auto mt-32 w-full max-w-6xl px-4 pb-10">
+            <div className="grid gap-6 border-t border-foreground pt-4 font-mono text-xs sm:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="space-y-3">
+                    <p>Kiitos käynnistä.</p>
+                    <ul className="flex flex-wrap gap-x-5 gap-y-1">
+                        {elsewhere.map((link) => (
+                            <li key={link.href}>
+                                <a href={link.href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-[3px] hover:decoration-2">
+                                    {link.label} ↗
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div className="flex flex-wrap items-center gap-5 text-muted-foreground sm:justify-end">
+                    <span>updated {updated}</span>
+                    <VisitCounter />
+                    <DarkModeToggle showLabel />
                 </div>
             </div>
         </footer>

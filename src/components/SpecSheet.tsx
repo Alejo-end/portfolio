@@ -19,8 +19,8 @@ interface SpecSheetProps {
     children?: ReactNode
 }
 
-// The header shared by project and experience pages: a big soft title, then a
-// plywood panel with the description and its "label ..... value" lines.
+// The header shared by project and experience pages: a heavy title, then the
+// description and its "label ..... value" lines under a rule.
 export function SpecSheet({
     tag,
     meta,
@@ -41,13 +41,15 @@ export function SpecSheet({
                     <span className="label">{meta.join(' · ')}</span>
                 </div>
                 <Heading className="display text-5xl leading-[0.95] md:text-7xl">{title}</Heading>
-                {subtitle && <p className="display text-2xl text-muted-foreground md:text-3xl">{subtitle}</p>}
+                {subtitle && <p className="text-2xl font-semibold tracking-tight text-muted-foreground md:text-3xl">{subtitle}</p>}
             </header>
 
-            <div className="ply max-w-4xl space-y-6 rounded-xl bg-card p-5 md:p-7">
-                <p className="max-w-2xl text-lg leading-relaxed">{description}</p>
+            <div className="grid gap-6 border-t border-foreground pt-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-12">
+                <div className="space-y-6">
+                    <p className="max-w-xl text-lg leading-relaxed">{description}</p>
+                    {children}
+                </div>
                 <SpecList specs={[...specs, { label: stackLabel, value: stack.join(' · ') }]} />
-                {children}
             </div>
         </div>
     )

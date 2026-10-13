@@ -20,7 +20,7 @@ export function SiteNav() {
                     href="/"
                     className="display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                    Alejandro<span className="text-poppy">?</span>
+                    Alejandro?
                 </Link>
                 <nav aria-label="Site" className="flex items-center gap-4 text-[15px] sm:gap-6">
                     {items.map((item) => {
@@ -32,7 +32,7 @@ export function SiteNav() {
                                 aria-current={active ? 'page' : undefined}
                                 className={`underline-offset-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                                     active
-                                        ? 'underline decoration-poppy decoration-wavy decoration-2'
+                                        ? 'underline decoration-2'
                                         : 'hover:underline hover:decoration-1'
                                 }`}
                             >

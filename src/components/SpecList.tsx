@@ -14,7 +14,7 @@ export function SpecList({ specs, className = '' }: { specs: Spec[]; className?:
                     />
                     <dd className="text-foreground/90 sm:text-right">
                         {spec.href ? (
-                            <Link href={spec.href} className="hover:decoration-poppy hover:decoration-2">
+                            <Link href={spec.href} className="hover:decoration-2">
                                 {spec.value}
                             </Link>
                         ) : (
