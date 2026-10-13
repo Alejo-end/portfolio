@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
+import { SiteFooter } from "@/components/SiteFooter";
+import { Cursor } from "@/components/koivu/Cursor";
+import { XpHud } from "@/components/koivu/XpHud";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff2",
@@ -12,11 +15,6 @@ const geistSans = localFont({
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff2",
   variable: "--font-geist-mono",
-  weight: "100 900",
-});
-const spaceGrotesk = localFont({
-  src: "./fonts/Space_Grotesk/SpaceGrotesk-VariableFont_wght.woff2",
-  variable: "--font-space-grotesk",
   weight: "100 900",
 });
 
@@ -49,11 +47,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
+        className={`${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >
         <Providers>
-          <SiteNav />
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <SiteNav />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+          </div>
+          <XpHud />
+          <Cursor />
         </Providers>
       </body>
     </html>

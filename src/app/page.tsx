@@ -1,59 +1,83 @@
 import { Metadata } from "next";
-import { FabLabAd } from "@/components/FabLabAd";
-import { ThreeDAd } from "@/components/ThreeDAd";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
-import { LinkRow, type LinkItem } from "@/components/LinkRow";
+import { projects, projectNo } from "@/data/projects";
+import { workExperiences, shortYears } from "@/data/experience";
+import { getGalleryBlobs } from "@/lib/blobs";
+import { hasSound } from "@/data/sound";
+import { experienceId } from "@/components/ExperienceDetails";
+import { SpecList } from "@/components/SpecList";
+import { Module } from "@/components/koivu/Module";
+import { kinds } from "@/components/koivu/kinds";
+import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
+import type { ProjectKind } from "@/app/types";
+
+// Covers come from the blob store; refresh every 5 minutes.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
     description:
-        "Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and the web.",
+        "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, with an enthusiasm for electronics and experimental music.",
 };
 
-const eyebrow =
-    'font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.2em] text-muted-foreground'
+const isImage = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname);
 
-const channels: LinkItem[] = [
-    { label: 'Projects', meta: 'Things I build', href: '/projects', external: false },
-    { label: 'Work Experience', meta: 'Where I have worked', href: '/experience', external: false },
-    { label: 'Persona', meta: 'Who is Alejandro?', href: '/persona', external: false },
-    { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end', external: true },
-    { label: 'LinkedIn', meta: 'linkedin.com/in/alejo-end', href: 'https://www.linkedin.com/in/alejo-end', external: true },
-];
+export default async function Home() {
+    const rows: IndexRow[] = await Promise.all(
+        projects.map(async (project) => {
+            const blobs = await getGalleryBlobs(project.alias);
+            return {
+                no: projectNo(project),
+                alias: project.alias,
+                title: project.title,
+                year: project.year,
+                kind: project.kind,
+                description: project.description,
+                cover: project.videos?.[0]?.poster ?? blobs.find((b) => isImage(b.pathname))?.url,
+                sound: blobs.some((b) => hasSound(b.pathname)),
+            };
+        })
+    );
 
-export default function Home() {
-    return (
-        <div className="bg-background">
-            <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-16">
-                <p className={`boot boot-1 ${eyebrow}`}>Alejandro? · Portfolio</p>
+    const kindCounts = (Object.keys(kinds) as ProjectKind[]).map((kind) => ({
+        label: kind,
+        value: String(projects.filter((p) => p.kind === kind).length),
+        href: `/projects?kind=${kind}`,
+    }));
 
-                <h1 className="boot boot-2 mt-6 font-[family-name:var(--font-space-grotesk)] text-4xl font-medium leading-[1.15] tracking-tight text-muted-foreground sm:text-5xl md:text-6xl">
-                    <span className="font-semibold text-foreground">Alejandro?</span> is a{' '}
-                    <span className="text-foreground">software engineer</span> and{' '}
-                    <span className="text-foreground">UX designer</span> from Panama, based in
-                    Helsinki, with an enthusiasm for{' '}
-                    <span className="text-foreground">electronics</span> and{' '}
-                    <span className="text-foreground">experimental music.</span>
-                </h1>
-
-                <section className="boot boot-4 mt-12">
-                    <p className={`${eyebrow} mb-2 px-1`}>Channels</p>
-                    <ul className="overflow-hidden rounded-xl border border-border bg-card">
-                        {channels.map((channel, index) => (
-                            <LinkRow key={channel.label} link={channel} first={index === 0} />
-                        ))}
-                    </ul>
-                </section>
-
-                <footer className="boot boot-5 mt-10 flex items-center justify-between">
-                    <DarkModeToggle showLabel />
-                    <span className={eyebrow}>Panama → Helsinki</span>
-                </footer>
-            </main>
-            {/* Phones get the pills in the page flow under the footer; wider screens pin them to the corners. */}
-            <div className="flex flex-wrap gap-2 px-6 pb-8 sm:contents">
-                <ThreeDAd />
-                <FabLabAd />
-            </div>
+    // Keyed because it crosses into a client component as a prop.
+    const modules = (
+        <div key="modules" className="grid gap-x-5 gap-y-10 md:grid-cols-3">
+            <Module no="01" title="now">
+                <SpecList
+                    specs={[
+                        { label: "day job", value: "UX engineer, MVision" },
+                        { label: "building", value: "Reins", href: "/projects/reins" },
+                        { label: "base", value: "Helsinki" },
+                    ]}
+                />
+            </Module>
+            <Module no="02" title="work">
+                <ul className="space-y-2 text-sm">
+                    {workExperiences.map((experience) => (
+                        <li key={experience.company} className="flex items-baseline justify-between gap-3">
+                            <a href={`/experience#${experienceId(experience)}`} className="truncate">
+                                {experience.company}
+                            </a>
+                            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                                {shortYears(experience.duration)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </Module>
+            <Module no="03" title="index">
+                <SpecList specs={kindCounts} />
+            </Module>
         </div>
+    );
+
+    return (
+        <main className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
+            <HomeIndex rows={rows} modules={modules} />
+        </main>
     );
 }

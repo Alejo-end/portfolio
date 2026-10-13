@@ -34,8 +34,8 @@ export function DarkModeToggle({ showLabel = false }: { showLabel?: boolean }) {
         >
             {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             {showLabel && (
-                <span className="font-[family-name:var(--font-geist-mono)] text-[11px] uppercase tracking-[0.15em]">
-                    Theme
+                <span className="font-[family-name:var(--font-geist-mono)] text-xs">
+                    theme
                 </span>
             )}
         </button>
