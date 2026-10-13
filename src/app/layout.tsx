@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Cursor } from "@/components/koivu/Cursor";
+import { XpHud } from "@/components/koivu/XpHud";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff2",
@@ -53,6 +55,8 @@ export default function RootLayout({
             <div className="flex-1">{children}</div>
             <SiteFooter />
           </div>
+          <XpHud />
+          <Cursor />
         </Providers>
       </body>
     </html>

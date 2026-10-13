@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 /*
- * Black on white with hairline rules and square corners. Color lives only in
- * the project kinds: big numbers in full color, tags as marker highlights.
+ * Black on white with hairline rules and square corners. No color.
  */
 
 @layer base {
@@ -29,11 +28,6 @@
     --input: 0 0% 86%;
     --ring: 0 0% 4%;
     --radius: 0rem;
-
-    --k-hardware: 8 100% 54%;
-    --k-sound: 214 92% 52%;
-    --k-image: 52 100% 48%;
-    --k-web: 148 75% 38%;
   }
 
   .dark {
@@ -56,11 +50,6 @@
     --border: 0 0% 18%;
     --input: 0 0% 18%;
     --ring: 0 0% 95%;
-
-    --k-hardware: 8 100% 60%;
-    --k-sound: 214 92% 62%;
-    --k-image: 52 100% 55%;
-    --k-web: 148 65% 48%;
   }
 }
 
@@ -164,5 +153,13 @@
   .btn:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+  }
+}
+
+/* The custom cursor (Cursor.tsx) replaces the arrow on mouse devices. */
+@media (pointer: fine) {
+  html.has-cursor,
+  html.has-cursor * {
+    cursor: none !important;
   }
 }

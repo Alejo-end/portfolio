@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Matopeli, the Nokia snake, on an 84×48 screen like the 3310's.
+// Snake, the old Nokia game, on an 84×48 screen like the 3310's.
 // It plays itself until someone clicks it and steers.
 
 type Cell = { x: number; y: number }
@@ -12,8 +12,8 @@ const COLS = 20
 const ROWS = 11
 const W = 84
 const H = 48
-const LCD = '#c7f0d8'
-const INK = '#43523d'
+const LCD = '#d6d6d1'
+const INK = '#1c1c1c'
 
 const DIRS: Record<string, Cell> = {
     ArrowUp: { x: 0, y: -1 },
@@ -57,7 +57,7 @@ function autopilot(snake: Cell[], dir: Cell, food: Cell): Cell {
     return safe.reduce((best, o) => (o.dist < best.dist ? o : best)).d
 }
 
-export function Matopeli() {
+export function Snake() {
     const canvas = useRef<HTMLCanvasElement>(null)
     const game = useRef({
         snake: freshSnake(),
@@ -152,11 +152,11 @@ export function Matopeli() {
     const touch = useRef<Cell | null>(null)
 
     return (
-        <figure className="space-y-3">
+        <figure className="space-y-2">
             <div
                 tabIndex={0}
                 role="application"
-                aria-label="Matopeli, the Nokia snake game. Use the arrow keys to play."
+                aria-label="Snake. Click, then use the arrow keys to play."
                 onKeyDown={(e) => {
                     const d = DIRS[e.key]
                     if (!d) return
@@ -178,10 +178,10 @@ export function Matopeli() {
                     steer(Math.abs(dx) > Math.abs(dy) ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) })
                 }}
                 style={{ touchAction: mode === 'play' ? 'none' : 'manipulation' }}
-                className="cursor-pointer select-none rounded-2xl border border-foreground/20 bg-[#161616] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="cursor-pointer select-none rounded-xl border border-foreground/20 bg-[#161616] p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-                <div className="rounded-md p-2" style={{ background: LCD, color: INK }}>
-                    <div className="flex justify-between px-0.5 pb-1.5 font-pixel text-[11px] uppercase leading-none">
+                <div className="rounded-sm p-1.5" style={{ background: LCD, color: INK }}>
+                    <div className="flex justify-between px-0.5 pb-1.5 font-pixel text-[9px] uppercase leading-none">
                         <span>{String(score).padStart(4, '0')}</span>
                         <span>{mode === 'over' ? 'game over' : mode}</span>
                     </div>
@@ -191,11 +191,6 @@ export function Matopeli() {
                         height={H}
                         className="block aspect-[84/48] w-full [image-rendering:pixelated]"
                     />
-                </div>
-                <div aria-hidden className="flex justify-center gap-1.5 pt-3">
-                    {Array.from({ length: 6 }, (_, i) => (
-                        <span key={i} className="h-1 w-4 rounded-full bg-white/25" />
-                    ))}
                 </div>
             </div>
             <figcaption className="label">

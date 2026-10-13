@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const params: Spec[] = [
     { label: 'origin', value: 'Panama City, PA' },
-    { label: 'base', value: 'Helsinki, FI · 60.17°N' },
+    { label: 'base', value: 'Helsinki, FI' },
     { label: 'day job', value: 'UX engineer at MVision, medical AI' },
     { label: 'after hours', value: 'norns scripts · PCBs · 35mm film' },
     { label: 'now building', value: 'Reins, open hardware MIDI', href: '/projects/reins' },

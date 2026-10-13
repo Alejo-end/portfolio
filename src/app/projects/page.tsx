@@ -13,13 +13,26 @@ export const metadata: Metadata = {
 }
 
 const isImage = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname)
+// MOV files are often HEVC, which most browsers will not play, so only MP4.
+const isClip = (pathname: string) => /\.mp4$/i.test(pathname)
 
 export default async function ProjectsPage() {
     const cards: ProjectCard[] = await Promise.all(
         projects.map(async (project) => {
             const blobs = await getGalleryBlobs(project.alias)
-            const cover = project.videos?.[0]?.poster ?? blobs.find((b) => isImage(b.pathname))?.url
-            return { no: projectNo(project), alias: project.alias, title: project.title, year: project.year, kind: project.kind, cover }
+            const images = blobs.filter((b) => isImage(b.pathname)).map((b) => b.url)
+            const cover = project.videos?.[0]?.poster ?? images[0]
+            const video = project.videos?.[0]?.src ?? blobs.find((b) => isClip(b.pathname))?.url
+            return {
+                no: projectNo(project),
+                alias: project.alias,
+                title: project.title,
+                year: project.year,
+                kind: project.kind,
+                cover,
+                burst: images.filter((url) => url !== cover).slice(0, 8),
+                video,
+            }
         })
     )
 

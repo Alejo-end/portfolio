@@ -14,9 +14,8 @@ const updated = new Date().toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsi
 export function SiteFooter() {
     return (
         <footer className="mx-auto mt-32 w-full max-w-6xl px-4 pb-10">
-            <div className="grid gap-6 border-t border-foreground pt-4 font-mono text-xs sm:grid-cols-[minmax(0,1fr)_auto]">
-                <div className="space-y-3">
-                    <p>Kiitos käynnistä.</p>
+            <div className="grid gap-8 border-t border-foreground pt-4 font-mono text-xs ">
+                <div className="flex flex-col justify-between gap-6">
                     <ul className="flex flex-wrap gap-x-5 gap-y-1">
                         {elsewhere.map((link) => (
                             <li key={link.href}>
@@ -26,11 +25,11 @@ export function SiteFooter() {
                             </li>
                         ))}
                     </ul>
-                </div>
-                <div className="flex flex-wrap items-center gap-5 text-muted-foreground sm:justify-end">
-                    <span>updated {updated}</span>
-                    <VisitCounter />
-                    <DarkModeToggle showLabel />
+                    <div className="flex flex-wrap items-center gap-5 text-muted-foreground">
+                        <span>updated {updated}</span>
+                        <VisitCounter />
+                        <DarkModeToggle showLabel />
+                    </div>
                 </div>
             </div>
         </footer>

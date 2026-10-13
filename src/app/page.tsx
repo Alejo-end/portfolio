@@ -4,9 +4,10 @@ import { workExperiences, shortYears } from "@/data/experience";
 import { getGalleryBlobs } from "@/lib/blobs";
 import { experienceId } from "@/components/ExperienceDetails";
 import { SpecList } from "@/components/SpecList";
-import { Matopeli } from "@/components/koivu/Matopeli";
 import { Module } from "@/components/koivu/Module";
-import { NumberField, type FieldCard } from "@/components/koivu/NumberField";
+import { kinds } from "@/components/koivu/kinds";
+import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
+import type { ProjectKind } from "@/app/types";
 
 // Covers come from the blob store; refresh every 5 minutes.
 export const revalidate = 300;
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 const isImage = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname);
 
 export default async function Home() {
-    const cards: FieldCard[] = await Promise.all(
+    const rows: IndexRow[] = await Promise.all(
         projects.map(async (project) => {
             const blobs = await getGalleryBlobs(project.alias);
             return {
@@ -34,22 +35,25 @@ export default async function Home() {
         })
     );
 
+    const kindCounts = (Object.keys(kinds) as ProjectKind[]).map((kind) => ({
+        label: kind,
+        value: String(projects.filter((p) => p.kind === kind).length),
+        href: `/projects?kind=${kind}`,
+    }));
+
     // Keyed because it crosses into a client component as a prop.
     const modules = (
-        <div key="modules" className="grid gap-x-5 gap-y-12 md:grid-cols-3">
+        <div key="modules" className="grid gap-x-5 gap-y-10 md:grid-cols-3">
             <Module no="01" title="now">
                 <SpecList
                     specs={[
                         { label: "day job", value: "UX engineer, MVision" },
                         { label: "building", value: "Reins", href: "/projects/reins" },
-                        { label: "base", value: "Helsinki · 60.17°N" },
+                        { label: "base", value: "Helsinki" },
                     ]}
                 />
             </Module>
-            <Module no="02" title="matopeli">
-                <Matopeli />
-            </Module>
-            <Module no="03" title="work">
+            <Module no="02" title="work">
                 <ul className="space-y-2 text-sm">
                     {workExperiences.map((experience) => (
                         <li key={experience.company} className="flex items-baseline justify-between gap-3">
@@ -63,12 +67,15 @@ export default async function Home() {
                     ))}
                 </ul>
             </Module>
+            <Module no="03" title="index">
+                <SpecList specs={kindCounts} />
+            </Module>
         </div>
     );
 
     return (
-        <main className="mx-auto max-w-6xl px-4 pt-8 md:pt-14">
-            <NumberField cards={cards} modules={modules} />
+        <main className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
+            <HomeIndex rows={rows} modules={modules} />
         </main>
     );
 }
