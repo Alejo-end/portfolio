@@ -7,6 +7,7 @@ import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
 import { addXp } from '@/lib/xp'
 import { kinds } from './kinds'
+import { SoundBadge } from './SoundBadge'
 
 export interface ProjectCard {
     no: string
@@ -19,6 +20,8 @@ export interface ProjectCard {
     burst: string[]
     /** A clip that plays while the tile is active, in place of the burst. */
     video?: string
+    /** Some of its media has audio. */
+    sound?: boolean
 }
 
 const filters: Filter[] = ['all', 'hardware', 'sound', 'image', 'web']
@@ -179,6 +182,7 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
                 <div className="mt-1.5 flex items-baseline gap-2 font-mono text-[11px]">
                     <span className="text-muted-foreground">{card.no}</span>
                     <span className="flex-1 truncate font-sans text-[13px] font-semibold tracking-tight group-hover:underline">{card.title}</span>
+                    {card.sound && <SoundBadge className="bg-secondary" />}
                     <span className="text-muted-foreground">{card.year}</span>
                 </div>
             </Link>

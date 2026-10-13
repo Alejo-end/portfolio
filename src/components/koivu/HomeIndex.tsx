@@ -8,6 +8,7 @@ import { addXp } from '@/lib/xp'
 import { kinds } from './kinds'
 import { Module } from './Module'
 import { NumberSky } from './NumberSky'
+import { SoundBadge } from './SoundBadge'
 
 export interface IndexRow {
     no: string
@@ -17,6 +18,7 @@ export interface IndexRow {
     kind: ProjectKind
     description: string
     cover?: string
+    sound?: boolean
 }
 
 type Focus = { kind: ProjectKind } | { alias: string } | null
@@ -136,6 +138,7 @@ export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactN
                                     <span className="font-mono text-[11px] text-muted-foreground">{row.no}</span>
                                     <span className={`truncate text-sm font-semibold tracking-tight ${state ? 'underline underline-offset-2' : ''}`}>
                                         {row.title}
+                                        {row.sound && <SoundBadge className="ml-2 bg-secondary align-middle" label={false} />}
                                     </span>
                                     <span className="hidden sm:block">
                                         <span className="bg-secondary px-1 font-mono text-[11px]">{kinds[row.kind].label}</span>

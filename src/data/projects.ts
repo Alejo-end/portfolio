@@ -6,7 +6,7 @@ export const projects: Project[] = [
     title: "Stray",
     description:
       "A spectral processor for a field recording, played from a MIDI keyboard. Play soft and the sound stays calm, play harder and it gets restless, then chaotic, moving around the room as it goes. Midterm for Programming in Max 1 at Sibelius Academy. The patch will be published soon.",
-    technologies: ["Max 9", "MSP", "JavaScript", "MIDI", "nanoKONTROL2", "Dante"],
+    technologies: ["Max 9", "MSP", "JavaScript", "MIDI", "nanoKONTROL2", "Dante", "Zoom H6", "Bitwig"],
     alias: "stray",
     kind: "sound",
     galleryLayout: "grid",
@@ -15,6 +15,8 @@ export const projects: Project[] = [
       { label: "room", value: "Sound Lab 1, Marsio, Aalto" },
       { label: "control", value: "MIDI keyboard · nanoKONTROL2" },
       { label: "recording", value: "Jaakko Arola, Hadi Hrekes, Wilson Tanner Smith (Something Else), Kallio" },
+      { label: "recorder", value: "Zoom H6" },
+      { label: "edit", value: "Bitwig: normalize, trim" },
     ],
     year: 2026,
   },

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { projects, projectNo } from '@/data/projects'
 import { getGalleryBlobs } from '@/lib/blobs'
+import { hasSound } from '@/data/sound'
 import { ProjectGrid, type ProjectCard } from '@/components/koivu/ProjectGrid'
 
 // The blob store is mutable; refresh the static page every 5 minutes.
@@ -32,6 +33,7 @@ export default async function ProjectsPage() {
                 cover,
                 burst: images.filter((url) => url !== cover).slice(0, 8),
                 video,
+                sound: blobs.some((b) => hasSound(b.pathname)),
             }
         })
     )

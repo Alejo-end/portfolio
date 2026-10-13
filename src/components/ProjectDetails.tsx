@@ -4,6 +4,8 @@ import { useEffect, useEffectEvent, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
+import { SoundBadge } from "@/components/koivu/SoundBadge"
+import { hasSound } from "@/data/sound"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
@@ -125,14 +127,15 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
           const index = offset + i
           const isVideo = isVideoFile(file)
           const name = mediaName(file)
+          const sound = isVideo && hasSound(file.pathname)
 
           return (
             <button
               key={file.url}
               type="button"
               onClick={() => openCarousel(index)}
-              aria-label={`Open ${name || "media"} (${index + 1} of ${media.length})`}
-              className="block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Open ${name || "media"}${sound ? ", with sound" : ""} (${index + 1} of ${media.length})`}
+              className="relative block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
@@ -155,6 +158,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   className="w-full h-auto object-cover"
                 />
               )}
+              {sound && <SoundBadge />}
             </button>
           )
         })}
@@ -243,6 +247,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
           <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">
             {currentIndex + 1} / {media.length}
             {name ? ` · ${name}` : ""}
+            {isVideo && hasSound(currentFile.pathname) ? " · sound on" : ""}
           </div>
         </div>
       </div>

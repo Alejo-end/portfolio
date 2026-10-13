@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { projects, projectNo } from "@/data/projects";
 import { workExperiences, shortYears } from "@/data/experience";
 import { getGalleryBlobs } from "@/lib/blobs";
+import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
 import { SpecList } from "@/components/SpecList";
 import { Module } from "@/components/koivu/Module";
@@ -31,6 +32,7 @@ export default async function Home() {
                 kind: project.kind,
                 description: project.description,
                 cover: project.videos?.[0]?.poster ?? blobs.find((b) => isImage(b.pathname))?.url,
+                sound: blobs.some((b) => hasSound(b.pathname)),
             };
         })
     );
