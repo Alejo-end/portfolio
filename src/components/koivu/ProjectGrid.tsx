@@ -69,7 +69,7 @@ function Grid({ cards, filter }: { cards: ProjectCard[]; filter: Filter }) {
                 })}
             </div>
 
-            <ul className="columns-1 gap-6 pt-6 sm:columns-2 lg:columns-3">
+            <ul className="columns-1 gap-8 pt-6 sm:columns-2">
                 {shown.map((card, i) => (
                     <Tile key={card.alias} card={card} priority={i < 4} />
                 ))}
@@ -128,7 +128,7 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
     }, [active, woken])
 
     return (
-        <li ref={ref} {...bind} className="mb-8 break-inside-avoid">
+        <li ref={ref} {...bind} className="mb-10 break-inside-avoid">
             <Link href={`/projects/${card.alias}`} className="plain group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="relative overflow-hidden bg-secondary">
                     {card.cover ? (
@@ -139,7 +139,7 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
                             height={450}
                             quality={60}
                             priority={priority}
-                            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                            sizes="(min-width: 1152px) 560px, (min-width: 640px) 50vw, 100vw"
                             className="h-auto w-full"
                         />
                     ) : (
@@ -157,7 +157,7 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
                                 alt=""
                                 fill
                                 quality={60}
-                                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                                sizes="(min-width: 1152px) 560px, (min-width: 640px) 50vw, 100vw"
                                 className={`bg-secondary object-contain ${frame === i + 1 ? 'opacity-100' : 'opacity-0'}`}
                             />
                         ))}
