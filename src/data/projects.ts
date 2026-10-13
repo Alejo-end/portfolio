@@ -3,6 +3,22 @@ import { midihostFirmware } from "./code/midihost"
 
 export const projects: Project[] = [
   {
+    title: "Stray",
+    description:
+      "A spectral processor for a field recording, played from a MIDI keyboard. Play soft and the sound stays calm, play harder and it gets restless, then chaotic, moving around the room as it goes. Midterm for Programming in Max 1 at Sibelius Academy. The patch will be published soon.",
+    technologies: ["Max 9", "MSP", "JavaScript", "MIDI", "nanoKONTROL2", "Dante"],
+    alias: "stray",
+    kind: "sound",
+    galleryLayout: "grid",
+    specs: [
+      { label: "speakers", value: "6.1 ring · stereo fallback" },
+      { label: "room", value: "Sound Lab 1, Marsio, Aalto" },
+      { label: "control", value: "MIDI keyboard · nanoKONTROL2" },
+      { label: "recording", value: "Jaakko Arola, Hadi Hrekes, Wilson Tanner Smith (Something Else), Kallio" },
+    ],
+    year: 2026,
+  },
+  {
     title: "Reins",
     description:
       "The MIDI Guitar as open hardware. A board on the guitar reads your hand. A pedal turns it into MIDI.",

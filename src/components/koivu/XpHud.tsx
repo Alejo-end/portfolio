@@ -58,7 +58,7 @@ export function XpHud() {
     return (
         <div className="fixed bottom-3 right-3 z-50 w-36 font-mono text-[10px] leading-none sm:w-60">
             {open && (
-                <div className="mb-2 w-60 max-w-[calc(100vw-1.5rem)] justify-self-end border border-foreground bg-background p-2 ml-auto">
+                <div className="absolute bottom-full right-0 mb-2 w-[calc(100vw-1.5rem)] border border-foreground bg-background p-2 sm:w-72">
                     <div className="mb-2 flex justify-between text-muted-foreground">
                         <span>snake</span>
                         <button type="button" onClick={() => setOpen(false)} aria-label="Close snake" className="hover:text-foreground">

@@ -21,6 +21,10 @@ const DIRS: Record<string, Cell> = {
     ArrowLeft: { x: -1, y: 0 },
     ArrowRight: { x: 1, y: 0 },
     w: { x: 0, y: -1 },
+    '2': { x: 0, y: -1 },
+    '8': { x: 0, y: 1 },
+    '4': { x: -1, y: 0 },
+    '6': { x: 1, y: 0 },
     s: { x: 0, y: 1 },
     a: { x: -1, y: 0 },
     d: { x: 1, y: 0 },
@@ -56,6 +60,18 @@ function autopilot(snake: Cell[], dir: Cell, food: Cell): Cell {
     if (safe.length === 0) return dir
     return safe.reduce((best, o) => (o.dist < best.dist ? o : best)).d
 }
+
+const KEYS: ({ n: string; glyph: string; label: string; dir?: Cell } | null)[] = [
+    null,
+    { n: '2', glyph: '▲', label: 'Up', dir: { x: 0, y: -1 } },
+    null,
+    { n: '4', glyph: '◀', label: 'Left', dir: { x: -1, y: 0 } },
+    { n: '5', glyph: '●', label: 'Start' },
+    { n: '6', glyph: '▶', label: 'Right', dir: { x: 1, y: 0 } },
+    null,
+    { n: '8', glyph: '▼', label: 'Down', dir: { x: 0, y: 1 } },
+    null,
+]
 
 export function Snake() {
     const canvas = useRef<HTMLCanvasElement>(null)
@@ -177,7 +193,7 @@ export function Snake() {
                     }
                     steer(Math.abs(dx) > Math.abs(dy) ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) })
                 }}
-                style={{ touchAction: mode === 'play' ? 'none' : 'manipulation' }}
+                style={{ touchAction: 'none' }}
                 className="cursor-pointer select-none rounded-xl border border-foreground/20 bg-[#161616] p-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
                 <div className="rounded-sm p-1.5" style={{ background: LCD, color: INK }}>
@@ -193,9 +209,32 @@ export function Snake() {
                     />
                 </div>
             </div>
+            {/* Nokia keys: 2, 4, 6 and 8 steer, 5 starts. Thumbs need these on phones. */}
+            <div className="mx-auto grid w-40 grid-cols-3 gap-1.5 pt-1 font-pixel text-[10px] uppercase">
+                {KEYS.map((key, i) =>
+                    key ? (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-label={key.label}
+                            onPointerDown={(e) => {
+                                e.preventDefault()
+                                if (key.dir) steer(key.dir)
+                                else restart('play')
+                            }}
+                            className="flex h-9 touch-none select-none items-center justify-center gap-1 rounded-full border border-foreground/30 bg-secondary active:bg-foreground active:text-background"
+                        >
+                            <span>{key.n}</span>
+                            <span aria-hidden className="text-muted-foreground">{key.glyph}</span>
+                        </button>
+                    ) : (
+                        <span key={i} />
+                    )
+                )}
+            </div>
             <figcaption className="label">
-                <span className="[@media(pointer:coarse)]:hidden">click, then arrow keys</span>
-                <span className="hidden [@media(pointer:coarse)]:inline">tap, then swipe</span>
+                <span className="[@media(pointer:coarse)]:hidden">click, then arrow keys or 2 4 6 8</span>
+                <span className="hidden [@media(pointer:coarse)]:inline">swipe the screen or use the keys</span>
             </figcaption>
         </figure>
     )
