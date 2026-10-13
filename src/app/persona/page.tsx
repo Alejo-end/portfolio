@@ -38,9 +38,6 @@ export default function Persona() {
             <header className="grid items-end gap-10 pt-8 md:grid-cols-[minmax(0,1fr)_24rem]">
                 <div>
                     <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-9xl">Alejandro?</h1>
-                    <p className="rise rise-2 mt-8 max-w-md text-xl leading-snug">
-                        Designs software for radiotherapy. Builds instruments at home.
-                    </p>
                 </div>
 
                 <figure className="rise rise-3 space-y-2">

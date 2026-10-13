@@ -17,7 +17,7 @@ export default function Home() {
                 <div>
                     <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-9xl">Alejandro?</h1>
                     <p className="rise rise-2 mt-8 max-w-md text-xl leading-snug">
-                        UX engineer in Helsinki, from Panama. Builds instruments after work.
+                        UX engineer at MVision, Helsinki.
                     </p>
                 </div>
                 <div className="rise rise-3 mx-auto w-full max-w-xs md:max-w-none">
