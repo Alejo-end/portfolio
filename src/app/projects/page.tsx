@@ -30,7 +30,7 @@ export default async function ProjectsPage() {
                 <p className="label">
                     index · {Math.min(...years)}–{Math.max(...years)}
                 </p>
-                <h1 className="display text-6xl font-semibold md:text-8xl">Projects</h1>
+                <h1 className="display text-6xl md:text-8xl">Projects</h1>
             </header>
             <div className="rise rise-2">
                 <ProjectGrid cards={cards} />

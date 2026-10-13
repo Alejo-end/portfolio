@@ -40,7 +40,7 @@ export function SpecSheet({
                     {tag}
                     <span className="label">{meta.join(' · ')}</span>
                 </div>
-                <Heading className="display text-5xl font-semibold leading-[0.95] md:text-7xl">{title}</Heading>
+                <Heading className="display text-5xl leading-[0.95] md:text-7xl">{title}</Heading>
                 {subtitle && <p className="display text-2xl text-muted-foreground md:text-3xl">{subtitle}</p>}
             </header>
 

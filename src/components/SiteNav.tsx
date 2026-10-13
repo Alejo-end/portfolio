@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { DarkModeToggle } from './DarkModeToggle'
-import { Stripes } from './koivu/Stripes'
 
 const items = [
     { label: 'Projects', href: '/projects' },
@@ -16,11 +15,10 @@ export function SiteNav() {
 
     return (
         <header>
-            <Stripes />
             <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
                 <Link
                     href="/"
-                    className="display text-2xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     Alejandro<span className="text-poppy">?</span>
                 </Link>

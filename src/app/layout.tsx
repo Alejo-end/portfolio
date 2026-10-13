@@ -15,12 +15,6 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
-// Soft, slightly wonky serif for headings (see .display in globals.css).
-const fraunces = localFont({
-  src: "./fonts/Fraunces/Fraunces-Variable.woff2",
-  variable: "--font-display",
-  weight: "100 900",
-});
 
 // norns-style bitmap face, kept to small screen moments (404, counters).
 const silkscreen = localFont({
@@ -51,7 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${fraunces.variable} ${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
+        className={`${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >
         <Providers>
           <div className="flex min-h-screen flex-col">

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
-import { Flower } from './Flower'
 import { kinds } from './kinds'
 
 export interface ProjectCard {
@@ -68,11 +67,13 @@ export function ProjectGrid({ cards }: { cards: ProjectCard[] }) {
                                             className="object-cover"
                                         />
                                     ) : (
-                                        <Flower className={`absolute inset-[18%] ${k.onBg} transition-transform duration-700 group-hover:rotate-45`} centerClassName="fill-background" />
+                                        <span className={`absolute inset-0 grid place-items-center font-pixel text-2xl uppercase ${k.onBg}`}>
+                                            {k.label}
+                                        </span>
                                     )}
                                 </div>
                                 <div className="flex items-baseline justify-between gap-3 p-4">
-                                    <span className="display text-2xl font-semibold leading-tight">{card.title}</span>
+                                    <span className="display text-2xl leading-tight">{card.title}</span>
                                     <span className="shrink-0 font-mono text-xs text-muted-foreground">{card.year}</span>
                                 </div>
                                 <div className="flex items-center gap-2 px-4 pb-4">

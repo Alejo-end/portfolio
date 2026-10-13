@@ -62,7 +62,7 @@ export default function WorkExperience() {
             <header className="rise space-y-6 py-8">
                 <div className="space-y-2">
                     <p className="label">timeline · 2019–now</p>
-                    <h1 className="display text-6xl font-semibold md:text-8xl">Work</h1>
+                    <h1 className="display text-6xl md:text-8xl">Work</h1>
                 </div>
                 {/* An old-fashioned table of contents: jump links to each job. */}
                 <nav aria-label="On this page">

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { projects } from "@/data/projects";
-import { Flower } from "@/components/koivu/Flower";
+import { Matopeli } from "@/components/koivu/Matopeli";
 import { KindTag } from "@/components/koivu/kinds";
 
 export const metadata: Metadata = {
@@ -22,10 +22,10 @@ export default function Home() {
 
     return (
         <main className="mx-auto max-w-6xl px-4">
-            <section className="grid items-center gap-8 py-8 md:grid-cols-[minmax(0,1fr)_18rem] md:py-14">
+            <section className="grid items-center gap-8 py-8 md:grid-cols-[minmax(0,1fr)_20rem] md:py-14">
                 <div>
                     <p className="label rise rise-1">hei, this is</p>
-                    <h1 className="display rise rise-2 mt-2 text-7xl font-semibold leading-[0.9] md:text-9xl">
+                    <h1 className="display rise rise-2 mt-2 text-7xl leading-[0.9] md:text-9xl">
                         Alejandro<span className="text-poppy">?</span>
                     </h1>
                     <p className="rise rise-3 mt-8 max-w-xl text-xl leading-snug md:text-2xl">
@@ -33,9 +33,8 @@ export default function Home() {
                         music the rest of the time.
                     </p>
                 </div>
-                <div className="rise rise-3 relative mx-auto aspect-square w-56 md:w-full">
-                    <Flower className="spin-slow absolute inset-0 text-sun" centerClassName="fill-poppy" />
-                    <Flower className="absolute bottom-0 right-0 w-1/3 text-lake" centerClassName="fill-background" />
+                <div className="rise rise-3 mx-auto w-full max-w-xs md:max-w-none">
+                    <Matopeli />
                 </div>
             </section>
 
@@ -49,7 +48,7 @@ export default function Home() {
                             >
                                 <span className="font-mono text-[13px] opacity-80">{room.meta}</span>
                                 <span className="flex items-end justify-between">
-                                    <span className="display text-5xl font-semibold">{room.label}</span>
+                                    <span className="display text-5xl">{room.label}</span>
                                     <span aria-hidden className="text-3xl">→</span>
                                 </span>
                             </Link>
@@ -75,7 +74,7 @@ export default function Home() {
                                 <KindTag kind={latest.kind} />
                                 <span className="label">{latest.year}</span>
                             </div>
-                            <h2 className="display text-5xl font-semibold">{latest.title}</h2>
+                            <h2 className="display text-5xl">{latest.title}</h2>
                             <p className="max-w-md text-lg leading-relaxed">{latest.description}</p>
                         </div>
                         <span className="font-mono text-[13px] underline underline-offset-[3px]">read more →</span>
