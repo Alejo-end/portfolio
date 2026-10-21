@@ -1,16 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { addXp, getServerXp, getXp, levelOf, SNAKE_LEVEL, subscribeXp } from '@/lib/xp'
 import { Snake } from './Snake'
 
 const SEGMENTS = 16
 
 // A small status box in the corner: level, XP bar, and later the snake.
-// Typing "snake" anywhere opens the game at any level.
+// Typing "snake" anywhere opens the game at any level. Typing "metro" goes
+// to the metro game.
 export function XpHud() {
     const pathname = usePathname()
+    const router = useRouter()
     const xp = useSyncExternalStore(subscribeXp, getXp, getServerXp)
     const { level, name, progress } = levelOf(xp)
     const [open, setOpen] = useState(false)
@@ -42,6 +44,7 @@ export function XpHud() {
             if (e.metaKey || e.ctrlKey || e.key.length !== 1) return
             typed = (typed + e.key.toLowerCase()).slice(-5)
             if (typed === 'snake') setOpen(true)
+            if (typed === 'metro') router.push('/metro')
             if (e.key === 'Escape') setOpen(false)
         }
         const onEsc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
@@ -51,7 +54,7 @@ export function XpHud() {
             document.removeEventListener('keypress', onKey)
             document.removeEventListener('keydown', onEsc)
         }
-    }, [])
+    }, [router])
 
     const filled = Math.round(progress * SEGMENTS)
 
