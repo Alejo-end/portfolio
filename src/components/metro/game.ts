@@ -35,10 +35,10 @@ const STREET: Stop[] = [
 export const LINES: Record<Mode, Line> = {
     metro: {
         stops: [
-            { name: 'Sörnäinen', sv: 'Sörnäs', nick: 'sörkka' },
-            { name: 'Hakaniemi', sv: 'Hagnäs', nick: 'hakis' },
+            STREET[0],
+            STREET[1],
             { name: 'Helsingin yliopisto', sv: 'Helsingfors universitet', nick: 'yliopisto' },
-            { name: 'Rautatientori', sv: 'Järnvägstorget', nick: 'rautsikka' },
+            STREET[3],
         ],
         vehicle: 'train',
         place: 'platform',
@@ -533,6 +533,7 @@ function startRide(g: Game) {
     g.crew = g.crew.filter((i) => i.aboard)
     const fresh = g.crew.filter((i) => !i.active)
     for (const i of g.crew) i.active = true
+    if (fresh.length) g.stalled = false
     g.sweep = g.crew.some((i) => hasWork(g, i))
     g.segment = line(g).segment[g.at]
     g.rideFrom = g.clock
@@ -645,7 +646,11 @@ function backToDoors(g: Game, aboard: boolean, caption: string) {
     if (!aboard) g.player.slot = g.player.x = 5
     g.phase = 'doors'
     g.t = g.rideT
-    g.closeAt = Math.max(g.closeAt, g.t + 1.5)
+    // If the doors now close later, they chime again before they do.
+    if (g.closeAt < g.t + 1.5) {
+        g.closeAt = g.t + 1.5
+        g.chimed = false
+    }
     g.caption = caption
 }
 
@@ -833,7 +838,7 @@ export function actions(g: Game): Action[] {
         case 'ride':
             if (!g.sweep || g.player.cleared) return [{ id: 'next', label: 'Skip' }]
             return [
-                { id: 'hide', label: 'Hide' },
+                { id: 'hide', label: g.player.hidden ? 'Hiding' : 'Hide', disabled: g.player.hidden },
                 { id: 'stall', label: 'Stall', disabled: g.stalled },
             ]
         case 'check':
@@ -939,7 +944,7 @@ export function step(g: Game, dt: number) {
         }
         case 'exit': {
             const crew = waiting(g)
-            if (at(1.3) && crew.length && !g.player.cleared) {
+            if (at(1.3) && crew.length) {
                 if (g.rand() < 0.55 - 0.15 * g.heat) g.caption = 'Behind a pram. Past them.'
                 else return startCheck(g, crew[0])
             }

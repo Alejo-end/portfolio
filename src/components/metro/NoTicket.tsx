@@ -41,19 +41,21 @@ export function NoTicket() {
     }, [])
 
     const press = (id: ActionId) => act(game.current, id)
-    const primary = ui.actions.find((a) => !a.disabled)
+    // Space, Enter and taps on the canvas do the first action, and only that one.
+    const primary = ui.actions[0]
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.metaKey || e.ctrlKey || e.altKey) return
+            if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+            // Keys typed into the snake, a field or a focused link or button are theirs.
+            const target = e.target instanceof Element ? e.target : null
+            if (target?.closest('[role="application"], input, textarea, select')) return
             const g = game.current
             const list = uiOf(g).actions
             if (e.key === ' ' || e.key === 'Enter') {
-                // A focused button already gets its own click.
-                if (e.target instanceof HTMLButtonElement || e.target instanceof HTMLInputElement) return
+                if (target?.closest('a, button')) return
                 e.preventDefault()
-                const first = list.find((a) => !a.disabled)
-                if (first) act(g, first.id)
+                if (list[0]) act(g, list[0].id)
             }
             const n = Number(e.key)
             if (n >= 1 && n <= list.length) act(g, list[n - 1].id)
@@ -78,7 +80,7 @@ export function NoTicket() {
                 ref={canvas}
                 width={W}
                 height={H}
-                onPointerDown={() => primary && press(primary.id)}
+                onPointerDown={() => primary && !primary.disabled && press(primary.id)}
                 className="block aspect-video w-full cursor-pointer select-none border border-foreground bg-black [image-rendering:pixelated]"
                 style={{ touchAction: 'manipulation' }}
                 role="img"
@@ -100,7 +102,7 @@ export function NoTicket() {
                         type="button"
                         disabled={a.disabled}
                         onClick={() => press(a.id)}
-                        className="flex h-11 min-w-[7.5rem] flex-1 items-center justify-between gap-3 border border-foreground px-3 text-[12px] uppercase enabled:hover:bg-foreground enabled:hover:text-background disabled:opacity-40 sm:flex-none"
+                        className="flex h-11 min-w-[6.5rem] flex-1 items-center justify-between gap-3 border border-foreground px-3 text-[12px] uppercase enabled:hover:bg-foreground enabled:hover:text-background disabled:opacity-40 sm:flex-none"
                     >
                         <span>{a.label}</span>
                         <span className="text-muted-foreground">{i === 0 ? 'space' : i + 1}</span>

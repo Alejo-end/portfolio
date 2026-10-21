@@ -1,4 +1,4 @@
-// A few synthesised blips. Nothing is sampled.
+// A few synthesized blips. Nothing is sampled.
 
 export type Cue = 'chime' | 'beep' | 'buzz' | 'ok' | 'fail' | 'reveal'
 
@@ -6,7 +6,7 @@ let audio: AudioContext | null = null
 
 function context() {
     audio ??= new AudioContext()
-    if (audio.state === 'suspended') void audio.resume()
+    if (audio.state === 'suspended') audio.resume().catch(() => {})
     return audio
 }
 
