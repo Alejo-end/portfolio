@@ -141,62 +141,6 @@ function title(ctx: Ctx, time: number) {
     if (Math.floor(time * 2) % 2 === 0) drawText(ctx, 'Press start', W / 2, 52, C.yellowL, 1, 'center')
 }
 
-// ——— The escalator shaft, 25 metres down ————————————————————————————
-
-const SLOPE = 0.418
-
-function escalator(ctx: Ctx, g: Game, still: boolean) {
-    const time = still ? 0 : g.time
-    R(ctx, 0, 0, W, H, '#24221f')
-    // Ceiling over the shaft with two light strips.
-    for (let x = 0; x < 224; x++) {
-        const y = x * SLOPE
-        R(ctx, x, 0, 1, y + 20, '#3b3833')
-        R(ctx, x, y + 2, 1, 2, C.glow)
-        R(ctx, x, y + 12, 1, 1, '#fff1c9')
-    }
-    // Three escalators: up, down (ours), up.
-    const bands = [
-        { y: 22, dir: -1 },
-        { y: 36, dir: 1 },
-        { y: 50, dir: -1 },
-    ]
-    const k = clamp01(g.t / 5)
-    const px = 26 + k * 176
-    bands.forEach((band, b) => {
-        for (let x = 0; x < 224; x++) {
-            const y = band.y + x * SLOPE
-            R(ctx, x, y, 1, 2, C.ink)
-            R(ctx, x, y + 2, 1, 3, '#8d877f')
-            const edge = Math.floor(x + band.dir * time * 22) % 6 === 0
-            R(ctx, x, y + 5, 1, 8, edge ? '#7b746c' : '#514c46')
-        }
-        if (b === 1) {
-            person(ctx, px, band.y + px * SLOPE + 12, g.look, 1, 'stand', 'player')
-            return
-        }
-        // Someone riding up on each of the other two.
-        const rx = 214 - ((time * 14 + b * 90) % 230)
-        person(ctx, rx, band.y + rx * SLOPE + 12, EXTRAS[b], -1, 'stand', 'rider')
-    })
-    // The inclined lift on its rails below.
-    for (let x = 0; x < 224; x++) {
-        const y = 86 + x * SLOPE
-        R(ctx, x, y, 1, 1, '#5c5650')
-        R(ctx, x, y + 6, 1, 1, '#5c5650')
-    }
-    const lx = 30 + ((time * 9) % 170)
-    const ly = 86 + lx * SLOPE
-    R(ctx, lx, ly - 15, 22, 16, '#3d4a52')
-    R(ctx, lx + 2, ly - 13, 18, 9, '#9fb4c0')
-
-    // The yellow platform hall at the bottom.
-    R(ctx, 224, 40, 32, 104, C.yellow)
-    for (let y = 44; y < 128; y += 10) R(ctx, 224, y, 32, 1, C.yellowD)
-    R(ctx, 224, 128, 32, 16, '#a39b8f')
-    R(ctx, 222, 40, 2, 104, '#1c1a18')
-}
-
 // ——— Where you wait: a metro platform or a street stop ————————————————
 
 const WALLS = [
@@ -657,26 +601,102 @@ const ROUTE: Record<Mode, string> = {
     bus: 'Bus  Hämeentie',
 }
 
+// The penalty fare slip. It slides in from the right and leaves the left
+// of the screen to the scene behind it.
 function slip(ctx: Ctx, g: Game, t: number) {
-    // Starts low so the end card above never covers it.
-    const y = Math.round(41 + (1 - ease(clamp01(t / 0.5))) * 110)
-    R(ctx, 63, y + 3, 136, 101, 'rgba(0, 0, 0, 0.4)')
-    R(ctx, 60, y, 136, 101, '#f4efe3')
-    R(ctx, 60, y, 136, 17, C.blue)
-    drawText(ctx, 'Tarkastusmaksu', 128, y + 3, C.white, 1, 'center')
-    drawText(ctx, 'Penalty fare', 128, y + 10, '#cfe6f7', 1, 'center')
-    drawText(ctx, '100,00 €', 128, y + 23, C.ink, 3, 'center')
-    drawText(ctx, `Time  ${clockText(g.clock)}`, 68, y + 43, C.grey)
-    drawText(ctx, ROUTE[g.mode], 68, y + 51, C.grey)
-    drawText(ctx, stopsOf(g)[Math.min(g.at, LAST)].name, 68, y + 59, C.grey)
+    const x = Math.round(140 + (1 - ease(clamp01((t - 1) / 0.5))) * 130)
+    const y = 41
+    const cx = x + 56
+    R(ctx, x + 3, y + 3, 112, 99, 'rgba(0, 0, 0, 0.4)')
+    R(ctx, x, y, 112, 99, '#f4efe3')
+    R(ctx, x, y, 112, 17, C.blue)
+    drawText(ctx, 'Tarkastusmaksu', cx, y + 3, C.white, 1, 'center')
+    drawText(ctx, 'Penalty fare', cx, y + 10, '#cfe6f7', 1, 'center')
+    drawText(ctx, '100,00 €', cx, y + 22, C.ink, 2, 'center')
+    drawText(ctx, `Time  ${clockText(g.clock)}`, x + 6, y + 37, C.grey)
+    drawText(ctx, ROUTE[g.mode], x + 6, y + 45, C.grey)
+    drawText(ctx, stopsOf(g)[Math.min(g.at, LAST)].name, x + 6, y + 53, C.grey)
     const stamp = g.ending === 'fake' ? 'Fake ticket' : 'No ticket'
     const color = g.ending === 'fake' ? C.red : C.grey
     const sw = textWidth(stamp, 2) + 10
-    R(ctx, 128 - sw / 2, y + 67, sw, 17, color)
-    R(ctx, 128 - sw / 2 + 1, y + 68, sw - 2, 15, '#f4efe3')
-    drawText(ctx, stamp, 128, y + 71, color, 2, 'center')
-    R(ctx, 140, y + 95, 48, 1, C.grey2)
-    for (let i = 0; i < 30; i++) R(ctx, 146 + i, y + 91 + Math.round(Math.sin(i * 0.9) * 2), 1, 1, C.blueD)
+    R(ctx, cx - sw / 2, y + 62, sw, 17, color)
+    R(ctx, cx - sw / 2 + 1, y + 63, sw - 2, 15, '#f4efe3')
+    drawText(ctx, stamp, cx, y + 66, color, 2, 'center')
+    R(ctx, x + 52, y + 92, 52, 1, C.grey2)
+    for (let i = 0; i < 30; i++) R(ctx, x + 60 + i, y + 88 + Math.round(Math.sin(i * 0.9) * 2), 1, 1, C.blueD)
+}
+
+// Caught, close up and at double size: two vests write you up while the car
+// films it. Busted with a fake, one of them studies your phone through a
+// magnifying glass.
+function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
+    const time = still ? 0 : g.time
+    const look = CABINS[g.mode]
+    if (g.checkFrom === 'ride') {
+        R(ctx, 0, 0, W, H, look.wall)
+        R(ctx, 0, 0, W, 10, shade(look.wall, 0.1))
+        R(ctx, 0, 8, W, 2, '#fffbe8')
+        R(ctx, 0, 24, W, 44, look.wallD)
+        for (const wx of [6, 70, 134, 198]) view(ctx, g.mode, wx, 27, 52, 38, time, still)
+        for (const px of [64, 128, 192]) R(ctx, px, 10, 2, 108, look.pole)
+    } else if (g.mode === 'metro') {
+        const wall = WALLS[g.at]
+        R(ctx, 0, 0, W, H, wall.base)
+        for (let x = 4; x < W; x += 24) R(ctx, x, 0, 2, 118, wall.seam)
+        R(ctx, 0, 60, W, 2, wall.seam)
+    } else {
+        R(ctx, 0, 0, W, 60, C.night)
+        facades(ctx, g.at + 5, 118)
+    }
+    R(ctx, 0, 118, W, 26, look.floor)
+    R(ctx, 0, 118, W, 2, shade(look.floor, -0.2))
+
+    const big = (draw: () => void) => {
+        ctx.save()
+        ctx.scale(2, 2)
+        draw()
+        ctx.restore()
+    }
+    const bystander = (x: number, n: number) => {
+        big(() => person(ctx, x / 2, 70, EXTRAS[n], 1, 'stand'))
+        // Filming it, of course.
+        R(ctx, x + 8, 90, 7, 12, '#151515')
+        R(ctx, x + 9, 91, 5, 9, C.screen)
+        if (Math.floor(time * 2) % 2 === 0) R(ctx, x + 12, 92, 2, 2, C.red)
+    }
+    bystander(14, 3)
+    bystander(172, 5)
+    bystander(214, 8)
+
+    // You, sweating.
+    big(() => person(ctx, 26, 70, g.look, 1, 'stand', 'player'))
+    for (const [dx, phase] of [
+        [-9, 0],
+        [12, 0.5],
+    ]) {
+        const k = (time * 1.4 + phase) % 1
+        R(ctx, 52 + dx, 86 + k * 14, 2, 3, C.blueL)
+    }
+
+    // The one writing, and the one with the reader or the magnifying glass.
+    big(() => person(ctx, 46, 70, g.crew[0]?.look ?? EXTRAS[0], -1, 'stand', 'vest'))
+    R(ctx, 74, 104, 12, 15, C.white)
+    for (let ly = 107; ly < 117; ly += 3) R(ctx, 76, ly, 8, 1, '#c9c4ba')
+    R(ctx, 78 + Math.round(Math.sin(time * 9) * 3), 100, 2, 9, C.ink)
+    big(() => person(ctx, 62, 70, g.crew[1]?.look ?? EXTRAS[1], -1, 'stand', 'vest'))
+    // Your phone, held up to the light in front of the second one's face.
+    if (g.ending === 'fake') {
+        R(ctx, 105, 92, 8, 13, '#151515')
+        R(ctx, 106, 93, 6, 10, C.blueL)
+        for (let a = 0; a < 16; a++) {
+            const ang = (a / 16) * Math.PI * 2
+            R(ctx, 108 + Math.round(Math.cos(ang) * 7), 97 + Math.round(Math.sin(ang) * 7), 2, 2, '#3a3a3a')
+        }
+        R(ctx, 113, 103, 2, 9, '#3a3a3a')
+    }
+
+    const line = g.ending === 'fake' ? 'Screenshot.' : t < 1.6 ? 'Name?' : 'Sign here.'
+    bubble(ctx, g.ending === 'fake' ? 110 : 92, 84, line.toUpperCase())
 }
 
 function square(ctx: Ctx, g: Game, still: boolean) {
@@ -795,8 +815,6 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
             street(ctx, time, still, g.t, g.look, still ? 0 : g.t + 0.8)
             if (g.t > 3.3) phone(ctx, g, 'empty', g.t - 3.3)
             return
-        case 'escalator':
-            return escalator(ctx, g, still)
         case 'platform':
         case 'doors':
         case 'exit':
@@ -812,8 +830,7 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
             return
         case 'outro':
             if (g.ending === 'fined' || g.ending === 'fake') {
-                behind(ctx, g, still)
-                dim(ctx)
+                fineScene(ctx, g, g.t, still)
                 slip(ctx, g, g.t)
             } else {
                 square(ctx, g, still)
