@@ -1,3 +1,25 @@
+import {
+    DRIVER_LOOK,
+    EXTRAS,
+    H,
+    R,
+    W,
+    bubble,
+    clamp01,
+    clipped,
+    ease,
+    facades,
+    hash,
+    lerp,
+    marker,
+    person,
+    rain,
+    sign,
+    slotX,
+    tick,
+    type Ctx,
+    type Role,
+} from './draw'
 import { drawText, textWidth } from './font'
 import {
     ARRIVE,
@@ -5,214 +27,26 @@ import {
     BOARD_WALK,
     DEPART,
     DOORS,
+    DRIVER,
     LAST,
     SEAT_FACE,
     SHUT,
-    STATIONS,
     clockText,
+    doorClock,
     doorOpen,
+    stopsOf,
     type Game,
     type Inspector,
     type Look,
+    type Mode,
 } from './game'
-import { C, CLOTH, HAIR, PANTS, SKIN, shade } from './palette'
+import { C, HAIR, PANTS, SKIN, shade } from './palette'
+import { CABINS, vehicle, windowsOf } from './vehicles'
 
-// Every scene, drawn with rectangles on a 256×144 canvas.
+// Every scene of the game. Primitives and people live in draw.ts, the
+// vehicles in vehicles.ts.
 
-export const W = 256
-export const H = 144
-
-type Ctx = CanvasRenderingContext2D
-type Pose = 'stand' | 'walk' | 'sit' | 'crouch'
-type Role = 'rider' | 'vest' | 'plain' | 'badge' | 'player'
-
-function R(ctx: Ctx, x: number, y: number, w: number, h: number, color: string) {
-    ctx.fillStyle = color
-    ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h))
-}
-
-// Stable noise for lit windows, rain and QR codes.
-function hash(n: number) {
-    const x = Math.sin(n * 127.1 + 311.7) * 43758.5453
-    return x - Math.floor(x)
-}
-
-const ease = (k: number) => 1 - (1 - k) ** 2
-const clamp01 = (k: number) => Math.max(0, Math.min(1, k))
-const lerp = (a: number, b: number, k: number) => a + (b - a) * k
-
-// Car slots, in canvas x, for a car whose left edge is at `left`.
-const slotX = (s: number, left = 18) => left + 10 + s * 20
-
-// Riders for the cars on either side of ours, always the same.
-const EXTRAS: Look[] = Array.from({ length: 12 }, (_, i) => ({
-    skin: SKIN[Math.floor(hash(i) * SKIN.length)],
-    hair: HAIR[Math.floor(hash(i + 20) * HAIR.length)],
-    coat: CLOTH[Math.floor(hash(i + 40) * CLOTH.length)].color,
-    pants: PANTS[Math.floor(hash(i + 60) * PANTS.length)],
-    hat: hash(i + 80) < 0.3 ? CLOTH[Math.floor(hash(i + 90) * CLOTH.length)].color : null,
-    bag: null,
-    phone: hash(i + 100) < 0.6,
-    tag: '',
-}))
-
-/** Draws a person standing on `feet`, facing right (1) or left (-1). Returns the top of the head. */
-export function person(
-    ctx: Ctx,
-    cx: number,
-    feet: number,
-    look: Look,
-    face: 1 | -1,
-    pose: Pose = 'stand',
-    role: Role = 'rider',
-    frame = 0,
-    wave = -1
-) {
-    const x = Math.round(cx)
-    const height = pose === 'sit' ? 20 : pose === 'crouch' ? 18 : 24
-    const top = Math.round(feet) - height
-    const rr = (dx: number, dy: number, w: number, h: number, color: string) =>
-        R(ctx, face > 0 ? x + dx : x - dx - w + 1, top + dy, w, h, color)
-    const coat = role === 'vest' ? C.navy : look.coat
-    const dark = shade(coat, -0.28)
-    const phone = look.phone && role === 'rider'
-    const reader = role === 'vest' || role === 'badge'
-
-    if (look.bag === 'backpack') rr(-6, pose === 'stand' || pose === 'walk' ? 9 : 8, 3, 7, '#4b5a3c')
-
-    // Head, hair, eye, nose.
-    rr(-2, 1, 5, 6, look.skin)
-    rr(-2, 0, 5, 2, look.hair)
-    rr(-2, 2, 1, 3, look.hair)
-    rr(1, phone ? 4 : 3, 1, 1, C.ink)
-    rr(3, 4, 1, 1, look.skin)
-    if (role === 'player' && look.hat) {
-        rr(-3, -1, 7, 3, look.hat)
-        rr(-3, 2, 2, 5, look.hat)
-    } else if (look.hat) {
-        rr(-3, -1, 7, 3, look.hat)
-        rr(-2, -2, 5, 1, look.hat)
-        rr(0, -3, 1, 1, shade(look.hat, 0.35))
-    }
-
-    // Body and legs.
-    let chest: number
-    if (pose === 'sit') {
-        chest = 7
-        rr(-3, 7, 7, 7, coat)
-        rr(-3, 7, 1, 7, dark)
-        rr(-2, 14, 7, 2, look.pants)
-        rr(3, 16, 2, 3, look.pants)
-        rr(3, 19, 3, 1, C.ink)
-    } else if (pose === 'crouch') {
-        chest = 7
-        rr(-3, 7, 7, 6, coat)
-        rr(-3, 7, 1, 6, dark)
-        rr(-2, 13, 6, 2, look.pants)
-        rr(2, 15, 2, 2, look.pants)
-        rr(2, 17, 3, 1, C.ink)
-        rr(-2, 15, 2, 2, look.pants)
-        rr(-3, 17, 3, 1, C.ink)
-    } else {
-        chest = 8
-        rr(-1, 7, 2, 1, shade(look.skin, -0.15))
-        rr(-3, 8, 7, 8, coat)
-        rr(-3, 8, 1, 8, dark)
-        const apart = pose === 'walk' && Math.floor(frame) % 2 === 0
-        const back = apart ? -3 : -2
-        const front = apart ? 2 : 1
-        rr(back, 16, 2, 7, look.pants)
-        rr(front, 16, 2, 7, look.pants)
-        rr(back - (apart ? 1 : 0), 23, 3, 1, C.ink)
-        rr(front, 23, 3, 1, C.ink)
-    }
-
-    // What gives inspectors away.
-    if (role === 'vest') {
-        rr(-3, chest + 3, 7, 1, C.band)
-        rr(1, chest + 1, 2, 2, C.white)
-    } else if (role === 'plain') {
-        rr(-2, chest, 1, 1, C.lanyard)
-        rr(1, chest, 1, 1, C.lanyard)
-    } else if (role === 'badge') {
-        rr(-2, chest, 1, 3, C.lanyard)
-        rr(1, chest, 1, 3, C.lanyard)
-        rr(-1, chest + 3, 3, 3, C.white)
-    }
-    if (look.bag === 'handbag') {
-        rr(-3, chest, 1, 4, '#6a3b2a')
-        rr(-5, chest + 4, 3, 3, '#6a3b2a')
-    }
-
-    // Front arm.
-    const y = chest + 1
-    if (wave >= 0) {
-        const up = Math.floor(wave) % 2
-        rr(2, y - 7 + up, 2, 7, dark)
-        rr(2, y - 8 + up, 2, 1, look.skin)
-    } else if (reader) {
-        rr(0, y, 2, 3, dark)
-        rr(1, y + 3, 3, 2, dark)
-        rr(4, y + 2, 2, 3, C.ink)
-        rr(5, y + 2, 1, 1, '#5be07a')
-    } else if (phone || pose === 'sit' || pose === 'crouch') {
-        rr(0, y, 2, 3, dark)
-        rr(1, y + 3, 2, 2, dark)
-        rr(3, y + 3, 1, 1, look.skin)
-        if (phone) rr(4, y + 2, 1, 2, C.screen)
-    } else {
-        rr(0, y, 2, 6, dark)
-        rr(0, y + 6, 2, 1, look.skin)
-        if (look.bag === 'shopping') {
-            rr(0, y + 8, 4, 5, '#ece7da')
-            rr(1, y + 7, 2, 1, '#b9b3a5')
-        }
-    }
-    return top - (look.hat ? 3 : 0)
-}
-
-function marker(ctx: Ctx, x: number, top: number, time: number) {
-    if (Math.floor(time * 3) % 3 === 2) return
-    R(ctx, x - 2, top - 6, 5, 1, C.white)
-    R(ctx, x - 1, top - 5, 3, 1, C.white)
-    R(ctx, x, top - 4, 1, 1, C.white)
-}
-
-function bubble(ctx: Ctx, x: number, y: number, text: string) {
-    const w = textWidth(text) + 6
-    const left = Math.max(2, Math.min(W - w - 2, Math.round(x - w / 2)))
-    R(ctx, left - 1, y - 10, w + 2, 11, C.ink)
-    R(ctx, left, y - 9, w, 9, C.white)
-    R(ctx, Math.round(x) - 1, y + 1, 3, 1, C.ink)
-    R(ctx, Math.round(x), y + 2, 1, 1, C.ink)
-    drawText(ctx, text, left + 3, y - 7, C.ink)
-}
-
-function tick(ctx: Ctx, x: number, y: number) {
-    R(ctx, x - 2, y + 1, 1, 1, C.green)
-    R(ctx, x - 1, y + 2, 1, 1, C.green)
-    R(ctx, x, y + 1, 1, 1, C.green)
-    R(ctx, x + 1, y, 1, 1, C.green)
-    R(ctx, x + 2, y - 1, 1, 1, C.green)
-}
-
-// The metro "M": white on an orange square.
-function metroSign(ctx: Ctx, x: number, y: number, size = 11) {
-    R(ctx, x, y, size, size, C.orange)
-    const rows = ['#.....#', '##...##', '#.#.#.#', '#..#..#', '#.....#', '#.....#', '#.....#']
-    const ox = x + Math.floor((size - 7) / 2)
-    const oy = y + Math.floor((size - 7) / 2)
-    rows.forEach((row, j) => [...row].forEach((c, i) => c === '#' && R(ctx, ox + i, oy + j, 1, 1, C.white)))
-}
-
-function rain(ctx: Ctx, time: number, still: boolean, color = '#4a5a80') {
-    if (still) return
-    for (let i = 0; i < 46; i++) {
-        const x = (hash(i) * (W + 40) + time * 24) % (W + 40)
-        const y = (hash(i + 500) * H + time * (130 + hash(i + 900) * 50)) % H
-        R(ctx, x, y, 1, 3, color)
-    }
-}
+export { H, W }
 
 // ——— Hämeentie at night ————————————————————————————————————————————————
 
@@ -253,7 +87,7 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
     R(ctx, 184, 76, 26, 3, C.yellowL)
     R(ctx, 196, 76, 2, 20, '#1d1c1b')
     R(ctx, 228, 56, 2, 40, '#2a2a2a')
-    metroSign(ctx, 222, 42, 14)
+    sign(ctx, 'metro', 222, 42, 14, C.orange)
 
     // Overhead tram wire and lamps.
     R(ctx, 0, 30, W, 1, '#080a12')
@@ -360,7 +194,7 @@ function escalator(ctx: Ctx, g: Game, still: boolean) {
     R(ctx, 222, 40, 2, 104, '#1c1a18')
 }
 
-// ——— Platforms ————————————————————————————————————————————————————————
+// ——— Where you wait: a metro platform or a street stop ————————————————
 
 const WALLS = [
     { base: C.yellow, seam: C.yellowD, light: C.yellowL },
@@ -369,98 +203,9 @@ const WALLS = [
     { base: '#8f8b84', seam: '#77736c', light: '#aaa69f' },
 ]
 
-function carWindows(left: number) {
-    const spans = [
-        [left + 3, left + 19],
-        [left + 41, left + 99],
-        [left + 121, left + 179],
-        [left + 201, left + 217],
-    ]
-    const out: { x: number; w: number }[] = []
-    for (const [a, b] of spans) {
-        const n = Math.max(1, Math.round((b - a) / 30))
-        const w = (b - a - (n - 1) * 3) / n
-        for (let i = 0; i < n; i++) out.push({ x: Math.round(a + i * (w + 3)), w: Math.round(w) })
-    }
-    return out
-}
-
-function leaf(ctx: Ctx, x: number) {
-    R(ctx, x, 56, 8, 6, C.orange)
-    R(ctx, x, 62, 2, 18, C.orange)
-    R(ctx, x + 6, 62, 2, 18, C.orange)
-    R(ctx, x, 80, 8, 14, C.orange)
-    R(ctx, x, 94, 8, 7, C.orangeD)
-}
-
-// One metro car seen from the platform. `inside` draws whoever is in it,
-// clipped to the glass and the open doors.
-function car(ctx: Ctx, left: number, open: number, inside: () => void) {
-    R(ctx, left + 8, 46, 204, 3, '#7f7973')
-    R(ctx, left + 2, 49, 216, 3, '#9a948d')
-    R(ctx, left, 52, 220, 49, C.orange)
-    R(ctx, left, 52, 220, 1, C.orangeL)
-    R(ctx, left, 94, 220, 7, C.orangeD)
-    R(ctx, left + 220, 58, 4, 40, '#2a2725')
-    R(ctx, left + 6, 101, 208, 3, '#2a2725')
-    const wins = carWindows(left)
-    for (const w of wins) R(ctx, w.x - 1, 61, w.w + 2, 32, '#1d1b1a')
-    for (const d of DOORS) R(ctx, slotX(d, left) - 9, 55, 18, 46, '#1d1b1a')
-
-    ctx.save()
-    ctx.beginPath()
-    for (const w of wins) ctx.rect(w.x, 62, w.w, 30)
-    for (const d of DOORS) ctx.rect(slotX(d, left) - 8, 56, 16, 45)
-    ctx.clip()
-    // The far side of the car: its windows onto the tunnel, poles, seats.
-    R(ctx, left, 56, 220, 45, C.cabin)
-    R(ctx, left, 56, 220, 3, '#fffbe8')
-    R(ctx, left, 66, 220, 14, '#2a2f36')
-    for (let x = left + 14; x < left + 220; x += 26) R(ctx, x, 66, 3, 14, C.cabinD)
-    R(ctx, left, 88, 220, 11, C.cabinD)
-    R(ctx, left, 99, 220, 2, '#6b655d')
-    for (const d of DOORS) {
-        R(ctx, slotX(d, left) - 7, 56, 1, 45, '#f4f1ea')
-        R(ctx, slotX(d, left) + 6, 56, 1, 45, '#f4f1ea')
-    }
-    for (const [s, f] of Object.entries(SEAT_FACE)) {
-        R(ctx, slotX(Number(s), left) - f * 7 - (f > 0 ? 1 : 0), 78, 2, 21, C.seat)
-    }
-    inside()
-    ctx.restore()
-
-    const slide = Math.round(open * 8)
-    for (const d of DOORS) {
-        const cx = slotX(d, left)
-        ctx.save()
-        ctx.beginPath()
-        ctx.rect(cx - 8, 56, 16, 45)
-        ctx.clip()
-        leaf(ctx, cx - 8 - slide)
-        leaf(ctx, cx + slide)
-        ctx.restore()
-    }
-}
-
-function roleOf(g: Game, i: Inspector): Role {
-    if (!i.plain) return 'vest'
-    return i.active || g.time < i.cue ? 'badge' : 'plain'
-}
-
-function trainLeft(g: Game) {
-    if (g.phase !== 'doors') return null
-    const t = g.t
-    if (t < ARRIVE) return 18 + 300 * (1 - ease(t / ARRIVE))
-    const gone = g.closeAt + SHUT
-    if (t > gone) return 18 - 330 * ((t - gone) / DEPART) ** 2
-    return 18
-}
-
-function platform(ctx: Ctx, g: Game) {
-    const time = g.time
+function platformBack(ctx: Ctx, g: Game) {
     const wall = WALLS[g.at]
-    const st = STATIONS[g.at]
-
+    const st = stopsOf(g)[g.at]
     R(ctx, 0, 0, W, 12, '#2b2926')
     for (let x = 8; x < W; x += 32) R(ctx, x, 7, 18, 2, '#fff4d6')
     R(ctx, 0, 11, W, 1, '#3c3833')
@@ -475,7 +220,7 @@ function platform(ctx: Ctx, g: Game) {
     const sw = Math.max(textWidth(name), textWidth(sv)) + 22
     const sx = Math.round(W / 2 - sw / 2)
     R(ctx, sx, 17, sw, 21, '#1c1c1e')
-    metroSign(ctx, sx + 3, 21, 13)
+    sign(ctx, 'metro', sx + 3, 21, 13, C.orange)
     drawText(ctx, name, sx + 19, 21, C.white)
     drawText(ctx, sv, sx + 19, 30, C.grey2)
 
@@ -488,31 +233,9 @@ function platform(ctx: Ctx, g: Game) {
 
     R(ctx, 0, 96, W, 8, '#1a1817')
     R(ctx, 0, 100, W, 1, '#77706a')
+}
 
-    const left = trainLeft(g)
-    const open = doorOpen(g)
-    const inside = (l: number) => () => {
-        R(ctx, l, 99, 220, 2, '#6b655d')
-        for (const r of g.riders) {
-            person(ctx, slotX(r.slot, l) + r.dx, 101, r.look, r.face, r.seated ? 'sit' : 'stand')
-        }
-        for (const i of g.crew) {
-            if (i.aboard) person(ctx, slotX(i.x, l) + i.dx, 101, i.look, i.dir, 'stand', roleOf(g, i))
-        }
-        if (g.aboard && !g.player.jumping) person(ctx, slotX(5, l) - 3, 101, g.look, -1, 'stand', 'player')
-    }
-    if (left !== null) {
-        const neighbour = (l: number, seed: number) => () => {
-            carWindows(l).forEach((w, n) => {
-                if (hash(seed + n) < 0.6) person(ctx, w.x + w.w / 2, 101, EXTRAS[(seed + n) % EXTRAS.length], n % 2 ? 1 : -1, 'sit')
-            })
-        }
-        car(ctx, left - 224, open, neighbour(left - 224, 3))
-        car(ctx, left + 224, open, neighbour(left + 224, 7))
-        car(ctx, left, open, inside(left))
-    }
-
-    // Platform floor with the yellow tactile edge.
+function platformFront(ctx: Ctx) {
     R(ctx, 0, 104, W, 40, '#a39b8f')
     R(ctx, 0, 104, W, 1, C.paper)
     R(ctx, 0, 105, W, 3, '#d6ad35')
@@ -529,53 +252,178 @@ function platform(ctx: Ctx, g: Game) {
         R(ctx, c, y, 1, 1, '#a39c92')
     }
     R(ctx, 0, 112, 26, 4, '#4a453f')
+}
 
-    // Vests waiting on the platform, or walking in through a door.
-    const waitingCrew = g.crew.filter((i) => !i.aboard)
-    for (const i of waitingCrew) {
-        const cx = slotX(i.door) + i.dx
-        if (g.phase === 'exit' || (g.phase === 'check' && g.checkFrom === 'exit') || (g.phase === 'ticket' && g.checkFrom === 'exit')) {
+function streetBack(ctx: Ctx, g: Game) {
+    R(ctx, 0, 0, W, 30, C.night)
+    R(ctx, 0, 30, W, 26, C.night2)
+    R(ctx, 0, 56, W, 40, C.night3)
+    facades(ctx, g.at + 1, 96)
+    // The tram wire, on its poles.
+    R(ctx, 0, 20, W, 1, '#080a12')
+    R(ctx, 4, 16, 2, 80, '#2a2a2a')
+    R(ctx, 0, 96, W, 8, '#262628')
+    if (g.mode === 'tram') {
+        R(ctx, 0, 99, W, 1, '#55524e')
+        R(ctx, 0, 102, W, 1, '#55524e')
+    }
+    stopSign(ctx, g)
+}
+
+function streetFront(ctx: Ctx, g: Game) {
+    R(ctx, 0, 104, W, 40, '#77716a')
+    R(ctx, 0, 104, W, 2, '#b8b0a4')
+    R(ctx, 0, 106, W, 2, '#d6ad35')
+    for (let x = 1; x < W; x += 3) R(ctx, x, 107, 1, 1, '#b38d22')
+    for (let x = 10; x < W; x += 20) R(ctx, x, 108, 1, 36, '#6b6560')
+    R(ctx, 0, 126, W, 1, '#6b6560')
+
+    // A small shelter past the rear door, so nothing hides the riders.
+    R(ctx, 225, 86, 31, 6, '#1c1c1e')
+    R(ctx, 227, 92, 1, 34, '#2a2a2a')
+    R(ctx, 254, 92, 1, 34, '#2a2a2a')
+    R(ctx, 228, 92, 26, 26, '#3b4a55')
+    R(ctx, 242, 94, 11, 20, '#e3bf6e')
+    R(ctx, 229, 94, 11, 5, '#111')
+    if (g.phase === 'platform') R(ctx, 230, 96, 6, 1, C.led)
+    R(ctx, 230, 112, 11, 2, '#2a2a2a')
+}
+
+// The stop sign hangs from the wire pole, above the roofs.
+function stopSign(ctx: Ctx, g: Game) {
+    const name = stopsOf(g)[g.at].name
+    R(ctx, 6, 29, 3, 1, '#2a2a2a')
+    R(ctx, 8, 24, textWidth(name) + 19, 11, '#1c1c1e')
+    sign(ctx, g.mode === 'tram' ? 'tram' : 'bus', 9, 25, 9, g.mode === 'tram' ? C.tram : C.blue)
+    drawText(ctx, name, 21, 27, C.white)
+}
+
+function roleOf(g: Game, i: Inspector): Role {
+    if (!i.plain) return 'vest'
+    return i.active || g.time < i.cue ? 'badge' : 'plain'
+}
+
+// Left edge of the vehicle, sliding in and out, or null when none is there.
+function vehicleLeft(g: Game) {
+    const t = doorClock(g)
+    if (t === null) return null
+    if (t < ARRIVE) return 18 + 300 * (1 - ease(t / ARRIVE))
+    const gone = g.closeAt + SHUT
+    if (t > gone) return 18 - 330 * ((t - gone) / DEPART) ** 2
+    return 18
+}
+
+function stop(ctx: Ctx, g: Game, still: boolean) {
+    const time = g.time
+    const metro = g.mode === 'metro'
+    if (metro) platformBack(ctx, g)
+    else streetBack(ctx, g)
+
+    const left = vehicleLeft(g)
+    const open = doorOpen(g)
+    const inside = (l: number) => () => {
+        for (const r of g.riders) {
+            person(ctx, slotX(r.slot, l) + r.dx, 101, r.look, r.face, r.seated ? 'sit' : 'stand')
+        }
+        for (const i of g.crew) {
+            if (i.aboard) person(ctx, slotX(i.x, l) + i.dx, 101, i.look, i.dir, 'stand', roleOf(g, i))
+        }
+        if (g.aboard && !g.player.jumping) person(ctx, slotX(g.player.slot, l) - 3, 101, g.look, -1, 'stand', 'player')
+    }
+    if (left !== null) {
+        if (metro) {
+            const neighbour = (l: number, seed: number) => () => {
+                windowsOf('metro', l).forEach(([x, w], n) => {
+                    const look = EXTRAS[(seed + n) % EXTRAS.length]
+                    if (hash(seed + n) < 0.6) person(ctx, x + w / 2, 101, look, n % 2 ? 1 : -1, 'sit')
+                })
+            }
+            vehicle(ctx, 'metro', left - 224, open, neighbour(left - 224, 3))
+            vehicle(ctx, 'metro', left + 224, open, neighbour(left + 224, 7))
+        }
+        vehicle(ctx, g.mode, left, open, inside(left))
+    }
+
+    if (metro) platformFront(ctx)
+    else streetFront(ctx, g)
+
+    // Vests waiting to board, walking in through a door, or by the way out.
+    const t = doorClock(g)
+    const leaving = g.phase === 'exit' || ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'exit')
+    for (const i of g.crew) {
+        if (i.aboard) continue
+        if (leaving) {
             person(ctx, i.dx < 0 ? 30 : 42, 124, i.look, 1, 'stand', 'vest')
             continue
         }
-        const k = g.phase === 'doors' && !g.spotted ? clamp01((g.t - BOARD) / BOARD_WALK) : 0
+        const cx = slotX(i.door) + i.dx
+        const k = t !== null && !g.spotted ? clamp01((t - BOARD) / BOARD_WALK) : 0
         const x = left !== null ? lerp(cx, slotX(i.door, left) + i.dx / 2, k) : cx
-        person(ctx, x, lerp(124, 101, k), i.look, i.dx < 0 ? 1 : -1, k > 0 && k < 1 ? 'walk' : 'stand', 'vest', g.t * 8)
+        person(ctx, x, lerp(124, 101, k), i.look, i.dx < 0 ? 1 : -1, k > 0 && k < 1 ? 'walk' : 'stand', 'vest', time * 8)
     }
 
-    // The player, on the platform or mid-jump.
-    const doorX = left !== null ? slotX(5, left) - 3 : 125
-    if (g.phase === 'exit' || g.checkFrom === 'exit' && (g.phase === 'check' || g.phase === 'ticket')) {
-        const t = g.phase === 'exit' ? g.t : g.rideT
-        const k = clamp01(t / 2.8)
-        const top = person(ctx, lerp(112, 8, k), 126, g.look, -1, g.phase === 'exit' ? 'walk' : 'stand', 'player', t * 7)
-        marker(ctx, lerp(112, 8, k), top, time)
+    // The player: walking out, mid-jump, waiting, or inside.
+    const doorX = (s: number) => (left !== null ? slotX(s, left) - 3 : 125)
+    if (leaving) {
+        const walked = g.phase === 'exit' ? g.t : g.rideT
+        const x = lerp(112, 8, clamp01(walked / 2.8))
+        const top = person(ctx, x, 126, g.look, -1, g.phase === 'exit' ? 'walk' : 'stand', 'player', walked * 7)
+        marker(ctx, x, top, time)
     } else if (g.player.jumping) {
         const k = g.player.jump
-        const [a, b] = g.aboard ? [doorX, 112] : [112, doorX]
+        const door = doorX(g.aboard ? g.player.slot : g.player.door)
+        const [a, b] = g.aboard ? [door, 112] : [112, door]
         const [fa, fb] = g.aboard ? [101, 126] : [126, 101]
-        person(ctx, lerp(a, b, k), lerp(fa, fb, k) - Math.sin(k * Math.PI) * 7, g.look, g.aboard ? -1 : 1, 'walk', 'player', 1)
+        person(ctx, lerp(a, b, k), lerp(fa, fb, k) - Math.sin(k * Math.PI) * 7, g.look, a < b ? 1 : -1, 'walk', 'player', 1)
     } else if (!g.aboard) {
         const top = person(ctx, 112, 126, g.look, 1, 'stand', 'player')
         marker(ctx, 112, top, time)
     } else if (left !== null) {
-        marker(ctx, doorX, 76, time)
+        marker(ctx, doorX(g.player.slot), 76, time)
     }
 
-    if (g.bubble && g.checkFrom === 'exit' && g.phase === 'check') bubble(ctx, 36, 96, g.bubble.text)
+    if (g.bubble?.id === DRIVER && left !== null) bubble(ctx, left + 10, 60, g.bubble.text)
+    else if (g.bubble && leaving && g.phase === 'check') bubble(ctx, 36, 96, g.bubble.text)
+
+    if (!metro) rain(ctx, time, still)
 }
 
-// ——— Inside the car ——————————————————————————————————————————————————
+// ——— Inside ——————————————————————————————————————————————————————————
+
+// What the far windows show while moving: tunnel lights or the street.
+function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, time: number, still: boolean) {
+    clipped(ctx, [[x, y, w, h]], () => {
+        if (mode === 'metro') {
+            R(ctx, x, y, w, h, '#0f1113')
+            R(ctx, x, y + 12, w, 1, '#23272b')
+            R(ctx, x, y + 24, w, 1, '#23272b')
+            if (still) return
+            for (let n = 0; n < 3; n++) R(ctx, W - ((time * 260 + n * 97) % (W + 80)), y + 16, 10, 1, '#ffd890')
+            return
+        }
+        const scroll = still ? 0 : time * 70
+        R(ctx, x, y, w, h, C.night2)
+        for (let k = 0; k < 9; k++) {
+            const bx = W + 30 - ((scroll + k * 47) % (W + 90))
+            const bh = 12 + Math.floor(hash(k) * 16)
+            R(ctx, bx, y + h - bh, 40, bh, k % 2 ? '#3d4150' : '#4a4652')
+            for (let j = 0; j < 4; j++) {
+                if (hash(k * 5 + j) > 0.4) R(ctx, bx + 4 + j * 9, y + h - bh + 4, 3, 3, '#e8c36a')
+            }
+        }
+        R(ctx, W + 10 - ((scroll * 1.6) % (W + 40)), y + 4, 3, 2, C.glow)
+    })
+}
 
 function interior(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
-    R(ctx, 0, 0, W, 16, '#d9d3c6')
+    const look = CABINS[g.mode]
+    R(ctx, 0, 0, W, 16, shade(look.wall, 0.1))
     R(ctx, 0, 12, W, 2, '#fffbe8')
-    R(ctx, 0, 15, W, 1, '#b9b2a4')
-    R(ctx, 0, 16, W, 84, C.cabin)
-    R(ctx, 0, 100, W, 16, C.cabinD)
+    R(ctx, 0, 15, W, 1, look.wallD)
+    R(ctx, 0, 16, W, 84, look.wall)
+    R(ctx, 0, 100, W, 16, look.wallD)
 
-    // Tunnel windows with lights sliding past.
     const spans = [
         [0, slotX(1) - 11],
         [slotX(1) + 11, slotX(5) - 11],
@@ -587,62 +435,61 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         const w = (b - a - (n - 1) * 4) / n
         for (let i = 0; i < n; i++) {
             const x = Math.round(a + i * (w + 4))
-            const ww = Math.round(w)
-            R(ctx, x - 1, 33, ww + 2, 35, '#8f887b')
-            R(ctx, x, 34, ww, 33, '#0f1113')
-            R(ctx, x, 46, ww, 1, '#23272b')
-            R(ctx, x, 58, ww, 1, '#23272b')
-            if (!still) {
-                ctx.save()
-                ctx.beginPath()
-                ctx.rect(x, 34, ww, 33)
-                ctx.clip()
-                for (let L = 0; L < 3; L++) {
-                    const lx = W - ((time * 260 + L * 97) % (W + 80))
-                    R(ctx, lx, 50, 10, 1, '#ffd890')
-                }
-                ctx.restore()
-            }
+            R(ctx, x - 1, 33, Math.round(w) + 2, 35, shade(look.wallD, -0.2))
+            view(ctx, g.mode, x, 34, Math.round(w), 33, time, still)
         }
     }
 
     // Doors on the far side, poles, the next-stop display.
     for (const d of DOORS) {
         const cx = slotX(d)
-        R(ctx, cx - 9, 28, 18, 88, '#a9a294')
-        R(ctx, cx - 8, 29, 16, 87, '#c4bdaf')
-        R(ctx, cx, 29, 1, 87, '#9c958a')
+        R(ctx, cx - 9, 28, 18, 88, shade(look.wallD, -0.1))
+        R(ctx, cx - 8, 29, 16, 87, look.wallD)
+        R(ctx, cx, 29, 1, 87, shade(look.wallD, -0.2))
         R(ctx, cx - 6, 36, 4, 28, '#0f1113')
         R(ctx, cx + 3, 36, 4, 28, '#0f1113')
-        R(ctx, cx - 11, 16, 1, 100, '#ece8df')
-        R(ctx, cx + 10, 16, 1, 100, '#ece8df')
+        R(ctx, cx - 11, 16, 1, 100, look.pole)
+        R(ctx, cx + 10, 16, 1, 100, look.pole)
     }
-    R(ctx, 0, 22, W, 1, '#a7a196')
-    const next = STATIONS[Math.min(g.at + 1, LAST)].name
+    R(ctx, 0, 22, W, 1, shade(look.wallD, -0.1))
+    const next = stopsOf(g)[Math.min(g.at + 1, LAST)].name
     const dw = textWidth(next) + 8
     R(ctx, Math.round(W / 2 - dw / 2), 17, dw, 9, '#111')
     drawText(ctx, next, W / 2, 19, C.led, 1, 'center')
 
-    // Seats.
     for (const [s, f] of Object.entries(SEAT_FACE)) {
+        if (g.mode === 'bus' && s === '0') continue
         const x = slotX(Number(s))
         const rr = (dx: number, y: number, w: number, h: number, c: string) =>
             R(ctx, f > 0 ? x + dx : x - dx - w + 1, y, w, h, c)
-        rr(-8, 94, 3, 21, C.seat)
-        rr(-6, 112, 9, 3, C.seat)
-        rr(-6, 115, 9, 1, C.seatD)
+        rr(-8, 94, 3, 21, look.seat)
+        rr(-6, 112, 9, 3, look.seat)
+        rr(-6, 115, 9, 1, look.seatD)
     }
 
-    // Floor.
-    R(ctx, 0, 116, W, 28, '#5d574f')
-    R(ctx, 0, 116, W, 1, '#4a453e')
-    R(ctx, 0, 125, W, 1, '#68625a')
-    R(ctx, 0, 138, W, 6, '#4f4a43')
+    R(ctx, 0, 116, W, 28, look.floor)
+    R(ctx, 0, 116, W, 1, shade(look.floor, -0.15))
+    R(ctx, 0, 125, W, 1, shade(look.floor, 0.08))
+    R(ctx, 0, 138, W, 6, shade(look.floor, -0.1))
+
+    // The bus driver's cab, and the card reader by the front door.
+    if (g.mode === 'bus') {
+        R(ctx, 0, 28, 34, 88, look.wallD)
+        view(ctx, 'bus', 2, 34, 24, 40, time, still)
+        R(ctx, 34, 60, 2, 56, '#8f8b84')
+        person(ctx, 18, 116, DRIVER_LOOK, -1, 'sit', 'driver')
+        R(ctx, 4, 97, 5, 1, '#222')
+        R(ctx, 3, 98, 1, 3, '#222')
+        R(ctx, 9, 98, 1, 3, '#222')
+        R(ctx, 4, 101, 5, 1, '#222')
+        R(ctx, 6, 102, 1, 6, '#222')
+        R(ctx, slotX(1) + 10, 84, 4, 7, '#222')
+        R(ctx, slotX(1) + 11, 85, 2, 1, '#5be07a')
+    }
 
     const px = slotX(g.player.x) - 2
     const drawPlayer = () => {
-        const crouch = g.player.hidden
-        const top = person(ctx, px, 116, g.look, 1, crouch ? 'crouch' : 'stand', 'player')
+        const top = person(ctx, px, 116, g.look, 1, g.player.hidden ? 'crouch' : 'stand', 'player')
         marker(ctx, px, top, time)
     }
     if (g.player.hidden) drawPlayer()
@@ -766,6 +613,12 @@ function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
 
 // ——— Endings ——————————————————————————————————————————————————————————
 
+const ROUTE: Record<Mode, string> = {
+    metro: 'Metro  westbound',
+    tram: 'Tram  Hämeentie',
+    bus: 'Bus  Hämeentie',
+}
+
 function slip(ctx: Ctx, g: Game, t: number) {
     // Starts low so the end card above never covers it.
     const y = Math.round(41 + (1 - ease(clamp01(t / 0.5))) * 110)
@@ -775,9 +628,9 @@ function slip(ctx: Ctx, g: Game, t: number) {
     drawText(ctx, 'Tarkastusmaksu', 128, y + 3, C.white, 1, 'center')
     drawText(ctx, 'Penalty fare', 128, y + 10, '#cfe6f7', 1, 'center')
     drawText(ctx, '100,00 €', 128, y + 23, C.ink, 3, 'center')
-    drawText(ctx, `Time  ${clockText(g.clock)}`, 68, y + 44, C.grey)
-    drawText(ctx, 'Metro  westbound', 68, y + 51, C.grey)
-    drawText(ctx, STATIONS[Math.min(g.at, LAST)].name, 68, y + 58, C.grey)
+    drawText(ctx, `Time  ${clockText(g.clock)}`, 68, y + 43, C.grey)
+    drawText(ctx, ROUTE[g.mode], 68, y + 51, C.grey)
+    drawText(ctx, stopsOf(g)[Math.min(g.at, LAST)].name, 68, y + 59, C.grey)
     const stamp = g.ending === 'fake' ? 'Fake ticket' : 'No ticket'
     const color = g.ending === 'fake' ? C.red : C.grey
     const sw = textWidth(stamp, 2) + 10
@@ -860,7 +713,16 @@ function square(ctx: Ctx, g: Game, still: boolean) {
     const k = clamp01(g.t / 1.4)
     person(ctx, lerp(20, 70, k), 134, g.look, 1, k < 1 ? 'walk' : 'stand', 'player', g.t * 7)
     if (g.ending === 'made') {
-        const friend: Look = { skin: SKIN[2], hair: HAIR[3], coat: '#b8402f', pants: PANTS[0], hat: null, bag: null, phone: false, tag: '' }
+        const friend: Look = {
+            skin: SKIN[2],
+            hair: HAIR[3],
+            coat: '#b8402f',
+            pants: PANTS[0],
+            hat: null,
+            bag: null,
+            phone: false,
+            tag: '',
+        }
         person(ctx, 92, 134, friend, -1, 'stand', 'rider', 0, still ? -1 : time * 4)
     }
     rain(ctx, time, still, '#3d4a6a')
@@ -876,6 +738,12 @@ function card(ctx: Ctx, g: Game) {
 
 function dim(ctx: Ctx) {
     R(ctx, 0, 0, W, H, 'rgba(8, 8, 10, 0.55)')
+}
+
+// The scene behind a check or a fine: inside, or wherever you waited.
+function behind(ctx: Ctx, g: Game, still: boolean) {
+    if (g.checkFrom === 'ride') interior(ctx, g, still)
+    else stop(ctx, g, still)
 }
 
 export function render(ctx: Ctx, g: Game, still: boolean) {
@@ -894,22 +762,19 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
         case 'platform':
         case 'doors':
         case 'exit':
-            return platform(ctx, g)
+            return stop(ctx, g, still)
         case 'ride':
             return interior(ctx, g, still)
         case 'check':
+            return behind(ctx, g, still)
         case 'ticket':
-            if (g.checkFrom === 'ride') interior(ctx, g, still)
-            else platform(ctx, g)
-            if (g.phase === 'ticket') {
-                dim(ctx)
-                phone(ctx, g, 'fake', g.t)
-            }
+            behind(ctx, g, still)
+            dim(ctx)
+            phone(ctx, g, 'fake', g.t)
             return
         case 'outro':
             if (g.ending === 'fined' || g.ending === 'fake') {
-                if (g.checkFrom === 'ride') interior(ctx, g, still)
-                else platform(ctx, g)
+                behind(ctx, g, still)
                 dim(ctx)
                 slip(ctx, g, g.t)
             } else {

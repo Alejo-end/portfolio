@@ -1,5 +1,5 @@
 // One palette for every scene. Metro orange and the yellow of the
-// Sörnäinen platform walls carry the colour; the rest stays muted.
+// Sörnäinen platform walls carry the color. The rest stays muted.
 
 export const C = {
     ink: '#14120f',
@@ -64,7 +64,7 @@ export const CLOTH: { name: string; color: string }[] = [
 
 const shades = new Map<string, string>()
 
-// Lighter (f > 0) or darker (f < 0) version of a #rrggbb colour.
+// Lighter (f > 0) or darker (f < 0) version of a #rrggbb color.
 export function shade(hex: string, f: number) {
     const key = hex + f
     const hit = shades.get(key)

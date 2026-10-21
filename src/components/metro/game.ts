@@ -1,37 +1,101 @@
 import { C, CLOTH, HAIR, PANTS, SKIN } from './palette'
 import type { Cue } from './sound'
 
-// No ticket: ride the metro from Sörnäinen to Rautatientori without paying.
-// Pure game state and rules. Drawing lives in art.ts, sound in sound.ts.
+// No ticket: get from Sörnäinen to Rautatientori by metro, tram or bus
+// without paying. Pure game state and rules. Drawing lives in art.ts,
+// sound in sound.ts.
 
-export const STATIONS = [
+export type Mode = 'metro' | 'tram' | 'bus'
+export type Stop = { name: string; sv: string; nick: string }
+
+type Line = {
+    stops: Stop[]
+    // What captions and the group chat call the vehicle and the place you wait.
+    vehicle: string
+    place: string
+    // Minutes between stops, and until the next one comes.
+    rideMin: number
+    waitMin: number
+    // Seconds of play per ride, by stop.
+    segment: number[]
+    // Chance per arrival, by stop: plain clothes in the car, vests in the
+    // car, vests waiting to board.
+    plain: number[]
+    vests: number[]
+    waiting: number[]
+}
+
+const STREET: Stop[] = [
     { name: 'Sörnäinen', sv: 'Sörnäs', nick: 'sörkka' },
     { name: 'Hakaniemi', sv: 'Hagnäs', nick: 'hakis' },
-    { name: 'Helsingin yliopisto', sv: 'Helsingfors universitet', nick: 'yliopisto' },
+    { name: 'Kaisaniemi', sv: 'Kajsaniemi', nick: 'kaisaniemi' },
     { name: 'Rautatientori', sv: 'Järnvägstorget', nick: 'rautsikka' },
 ]
-export const LAST = STATIONS.length - 1
 
-// The car is eleven slots long. Doors at 1, 5 and 9, seats elsewhere.
+export const LINES: Record<Mode, Line> = {
+    metro: {
+        stops: [
+            { name: 'Sörnäinen', sv: 'Sörnäs', nick: 'sörkka' },
+            { name: 'Hakaniemi', sv: 'Hagnäs', nick: 'hakis' },
+            { name: 'Helsingin yliopisto', sv: 'Helsingfors universitet', nick: 'yliopisto' },
+            { name: 'Rautatientori', sv: 'Järnvägstorget', nick: 'rautsikka' },
+        ],
+        vehicle: 'train',
+        place: 'platform',
+        rideMin: 2,
+        waitMin: 4,
+        segment: [16, 12, 10],
+        plain: [0.3, 0.3, 0.35, 0],
+        vests: [0.25, 0.25, 0.3, 0],
+        waiting: [0.2, 0.3, 0.3, 0.5],
+    },
+    // Plain clothes like trams. Slower than the metro, one wait still fits.
+    tram: {
+        stops: STREET,
+        vehicle: 'tram',
+        place: 'stop',
+        rideMin: 2.5,
+        waitMin: 4,
+        segment: [14, 12, 12],
+        plain: [0.35, 0.35, 0.35, 0],
+        vests: [0.2, 0.2, 0.2, 0],
+        waiting: [0.2, 0.25, 0.25, 0.35],
+    },
+    // Few inspectors, but the driver watches the doors. Any wait makes you late.
+    bus: {
+        stops: STREET,
+        vehicle: 'bus',
+        place: 'stop',
+        rideMin: 3,
+        waitMin: 5,
+        segment: [14, 12, 12],
+        plain: [0.05, 0.05, 0.05, 0],
+        vests: [0.15, 0.15, 0.15, 0],
+        waiting: [0.1, 0.15, 0.15, 0.2],
+    },
+}
+export const LAST = 3
+export const stopsOf = (g: Game) => LINES[g.mode].stops
+
+// The car is eleven slots long. Doors at 1, 5 and 9, seats elsewhere. On
+// the bus, slot 0 is the driver's.
 export const SLOTS = 11
 export const DOORS = [1, 5, 9]
 export const SEAT_FACE: Record<number, 1 | -1> = { 0: 1, 2: 1, 3: -1, 4: -1, 6: 1, 7: 1, 8: -1, 10: -1 }
 export const PLAYER = -1
+export const DRIVER = -2
 
 // Clock in minutes after 21:00.
 const START = 45
 const MEET = 60
-const RIDE_MIN = 2
-const WAIT_MIN = 4
 const WALK_MIN = [33, 21, 9, 0]
 
-// Seconds of play per ride between stations, longest first like the line.
-const SEGMENT = [16, 12, 10]
 const CALM = 4.5
 const PLATFORM_WAIT = 4
 const ESCALATOR = 5.4
+const CHOOSE = 3.4
 
-// Door timeline, in seconds from the moment the train appears.
+// Door timeline, in seconds from the moment the vehicle appears.
 export const ARRIVE = 2.6
 export const OPEN = ARRIVE + 0.5
 export const BOARD = OPEN + 1.4
@@ -47,12 +111,6 @@ const STALL = 5
 const STEP = 0.55
 // Seconds after the doors shut before anyone starts checking.
 const SETTLE = 1.2
-
-// Chance per arrival, by station: plain clothes in the car, vests in the
-// car, vests waiting on the platform.
-const P_PLAIN = [0.3, 0.3, 0.35, 0]
-const P_VEST = [0.25, 0.25, 0.3, 0]
-const P_PLATFORM = [0.2, 0.3, 0.3, 0.5]
 
 export type Look = {
     skin: string
@@ -109,11 +167,26 @@ export type Phase =
     | 'outro'
 
 export type Ending = 'made' | 'late' | 'fined' | 'fake'
-export type ActionId = 'start' | 'next' | 'jump' | 'walk' | 'hide' | 'stall' | 'show' | 'giveup' | 'again'
+export type ActionId =
+    | 'start'
+    | 'next'
+    | 'metro'
+    | 'tram'
+    | 'bus'
+    | 'jump'
+    | 'front'
+    | 'walk'
+    | 'hide'
+    | 'stall'
+    | 'show'
+    | 'giveup'
+    | 'stepoff'
+    | 'again'
 export type Action = { id: ActionId; label: string; disabled?: boolean }
 
 export type Game = {
     phase: Phase
+    mode: Mode
     t: number
     time: number
     clock: number
@@ -121,7 +194,7 @@ export type Game = {
     aboard: boolean
     riders: Rider[]
     crew: Inspector[]
-    player: { slot: number; x: number; hidden: boolean; cleared: boolean; jump: number; jumping: boolean }
+    player: { slot: number; x: number; door: number; hidden: boolean; cleared: boolean; jump: number; jumping: boolean }
     look: Look
     heat: number
     stalled: boolean
@@ -133,7 +206,7 @@ export type Game = {
     chimed: boolean
     spotted: boolean
     checker: number | null
-    checkFrom: 'ride' | 'exit'
+    checkFrom: 'ride' | 'exit' | 'driver'
     verdict: 'pass' | 'fail' | null
     ending: Ending | null
     note: string
@@ -169,6 +242,7 @@ function mulberry32(seed: number) {
 }
 
 const pick = <T>(g: Game, list: readonly T[]): T => list[Math.floor(g.rand() * list.length)]
+const line = (g: Game) => LINES[g.mode]
 
 export const clockText = (minutes: number) => {
     const m = Math.floor(minutes)
@@ -227,13 +301,14 @@ function inspector(g: Game, door: number, dx: number, plain: boolean, aboard: bo
     }
 }
 
-// A fresh car for the next train, with whoever is waiting inside it.
+// A fresh car for the next arrival, with whoever is waiting inside it.
 function fillCar(g: Game) {
     const st = g.at
-    const plain = g.rand() < P_PLAIN[st]
-    const vests = !plain && g.rand() < P_VEST[st]
+    const plain = g.rand() < line(g).plain[st]
+    const vests = !plain && g.rand() < line(g).vests[st]
     const riders: Rider[] = []
     for (const [slot, face] of Object.entries(SEAT_FACE)) {
+        if (g.mode === 'bus' && slot === '0') continue
         if (g.rand() < 0.62) riders.push(rider(g, Number(slot), true, face))
     }
     for (const door of [1, 9]) {
@@ -259,36 +334,42 @@ function fillCar(g: Game) {
 }
 
 function addPlatformCrew(g: Game) {
-    const door = pick(g, [1, 5, 9])
+    const door = pick(g, DOORS)
     g.crew.push(inspector(g, door, -7, false, false), inspector(g, door, 7, false, false))
 }
 
 const waiting = (g: Game) => g.crew.filter((i) => !i.aboard)
 
 function trainTip(g: Game) {
-    const st = STATIONS[g.at]
+    const { vehicle, place } = line(g)
+    const nick = stopsOf(g)[g.at].nick
+    const on = g.mode === 'metro' ? 'the westbound' : `the ${vehicle}`
     const plain = g.crew.find((i) => i.plain)
-    const onPlatform = waiting(g).length
+    const vests = waiting(g).length
     const r = g.rand()
-    if (plain && r < 0.75) return `plainclothes on the westbound, ${plain.look.tag}`
-    if (onPlatform && r < 0.75) return `${onPlatform} vests on ${st.nick} platform`
-    if (r < 0.3) return `plainclothes on the westbound, ${pick(g, CLOTH).name} beanie`
-    if (r < 0.65) return `${st.nick} clear`
-    return `vests at kalasatama, eastbound`
+    if (plain && r < 0.75) return `plainclothes on ${on}, ${plain.look.tag}`
+    if (vests && r < 0.75) return `${vests} vests on ${nick} ${place}`
+    if (r < 0.3) return `plainclothes on ${on}, ${pick(g, CLOTH).name} beanie`
+    if (r < 0.65) return `${nick} clear`
+    return g.mode === 'metro' ? 'vests at kalasatama, eastbound' : 'vests at kallio, other way'
 }
 
 function stationTip(g: Game, next: number) {
-    const nick = STATIONS[next].nick
+    const nick = stopsOf(g)[next].nick
+    const place = line(g).place
     const ahead = waiting(g).length
     const r = g.rand()
-    if (ahead && r < 0.75) return `${ahead} vests on ${nick} platform`
-    if (!ahead && r < 0.25) return `vests on ${nick} platform?`
+    if (ahead && r < 0.75) return `${ahead} vests on ${nick} ${place}`
+    if (!ahead && r < 0.25) return `vests on ${nick} ${place}?`
     return `${nick} clear`
 }
+
+const freshPlayer = (slot = 5) => ({ slot, x: slot, door: 5, hidden: false, cleared: false, jump: 0, jumping: false })
 
 export function createGame(seed = Date.now()): Game {
     return {
         phase: 'title',
+        mode: 'metro',
         t: 0,
         time: 0,
         clock: START,
@@ -296,7 +377,7 @@ export function createGame(seed = Date.now()): Game {
         aboard: false,
         riders: [],
         crew: [],
-        player: { slot: 5, x: 5, hidden: false, cleared: false, jump: 0, jumping: false },
+        player: freshPlayer(),
         look: {
             skin: SKIN[1],
             hair: HAIR[0],
@@ -310,7 +391,7 @@ export function createGame(seed = Date.now()): Game {
         heat: 0,
         stalled: false,
         sweep: false,
-        segment: SEGMENT[0],
+        segment: 0,
         rideFrom: START,
         rideT: 0,
         closeAt: 0,
@@ -355,14 +436,21 @@ function begin(g: Game) {
     enter(g, 'intro', `Hämeentie, ${clockText(START)}. Meeting at Rautatientori at 22:00.`)
 }
 
+function choose(g: Game, mode: Mode) {
+    g.mode = mode
+    if (mode === 'metro') return enter(g, 'escalator', 'Sörnäinen. 25 metres down.')
+    g.clock = START + 1
+    toPlatform(g, `${mode === 'tram' ? 'Tram' : 'Bus'} stop on Hämeentie.`)
+}
+
 function toPlatform(g: Game, caption: string) {
     g.aboard = false
-    g.player = { slot: 5, x: 5, hidden: false, cleared: false, jump: 0, jumping: false }
+    g.player = freshPlayer()
     g.stalled = false
     g.spotted = false
     fillCar(g)
     // One team per car: vests only wait on the platform for an empty one.
-    if (!g.crew.length && g.rand() < P_PLATFORM[g.at]) addPlatformCrew(g)
+    if (!g.crew.length && g.rand() < line(g).waiting[g.at]) addPlatformCrew(g)
     g.tip = trainTip(g)
     g.cues.push('buzz')
     enter(g, 'platform', caption)
@@ -375,9 +463,16 @@ function toDoors(g: Game, caption: string) {
     enter(g, 'doors', caption)
 }
 
+/** Seconds into the door timeline, also while the bus driver checks you at the door. */
+export function doorClock(g: Game) {
+    if (g.phase === 'doors') return g.t
+    if ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'driver') return g.rideT
+    return null
+}
+
 export function doorOpen(g: Game) {
-    const t = g.t
-    if (g.phase !== 'doors' || t < ARRIVE) return 0
+    const t = doorClock(g)
+    if (t === null || t < ARRIVE) return 0
     if (t < OPEN) return (t - ARRIVE) / (OPEN - ARRIVE)
     if (t < g.closeAt) return 1
     return Math.max(0, 1 - (t - g.closeAt) / SHUT)
@@ -385,20 +480,53 @@ export function doorOpen(g: Game) {
 
 const canJump = (g: Game) => g.phase === 'doors' && !g.player.jumping && doorOpen(g) > 0.3
 
+function jump(g: Game, door: number) {
+    if (g.t > g.closeAt) {
+        g.closeAt = g.t + 0.9
+        g.heat = Math.min(3, g.heat + 1)
+        g.caption = 'The doors bounce back open. Everyone looks.'
+        g.cues.push('chime')
+    }
+    g.player.door = door
+    g.player.jumping = true
+    g.player.jump = 0
+}
+
+function land(g: Game) {
+    g.player.jumping = false
+    g.player.jump = 0
+    g.player.hidden = false
+    g.aboard = !g.aboard
+    if (!g.aboard) {
+        g.player.slot = g.player.x = 5
+        if (waiting(g).length && g.t < BOARD + BOARD_WALK) {
+            g.spotted = true
+            g.caption = `The vests on the ${line(g).place} watch you step off.`
+        }
+        return
+    }
+    g.player.slot = g.player.x = g.player.door
+    if (g.mode !== 'bus') return
+    if (g.player.door === 1) return startDriverCheck(g, 'The driver looks up.')
+    if (g.rand() < 0.4 + 0.1 * g.heat) return startDriverCheck(g, 'The driver saw you in the mirror.')
+    g.caption = 'In through the middle. The driver is busy.'
+}
+
 function depart(g: Game) {
     if (g.aboard) {
         if (g.at === LAST) {
-            g.clock += RIDE_MIN + 5
-            g.note = 'Missed the stop. Walked back from Kamppi.'
+            g.clock += line(g).rideMin + 5
+            g.note = g.mode === 'metro' ? 'Missed the stop. Walked back from Kamppi.' : 'Missed the stop. Walked back.'
             return finish(g, g.clock <= MEET ? 'made' : 'late')
         }
         return startRide(g)
     }
     if (g.at === LAST || g.spotted) return toExit(g)
-    g.clock += WAIT_MIN
-    g.waited += WAIT_MIN
+    const { vehicle, waitMin } = line(g)
+    g.clock += waitMin
+    g.waited += waitMin
     g.crew = []
-    toPlatform(g, `Next train in ${WAIT_MIN} min.`)
+    toPlatform(g, `Next ${vehicle} in ${waitMin} min.`)
 }
 
 function startRide(g: Game) {
@@ -406,13 +534,13 @@ function startRide(g: Game) {
     const fresh = g.crew.filter((i) => !i.active)
     for (const i of g.crew) i.active = true
     g.sweep = g.crew.some((i) => hasWork(g, i))
-    g.segment = SEGMENT[g.at]
+    g.segment = line(g).segment[g.at]
     g.rideFrom = g.clock
     const next = g.at + 1
-    if (!g.crew.length && g.rand() < P_PLATFORM[next]) addPlatformCrew(g)
+    if (!g.crew.length && g.rand() < line(g).waiting[next]) addPlatformCrew(g)
     g.tip = stationTip(g, next)
     g.cues.push('buzz')
-    let caption = `Next: ${STATIONS[next].name}.`
+    let caption = `Next: ${stopsOf(g)[next].name}.`
     const plain = fresh.find((i) => i.plain)
     if (plain) {
         g.bubble = { id: plain.id, text: 'LIPUNTARKASTUS!', until: g.time + 2 }
@@ -436,13 +564,26 @@ function arrive(g: Game) {
         }
     }
     for (const i of g.crew) if (i.aboard && !hasWork(g, i)) i.leaving = true
-    toDoors(g, g.at === LAST ? `${STATIONS[g.at].name}. Get off here.` : `${STATIONS[g.at].name}.`)
+    // Standing up to be ready at the nearest door.
+    const door = DOORS.reduce((a, b) => (Math.abs(b - g.player.slot) < Math.abs(a - g.player.slot) ? b : a))
+    g.player.slot = g.player.x = door
+    g.player.hidden = false
+    const name = stopsOf(g)[g.at].name
+    toDoors(g, g.at === LAST ? `${name}. Get off here.` : `${name}.`)
 }
 
 function toExit(g: Game) {
     const crew = waiting(g)
     g.crew = crew
-    enter(g, 'exit', crew.length ? 'Two vests by the escalator.' : g.at === LAST ? 'Up to the square.' : '')
+    const metro = g.mode === 'metro'
+    const caption = crew.length
+        ? `Two vests ${metro ? 'by the escalator' : 'at the stop'}.`
+        : g.at === LAST
+          ? metro
+              ? 'Up to the square.'
+              : 'Off at the square.'
+          : ''
+    enter(g, 'exit', caption)
 }
 
 function finish(g: Game, ending: Ending) {
@@ -484,6 +625,28 @@ function startCheck(g: Game, insp: Inspector, lead = '') {
     g.bubble = { id: insp.id, text: 'TICKET, PLEASE.', until: Infinity }
     g.cues.push('beep')
     enter(g, 'check', `${lead} "Ticket, please."`.trim())
+}
+
+// The bus driver checks at the front door. They cannot fine you, only send you off.
+function startDriverCheck(g: Game, lead: string) {
+    g.checker = DRIVER
+    g.checkFrom = 'driver'
+    g.rideT = g.t
+    g.player.slot = g.player.x = 1
+    g.bubble = { id: DRIVER, text: 'TICKET?', until: Infinity }
+    g.cues.push('beep')
+    enter(g, 'check', `${lead} "Ticket?"`)
+}
+
+// Back to the open doors after the driver, with time to step on or off.
+function backToDoors(g: Game, aboard: boolean, caption: string) {
+    g.aboard = aboard
+    g.bubble = null
+    if (!aboard) g.player.slot = g.player.x = 5
+    g.phase = 'doors'
+    g.t = g.rideT
+    g.closeAt = Math.max(g.closeAt, g.t + 1.5)
+    g.caption = caption
 }
 
 function reachPlayer(g: Game, insp: Inspector) {
@@ -563,7 +726,9 @@ function hide(g: Game) {
     const insp = nearest(g)
     const from = g.player.slot
     const away = insp ? Math.sign(from - insp.x) || -insp.dir : 1
-    g.player.slot = Math.max(0, Math.min(SLOTS - 1, from + away))
+    // On the bus, slot 0 is the driver's seat.
+    const first = g.mode === 'bus' ? 1 : 0
+    g.player.slot = Math.max(first, Math.min(SLOTS - 1, from + away))
     g.player.hidden = true
     g.heat = Math.min(3, g.heat + 1)
     const cover = g.riders.some((r) => r.slot === g.player.slot)
@@ -584,20 +749,18 @@ function stall(g: Game) {
     g.caption = pick(g, STALLS)
 }
 
-function toEscalator(g: Game) {
-    enter(g, 'escalator', 'Sörnäinen. 25 metres down.')
+function skip(g: Game) {
+    if (g.phase === 'intro') {
+        g.t = CHOOSE
+        g.caption = 'Balance 0,00 €. Metro, tram or bus?'
+    } else if (g.phase === 'escalator') leaveEscalator(g)
+    else if (g.phase === 'platform') g.t = PLATFORM_WAIT
+    else if (g.phase === 'ride') g.t = g.sweep ? g.segment : CALM
 }
 
 function leaveEscalator(g: Game) {
     g.clock = START + 1
     toPlatform(g, 'Westbound platform.')
-}
-
-function skip(g: Game) {
-    if (g.phase === 'intro') toEscalator(g)
-    else if (g.phase === 'escalator') leaveEscalator(g)
-    else if (g.phase === 'platform') g.t = PLATFORM_WAIT
-    else if (g.phase === 'ride') g.t = g.sweep ? g.segment : CALM
 }
 
 export function act(g: Game, id: ActionId) {
@@ -608,32 +771,33 @@ export function act(g: Game, id: ActionId) {
             return begin(g)
         case 'next':
             return skip(g)
+        case 'metro':
+        case 'tram':
+        case 'bus':
+            return choose(g, id)
         case 'walk':
-            g.note = `Walked from ${STATIONS[g.at].name}.`
+            g.note = `Walked from ${stopsOf(g)[g.at].name}.`
             g.clock += WALK_MIN[g.at]
             return finish(g, g.clock <= MEET ? 'made' : 'late')
         case 'jump':
-            if (g.t > g.closeAt) {
-                g.closeAt = g.t + 0.9
-                g.heat = Math.min(3, g.heat + 1)
-                g.caption = 'The doors bounce back open. Everyone looks.'
-                g.cues.push('chime')
-            }
-            g.player.jumping = true
-            g.player.jump = 0
-            return
+            return jump(g, g.aboard ? g.player.slot : 5)
+        case 'front':
+            return jump(g, 1)
         case 'hide':
             return hide(g)
         case 'stall':
             return stall(g)
         case 'show': {
             const insp = g.crew.find((i) => i.id === g.checker)
-            const fail = 0.3 + 0.12 * g.heat + (insp?.plain ? 0.15 : 0)
+            const fail =
+                g.checkFrom === 'driver' ? 0.25 + 0.1 * g.heat : 0.3 + 0.12 * g.heat + (insp?.plain ? 0.15 : 0)
             g.verdict = g.rand() < fail ? 'fail' : 'pass'
             return enter(g, 'ticket', 'You hold up a screenshot of an old ticket.')
         }
         case 'giveup':
             return finish(g, 'fined')
+        case 'stepoff':
+            return backToDoors(g, false, 'You step back off.')
     }
 }
 
@@ -642,6 +806,12 @@ export function actions(g: Game): Action[] {
         case 'title':
             return [{ id: 'start', label: 'Start' }]
         case 'intro':
+            if (g.t < CHOOSE) return [{ id: 'next', label: 'Skip' }]
+            return [
+                { id: 'metro', label: 'Metro' },
+                { id: 'tram', label: 'Tram' },
+                { id: 'bus', label: 'Bus' },
+            ]
         case 'escalator':
             return [{ id: 'next', label: 'Skip' }]
         case 'platform':
@@ -650,8 +820,15 @@ export function actions(g: Game): Action[] {
                 { id: 'walk', label: 'Walk instead' },
             ]
         case 'doors': {
-            const label = g.aboard ? (g.at === LAST ? 'Get off' : 'Jump out') : 'Jump in'
-            return [{ id: 'jump', label, disabled: !canJump(g) }]
+            const disabled = !canJump(g)
+            if (g.aboard) return [{ id: 'jump', label: g.at === LAST ? 'Get off' : 'Jump out', disabled }]
+            if (g.mode === 'bus') {
+                return [
+                    { id: 'front', label: 'Front door', disabled },
+                    { id: 'jump', label: 'Middle door', disabled },
+                ]
+            }
+            return [{ id: 'jump', label: 'Jump in', disabled }]
         }
         case 'ride':
             if (!g.sweep || g.player.cleared) return [{ id: 'next', label: 'Skip' }]
@@ -662,7 +839,7 @@ export function actions(g: Game): Action[] {
         case 'check':
             return [
                 { id: 'show', label: 'Show ticket' },
-                { id: 'giveup', label: 'Give up' },
+                g.checkFrom === 'driver' ? { id: 'stepoff', label: 'Step off' } : { id: 'giveup', label: 'Give up' },
             ]
         case 'outro':
             return [{ id: 'again', label: 'Ride again', disabled: g.t < 2.4 }]
@@ -680,15 +857,14 @@ export function step(g: Game, dt: number) {
 
     switch (g.phase) {
         case 'intro':
-            if (at(3.4)) g.caption = 'Balance 0,00 €.'
-            if (g.t > 7.4) toEscalator(g)
+            if (at(CHOOSE)) g.caption = 'Balance 0,00 €. Metro, tram or bus?'
             return
         case 'escalator':
             g.clock = START + Math.min(1, g.t / 5)
             if (g.t > ESCALATOR) leaveEscalator(g)
             return
         case 'platform':
-            if (g.t >= PLATFORM_WAIT) toDoors(g, 'The train pulls in.')
+            if (g.t >= PLATFORM_WAIT) toDoors(g, `The ${line(g).vehicle} pulls in.`)
             return
         case 'doors': {
             if (at(OPEN)) {
@@ -699,10 +875,13 @@ export function step(g: Game, dt: number) {
                 }
             }
             if (at(BOARD + BOARD_WALK) && !g.spotted) {
-                for (const i of waiting(g)) {
+                const boarding = waiting(g)
+                for (const i of boarding) {
                     i.aboard = true
                     i.x = i.door
                 }
+                // A new team has not seen your screenshot yet.
+                if (boarding.length) g.player.cleared = false
             }
             if (!g.chimed && g.t >= g.closeAt - CHIME) {
                 g.chimed = true
@@ -714,24 +893,15 @@ export function step(g: Game, dt: number) {
             }
             if (g.player.jumping) {
                 g.player.jump += dt / JUMP
-                if (g.player.jump >= 1) {
-                    g.player.jumping = false
-                    g.player.jump = 0
-                    g.aboard = !g.aboard
-                    g.player.slot = 5
-                    g.player.x = 5
-                    if (!g.aboard && waiting(g).length && g.t < BOARD + BOARD_WALK) {
-                        g.spotted = true
-                        g.caption = 'The vests on the platform watch you step off.'
-                    }
-                }
+                if (g.player.jump >= 1) land(g)
+                if (g.phase !== 'doors') return
             }
             if (g.t > g.closeAt + SHUT + DEPART) depart(g)
             return
         }
         case 'ride': {
             const dur = g.sweep ? g.segment : CALM
-            g.clock = g.rideFrom + RIDE_MIN * Math.min(1, g.t / dur)
+            g.clock = g.rideFrom + line(g).rideMin * Math.min(1, g.t / dur)
             g.player.x += Math.sign(g.player.slot - g.player.x) * Math.min(Math.abs(g.player.slot - g.player.x), dt * 4)
             if (g.sweep && g.t > SETTLE) {
                 for (const i of g.crew) {
@@ -742,23 +912,31 @@ export function step(g: Game, dt: number) {
             if (g.t >= dur) arrive(g)
             return
         }
-        case 'ticket':
+        case 'ticket': {
+            const driver = g.checkFrom === 'driver'
             if (at(1.7)) g.cues.push('beep')
             if (at(2.3)) {
-                g.cues.push(g.verdict === 'pass' ? 'ok' : 'fail')
-                g.caption = g.verdict === 'pass' ? '"Thanks." It worked.' : '"This is a screenshot."'
+                const pass = g.verdict === 'pass'
+                g.cues.push(pass ? 'ok' : 'fail')
+                if (driver) g.caption = pass ? '"Okay."' : '"Nice try."'
+                else g.caption = pass ? '"Thanks." It worked.' : '"This is a screenshot."'
             }
-            if (g.t > 4) {
-                if (g.verdict === 'fail') return finish(g, 'fake')
-                const insp = g.crew.find((i) => i.id === g.checker)
-                if (insp) insp.passed = true
-                g.player.cleared = true
-                g.player.hidden = false
-                g.bubble = null
-                g.phase = g.checkFrom
-                g.t = g.rideT
+            if (g.t <= 4) return
+            if (driver) {
+                if (g.verdict === 'pass') return backToDoors(g, true, 'The driver waves you in.')
+                g.heat = Math.min(3, g.heat + 1)
+                return backToDoors(g, false, 'The driver points at the door. Off.')
             }
+            if (g.verdict === 'fail') return finish(g, 'fake')
+            const insp = g.crew.find((i) => i.id === g.checker)
+            if (insp) insp.passed = true
+            g.player.cleared = true
+            g.player.hidden = false
+            g.bubble = null
+            g.phase = g.checkFrom === 'exit' ? 'exit' : 'ride'
+            g.t = g.rideT
             return
+        }
         case 'exit': {
             const crew = waiting(g)
             if (at(1.3) && crew.length && !g.player.cleared) {
@@ -773,7 +951,11 @@ export function step(g: Game, dt: number) {
                 g.clock += 2
                 g.waited += 2
                 g.crew = []
-                toPlatform(g, 'Up one escalator, down the other. Next train.')
+                const back =
+                    g.mode === 'metro'
+                        ? 'Up one escalator, down the other. Next train.'
+                        : `Round the block and back to the stop. Next ${line(g).vehicle}.`
+                toPlatform(g, back)
             }
             return
         }
@@ -781,15 +963,16 @@ export function step(g: Game, dt: number) {
 }
 
 export function uiOf(g: Game): Ui {
-    const st = STATIONS[Math.min(g.at, LAST)]
+    const stops = stopsOf(g)
     const riding = g.phase === 'ride' || ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'ride')
+    const choosing = g.phase === 'title' || g.phase === 'intro'
     const left = Math.ceil(g.segment - g.t)
     return {
         phase: g.phase,
         caption: g.caption,
         tip: g.tip,
         clock: clockText(g.clock),
-        where: riding ? `> ${STATIONS[g.at + 1]?.name ?? ''}` : st.name,
+        where: choosing ? 'Sörnäinen' : riding ? `> ${stops[g.at + 1]?.name ?? ''}` : stops[Math.min(g.at, LAST)].name,
         heat: g.heat,
         countdown: g.phase === 'ride' && g.sweep ? `next stop ${Math.max(0, left)} s` : '',
         actions: actions(g),
