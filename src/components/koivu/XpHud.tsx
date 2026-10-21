@@ -42,6 +42,8 @@ export function XpHud() {
         let typed = ''
         const onKey = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey || e.key.length !== 1) return
+            const target = e.target instanceof Element ? e.target : null
+            if (target?.closest('input, textarea, select, [contenteditable="true"], [role="application"]')) return
             typed = (typed + e.key.toLowerCase()).slice(-5)
             if (typed === 'snake') setOpen(true)
             if (typed === 'metro') router.push('/metro')

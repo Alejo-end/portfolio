@@ -492,19 +492,30 @@ function jump(g: Game, door: number) {
     g.player.jump = 0
 }
 
+// Out of hiding. Whoever walked past you before can see you now.
+function standUp(g: Game) {
+    g.player.hidden = false
+    for (const i of g.crew) i.passed = false
+}
+
+// Back on the platform or the stop, in sight of any vests waiting there.
+function stepOff(g: Game) {
+    g.aboard = false
+    g.player.slot = g.player.x = 5
+    if (waiting(g).length && g.t < BOARD + BOARD_WALK) {
+        g.spotted = true
+        g.caption = `The vests on the ${line(g).place} watch you step off.`
+    }
+}
+
 function land(g: Game) {
     g.player.jumping = false
     g.player.jump = 0
-    g.player.hidden = false
-    g.aboard = !g.aboard
-    if (!g.aboard) {
-        g.player.slot = g.player.x = 5
-        if (waiting(g).length && g.t < BOARD + BOARD_WALK) {
-            g.spotted = true
-            g.caption = `The vests on the ${line(g).place} watch you step off.`
-        }
-        return
-    }
+    standUp(g)
+    if (g.aboard) return stepOff(g)
+    g.aboard = true
+    // Back on board, out of sight of the vests outside.
+    g.spotted = false
     g.player.slot = g.player.x = g.player.door
     if (g.mode !== 'bus') return
     if (g.player.door === 1) return startDriverCheck(g, 'The driver looks up.')
@@ -564,11 +575,11 @@ function arrive(g: Game) {
             g.riders.push(rider(g, door, false, g.rand() < 0.5 ? 1 : -1, g.rand() < 0.5 ? -3 : 3))
         }
     }
-    for (const i of g.crew) if (i.aboard && !hasWork(g, i)) i.leaving = true
+    for (const i of g.crew) if (i.aboard && i.busy <= 0 && !hasWork(g, i)) i.leaving = true
     // Standing up to be ready at the nearest door.
     const door = DOORS.reduce((a, b) => (Math.abs(b - g.player.slot) < Math.abs(a - g.player.slot) ? b : a))
     g.player.slot = g.player.x = door
-    g.player.hidden = false
+    standUp(g)
     const name = stopsOf(g)[g.at].name
     toDoors(g, g.at === LAST ? `${name}. Get off here.` : `${name}.`)
 }
@@ -641,17 +652,16 @@ function startDriverCheck(g: Game, lead: string) {
 
 // Back to the open doors after the driver, with time to step on or off.
 function backToDoors(g: Game, aboard: boolean, caption: string) {
-    g.aboard = aboard
     g.bubble = null
-    if (!aboard) g.player.slot = g.player.x = 5
     g.phase = 'doors'
     g.t = g.rideT
+    g.caption = caption
+    if (!aboard) stepOff(g)
     // If the doors now close later, they chime again before they do.
     if (g.closeAt < g.t + 1.5) {
         g.closeAt = g.t + 1.5
         g.chimed = false
     }
-    g.caption = caption
 }
 
 function reachPlayer(g: Game, insp: Inspector) {
@@ -879,14 +889,16 @@ export function step(g: Game, dt: number) {
                     g.caption = 'The vests get off here.'
                 }
             }
-            if (at(BOARD + BOARD_WALK) && !g.spotted) {
-                const boarding = waiting(g)
+            // Vests waiting at the last stop stay there to check people leaving.
+            const boarding = g.t >= BOARD + BOARD_WALK && !g.spotted && g.at !== LAST ? waiting(g) : []
+            if (boarding.length) {
                 for (const i of boarding) {
                     i.aboard = true
                     i.x = i.door
                 }
-                // A new team has not seen your screenshot yet.
-                if (boarding.length) g.player.cleared = false
+                // A new team checks everyone again, you included.
+                for (const r of g.riders) Object.assign(r, { checked: false, claimed: false, slow: 0 })
+                g.player.cleared = false
             }
             if (!g.chimed && g.t >= g.closeAt - CHIME) {
                 g.chimed = true
@@ -965,6 +977,20 @@ export function step(g: Game, dt: number) {
             return
         }
     }
+}
+
+/** True when two screens show the same text and buttons. */
+export function sameUi(a: Ui, b: Ui) {
+    for (const k of Object.keys(a) as (keyof Ui)[]) {
+        if (k !== 'actions' && a[k] !== b[k]) return false
+    }
+    return (
+        a.actions.length === b.actions.length &&
+        a.actions.every((x, i) => {
+            const y = b.actions[i]
+            return x.id === y.id && x.label === y.label && x.disabled === y.disabled
+        })
+    )
 }
 
 export function uiOf(g: Game): Ui {

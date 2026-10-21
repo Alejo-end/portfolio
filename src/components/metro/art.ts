@@ -57,7 +57,7 @@ const BUILDINGS = [
     { x: 170, w: 86, h: 72, c: '#5f5a66' },
 ]
 
-function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, look: Look, tram = time) {
+function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, look: Look, tram: number) {
     R(ctx, 0, 0, W, 34, C.night)
     R(ctx, 0, 34, W, 22, C.night2)
     R(ctx, 0, 56, W, 40, C.night3)
@@ -357,7 +357,7 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
             continue
         }
         const cx = slotX(i.door) + i.dx
-        const k = t !== null && !g.spotted ? clamp01((t - BOARD) / BOARD_WALK) : 0
+        const k = t !== null && !g.spotted && g.at !== LAST ? clamp01((t - BOARD) / BOARD_WALK) : 0
         const x = left !== null ? lerp(cx, slotX(i.door, left) + i.dx / 2, k) : cx
         person(ctx, x, lerp(124, 101, k), i.look, i.dx < 0 ? 1 : -1, k > 0 && k < 1 ? 'walk' : 'stand', 'vest', time * 8)
     }
@@ -750,11 +750,11 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
     switch (g.phase) {
         case 'title':
-            street(ctx, time, still, null, g.look)
+            street(ctx, time, still, null, g.look, still ? 0 : time)
             title(ctx, time)
             return
         case 'intro':
-            street(ctx, time, still, g.t, g.look, g.t + 0.8)
+            street(ctx, time, still, g.t, g.look, still ? 0 : g.t + 0.8)
             if (g.t > 3.3) phone(ctx, g, 'empty', g.t - 3.3)
             return
         case 'escalator':

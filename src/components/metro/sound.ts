@@ -24,6 +24,15 @@ function tone(freq: number, at: number, length: number, type: OscillatorType = '
     osc.stop(start + length + 0.02)
 }
 
+/** Call from a tap or key press: browsers only start audio inside one. */
+export function unlock() {
+    try {
+        context()
+    } catch {
+        // No Web Audio here.
+    }
+}
+
 export function play(cue: Cue) {
     try {
         switch (cue) {

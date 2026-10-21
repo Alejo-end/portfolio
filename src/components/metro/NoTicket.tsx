@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { H, W, render } from './art'
-import { act, createGame, step, uiOf, type ActionId, type Ui } from './game'
-import { play } from './sound'
+import { act, createGame, sameUi, step, uiOf, type ActionId, type Ui } from './game'
+import { play, unlock } from './sound'
 
 // The game screen: the canvas, a caption line, and the buttons for
 // whatever can be done right now.
@@ -21,7 +21,7 @@ export function NoTicket() {
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         let last = performance.now()
         let frame = 0
-        let shown = ''
+        let shown = uiOf(game.current)
         const loop = (now: number) => {
             const g = game.current
             step(g, Math.min(0.1, (now - last) / 1000))
@@ -29,9 +29,8 @@ export function NoTicket() {
             for (const cue of g.cues.splice(0)) if (!mutedRef.current) play(cue)
             render(ctx, g, still)
             const next = uiOf(g)
-            const key = JSON.stringify(next)
-            if (key !== shown) {
-                shown = key
+            if (!sameUi(next, shown)) {
+                shown = next
                 setUi(next)
             }
             frame = requestAnimationFrame(loop)
@@ -40,7 +39,11 @@ export function NoTicket() {
         return () => cancelAnimationFrame(frame)
     }, [])
 
-    const press = (id: ActionId) => act(game.current, id)
+    // Audio may only start inside a tap or key press, so every input unlocks it.
+    const press = (id: ActionId) => {
+        unlock()
+        act(game.current, id)
+    }
     // Space, Enter and taps on the canvas do the first action, and only that one.
     const primary = ui.actions[0]
 
@@ -55,10 +58,14 @@ export function NoTicket() {
             if (e.key === ' ' || e.key === 'Enter') {
                 if (target?.closest('a, button')) return
                 e.preventDefault()
+                unlock()
                 if (list[0]) act(g, list[0].id)
             }
             const n = Number(e.key)
-            if (n >= 1 && n <= list.length) act(g, list[n - 1].id)
+            if (n >= 1 && n <= list.length) {
+                unlock()
+                act(g, list[n - 1].id)
+            }
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
