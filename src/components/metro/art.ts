@@ -10,6 +10,7 @@ import {
     ease,
     facades,
     hash,
+    windowColor,
     lerp,
     marker,
     person,
@@ -29,14 +30,16 @@ import {
     DEPART,
     DOORS,
     DRIVER,
-    LAST,
     LINES,
     OPEN,
+    PRICE,
     SEAT_FACE,
     SHUT,
     clockText,
     doorClock,
     doorOpen,
+    euro,
+    lastStop,
     stopsOf,
     type Game,
     type Inspector,
@@ -51,6 +54,11 @@ import { CABINS, vehicle, windowsOf } from './vehicles'
 
 export { H, W }
 
+// Sky bands from the top down: the 22:00 run is at night, rush hour at 8:40.
+const NIGHT_SKY = [C.night, C.night2, C.night3]
+const DAY_SKY = ['#8fbbe3', '#a9cbe9', '#c4dbef']
+const skyOf = (day: boolean) => (day ? DAY_SKY : NIGHT_SKY)
+
 // ——— Hämeentie at night ————————————————————————————————————————————————
 
 const BUILDINGS = [
@@ -60,10 +68,11 @@ const BUILDINGS = [
     { x: 170, w: 86, h: 72, c: '#5f5a66' },
 ]
 
-function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, look: Look, tram: number) {
-    R(ctx, 0, 0, W, 34, C.night)
-    R(ctx, 0, 34, W, 22, C.night2)
-    R(ctx, 0, 56, W, 40, C.night3)
+function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, look: Look, tram: number, day = false) {
+    const sky = skyOf(day)
+    R(ctx, 0, 0, W, 34, sky[0])
+    R(ctx, 0, 34, W, 22, sky[1])
+    R(ctx, 0, 56, W, 40, sky[2])
     for (const b of BUILDINGS) {
         const top = 96 - b.h
         R(ctx, b.x, top, b.w, b.h, b.c)
@@ -72,7 +81,7 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
         for (let row = 0; top + 7 + row * 11 < 80; row++) {
             for (let col = 0; 4 + col * 9 + 4 < b.w; col++) {
                 const lit = hash(b.x * 13 + row * 7 + col) > 0.55
-                R(ctx, b.x + 4 + col * 9, top + 7 + row * 11, 4, 6, lit ? '#e8c36a' : '#262833')
+                R(ctx, b.x + 4 + col * 9, top + 7 + row * 11, 4, 6, windowColor(lit, day))
             }
         }
         R(ctx, b.x, 82, b.w, 14, shade(b.c, -0.35))
@@ -97,7 +106,7 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
     for (const lx of [40, 150]) {
         R(ctx, lx, 56, 2, 40, '#2a2a2a')
         R(ctx, lx - 3, 54, 8, 2, '#3a3a3a')
-        R(ctx, lx - 2, 56, 6, 1, C.glow)
+        R(ctx, lx - 2, 56, 6, 1, day ? '#9a9a96' : C.glow)
     }
 
     // Pavement, kerb, road with two tracks.
@@ -130,7 +139,7 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
     }
     R(ctx, tx + 50, 92, 20, 1, '#3a3a3a')
 
-    rain(ctx, time, still)
+    if (!day) rain(ctx, time, still)
 }
 
 function title(ctx: Ctx, time: number) {
@@ -148,6 +157,7 @@ const WALLS = [
     { base: '#7d93a6', seam: '#64788a', light: '#9fb2c2' },
     { base: '#bdb7aa', seam: '#a29c8f', light: '#d4cfc4' },
     { base: '#8f8b84', seam: '#77736c', light: '#aaa69f' },
+    { base: '#9aa3a8', seam: '#80898e', light: '#b5bdc1' },
 ]
 
 function platformBack(ctx: Ctx, g: Game) {
@@ -202,10 +212,11 @@ function platformFront(ctx: Ctx) {
 }
 
 function streetBack(ctx: Ctx, g: Game) {
-    R(ctx, 0, 0, W, 30, C.night)
-    R(ctx, 0, 30, W, 26, C.night2)
-    R(ctx, 0, 56, W, 40, C.night3)
-    facades(ctx, g.at + 1, 96)
+    const sky = skyOf(g.rush)
+    R(ctx, 0, 0, W, 30, sky[0])
+    R(ctx, 0, 30, W, 26, sky[1])
+    R(ctx, 0, 56, W, 40, sky[2])
+    facades(ctx, g.at + 1, 96, g.rush)
     // The tram wire, on its poles.
     R(ctx, 0, 20, W, 1, '#080a12')
     R(ctx, 4, 16, 2, 80, '#2a2a2a')
@@ -326,7 +337,7 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
             continue
         }
         const cx = slotX(i.door) + i.dx
-        const k = t !== null && !g.spotted && g.at !== LAST ? clamp01((t - BOARD) / BOARD_WALK) : 0
+        const k = t !== null && !g.spotted && g.at !== lastStop(g) ? clamp01((t - BOARD) / BOARD_WALK) : 0
         const x = left !== null ? lerp(cx, slotX(i.door, left) + i.dx / 2, k) : cx
         person(ctx, x, lerp(124, 101, k), i.look, i.dx < 0 ? 1 : -1, k > 0 && k < 1 ? 'walk' : 'stand', 'vest', time * 8)
     }
@@ -354,13 +365,13 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
     if (g.bubble?.id === DRIVER && left !== null) bubble(ctx, left + 10, 60, g.bubble.text)
     else if (g.bubble && leaving && g.phase === 'check') bubble(ctx, 36, 96, g.bubble.text)
 
-    if (!metro) rain(ctx, time, still)
+    if (!metro && !g.rush) rain(ctx, time, still)
 }
 
 // ——— Inside ——————————————————————————————————————————————————————————
 
 // What the far windows show while moving: tunnel lights or the street.
-function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, time: number, still: boolean) {
+function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, time: number, still: boolean, day = false) {
     clipped(ctx, [[x, y, w, h]], () => {
         if (mode === 'metro') {
             R(ctx, x, y, w, h, '#0f1113')
@@ -371,16 +382,16 @@ function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, 
             return
         }
         const scroll = still ? 0 : time * 70
-        R(ctx, x, y, w, h, C.night2)
+        R(ctx, x, y, w, h, skyOf(day)[1])
         for (let k = 0; k < 9; k++) {
             const bx = W + 30 - ((scroll + k * 47) % (W + 90))
             const bh = 12 + Math.floor(hash(k) * 16)
-            R(ctx, bx, y + h - bh, 40, bh, k % 2 ? '#3d4150' : '#4a4652')
+            R(ctx, bx, y + h - bh, 40, bh, day ? (k % 2 ? '#8a7d70' : '#76808a') : k % 2 ? '#3d4150' : '#4a4652')
             for (let j = 0; j < 4; j++) {
-                if (hash(k * 5 + j) > 0.4) R(ctx, bx + 4 + j * 9, y + h - bh + 4, 3, 3, '#e8c36a')
+                R(ctx, bx + 4 + j * 9, y + h - bh + 4, 3, 3, windowColor(hash(k * 5 + j) > 0.4, day))
             }
         }
-        R(ctx, W + 10 - ((scroll * 1.6) % (W + 40)), y + 4, 3, 2, C.glow)
+        if (!day) R(ctx, W + 10 - ((scroll * 1.6) % (W + 40)), y + 4, 3, 2, C.glow)
     })
 }
 
@@ -405,7 +416,7 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         for (let i = 0; i < n; i++) {
             const x = Math.round(a + i * (w + 4))
             R(ctx, x - 1, 33, Math.round(w) + 2, 35, shade(look.wallD, -0.2))
-            view(ctx, g.mode, x, 34, Math.round(w), 33, time, still)
+            view(ctx, g.mode, x, 34, Math.round(w), 33, time, still, g.rush)
         }
     }
 
@@ -421,7 +432,7 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         R(ctx, cx + 10, 16, 1, 100, look.pole)
     }
     R(ctx, 0, 22, W, 1, shade(look.wallD, -0.1))
-    const next = stopsOf(g)[Math.min(g.at + 1, LAST)].name
+    const next = stopsOf(g)[Math.min(g.at + 1, lastStop(g))].name
     const dw = textWidth(next) + 8
     R(ctx, Math.round(W / 2 - dw / 2), 17, dw, 9, '#111')
     drawText(ctx, next, W / 2, 19, C.led, 1, 'center')
@@ -444,7 +455,7 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
     // The bus driver's cab, and the card reader by the front door.
     if (g.mode === 'bus') {
         R(ctx, 0, 28, 34, 88, look.wallD)
-        view(ctx, 'bus', 2, 34, 24, 40, time, still)
+        view(ctx, 'bus', 2, 34, 24, 40, time, still, g.rush)
         R(ctx, 34, 60, 2, 56, '#8f8b84')
         person(ctx, 18, 116, DRIVER_LOOK, -1, 'sit', 'driver')
         R(ctx, 4, 97, 5, 1, '#222')
@@ -499,15 +510,19 @@ function qr(ctx: Ctx, x: number, y: number) {
     }
 }
 
-// Door to door: a minute to the platform or stop, then three rides.
-const ROUTES: { mode: Mode; name: string; color: string; minutes: number }[] = [
-    { mode: 'metro', name: 'Metro', color: C.orange, minutes: Math.round(1 + 3 * LINES.metro.rideMin) },
-    { mode: 'tram', name: 'Tram', color: C.tram, minutes: Math.round(1 + 3 * LINES.tram.rideMin) },
-    { mode: 'bus', name: 'Bus', color: C.blue, minutes: Math.round(1 + 3 * LINES.bus.rideMin) },
+const WAYS: { mode: Mode; name: string; color: string }[] = [
+    { mode: 'metro', name: 'Metro', color: C.orange },
+    { mode: 'tram', name: 'Tram', color: C.tram },
+    { mode: 'bus', name: 'Bus', color: C.blue },
 ]
 
-function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
-    const rise = Math.round((1 - ease(clamp01(t / 0.35))) * 120)
+type Screen = 'empty' | 'buying' | 'fake' | 'live'
+
+// The ticket app. Before the trip it plans the route; while buying it waits
+// for your bank; held up to an inspector it shows a screenshot of an old
+// ticket (frozen, the giveaway) or a real one (its band moves).
+function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t) {
+    const rise = Math.round((1 - ease(clamp01(risen / 0.35))) * 120)
     const shake = mode === 'fake' && t < 2.3 ? Math.round(Math.sin(t * 38) * g.heat * 0.6) : 0
     ctx.save()
     ctx.translate(shake, rise)
@@ -537,24 +552,39 @@ function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
     drawText(ctx, 'Tickets', 104, 33, C.white)
 
     if (mode === 'empty') {
-        drawText(ctx, 'No valid tickets', 128, 49, '#3b3b3b', 1, 'center')
-        drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
+        // Door to door: a minute to the platform or stop, then the rides.
+        const rides = lastStop(g)
+        drawText(ctx, g.ticket ? 'Single ticket AB' : 'No valid tickets', 128, 49, '#3b3b3b', 1, 'center')
+        if (g.ticket) drawText(ctx, 'Valid', 128, 57, C.green, 2, 'center')
+        else drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
         R(ctx, 89, 72, 78, 1, '#e2ddd3')
-        drawText(ctx, 'To Rautatientori', 91, 77, C.grey2)
-        ROUTES.forEach((r, i) => {
+        drawText(ctx, `To ${stopsOf(g)[rides].name}`, 91, 77, C.grey2)
+        WAYS.forEach((r, i) => {
             const y = 87 + i * 17
             sign(ctx, r.mode, 90, y, 9, r.color)
             drawText(ctx, r.name, 103, y + 1, C.ink)
-            drawText(ctx, `${r.minutes} min`, 167, y + 1, C.ink, 1, 'right')
+            drawText(ctx, `${Math.round(1 + rides * LINES[r.mode].rideMin)} min`, 167, y + 1, C.ink, 1, 'right')
             drawText(ctx, `every ${LINES[r.mode].waitMin} min`, 103, y + 8, C.grey2)
         })
+    } else if (mode === 'buying') {
+        drawText(ctx, 'Single ticket AB', 128, 52, C.ink, 1, 'center')
+        drawText(ctx, euro(PRICE), 128, 61, C.ink, 2, 'center')
+        if (t < 1.8) {
+            drawText(ctx, 'Log in with', 128, 86, C.grey2, 1, 'center')
+            drawText(ctx, 'your bank', 128, 93, C.grey2, 1, 'center')
+            for (let i = 0; i < 3; i++) R(ctx, 122 + i * 5, 106, 3, 3, Math.floor(t * 4) % 3 === i ? C.blue : '#d9d4ca')
+        } else {
+            R(ctx, 96, 86, 64, 24, C.green)
+            drawText(ctx, 'Paid', 128, 90, C.white, 2, 'center')
+        }
     } else {
         R(ctx, 88, 46, 80, 98, '#d9d4ca')
         R(ctx, 89, 47, 78, 97, C.white)
         // The moving band of a live ticket. Frozen, it is a screenshot.
+        const drift = mode === 'live' ? Math.floor(g.time * 12) : 3
         for (let j = 0; j < 24; j++) {
             for (let i = 0; i < 78; i += 2) {
-                const on = Math.floor((i + j + 3) / 6) % 2 === 0
+                const on = Math.floor((i + j + drift) / 6) % 2 === 0
                 R(ctx, 89 + i, 47 + j, 2, 1, on ? C.blue : C.blueL)
             }
         }
@@ -563,7 +593,7 @@ function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
         drawText(ctx, 'Single ticket', 128, 75, C.ink, 1, 'center')
         drawText(ctx, 'Adult', 128, 82, C.grey2, 1, 'center')
         drawText(ctx, 'Valid until', 128, 91, C.grey2, 1, 'center')
-        drawText(ctx, '22:12', 128, 98, C.ink, 2, 'center')
+        drawText(ctx, mode === 'live' ? clockText(g.clock + 80) : '22:12', 128, 98, C.ink, 2, 'center')
         qr(ctx, 116, 113)
         if (t > 1.4 && t < 1.8) R(ctx, 112, 112 + ((t - 1.4) / 0.4) * 26, 32, 1, C.red)
     }
@@ -578,7 +608,7 @@ function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
     }
     ctx.restore()
 
-    if (mode === 'fake' && t > 2.3) {
+    if ((mode === 'fake' || mode === 'live') && t > 2.3) {
         if (g.verdict === 'pass') {
             R(ctx, 95, 58, 66, 32, C.white)
             R(ctx, 96, 59, 64, 30, C.green)
@@ -615,7 +645,7 @@ function slip(ctx: Ctx, g: Game, t: number) {
     drawText(ctx, '100,00 €', cx, y + 22, C.ink, 2, 'center')
     drawText(ctx, `Time  ${clockText(g.clock)}`, x + 6, y + 37, C.grey)
     drawText(ctx, ROUTE[g.mode], x + 6, y + 45, C.grey)
-    drawText(ctx, stopsOf(g)[Math.min(g.at, LAST)].name, x + 6, y + 53, C.grey)
+    drawText(ctx, stopsOf(g)[Math.min(g.at, lastStop(g))].name, x + 6, y + 53, C.grey)
     const stamp = g.ending === 'fake' ? 'Fake ticket' : 'No ticket'
     const color = g.ending === 'fake' ? C.red : C.grey
     const sw = textWidth(stamp, 2) + 10
@@ -637,7 +667,7 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
         R(ctx, 0, 0, W, 10, shade(look.wall, 0.1))
         R(ctx, 0, 8, W, 2, '#fffbe8')
         R(ctx, 0, 24, W, 44, look.wallD)
-        for (const wx of [6, 70, 134, 198]) view(ctx, g.mode, wx, 27, 52, 38, time, still)
+        for (const wx of [6, 70, 134, 198]) view(ctx, g.mode, wx, 27, 52, 38, time, still, g.rush)
         for (const px of [64, 128, 192]) R(ctx, px, 10, 2, 108, look.pole)
     } else if (g.mode === 'metro') {
         const wall = WALLS[g.at]
@@ -645,8 +675,8 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
         for (let x = 4; x < W; x += 24) R(ctx, x, 0, 2, 118, wall.seam)
         R(ctx, 0, 60, W, 2, wall.seam)
     } else {
-        R(ctx, 0, 0, W, 60, C.night)
-        facades(ctx, g.at + 5, 118)
+        R(ctx, 0, 0, W, 60, skyOf(g.rush)[0])
+        facades(ctx, g.at + 5, 118, g.rush)
     }
     R(ctx, 0, 118, W, 26, look.floor)
     R(ctx, 0, 118, W, 2, shade(look.floor, -0.2))
@@ -699,11 +729,31 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     bubble(ctx, g.ending === 'fake' ? 110 : 92, 84, line.toUpperCase())
 }
 
+// You, walking onto the square, and your friend if you are on time.
+function arrival(ctx: Ctx, g: Game, still: boolean) {
+    const k = clamp01(g.t / 1.4)
+    person(ctx, lerp(20, 70, k), 134, g.look, 1, k < 1 ? 'walk' : 'stand', 'player', g.t * 7)
+    if (g.ending === 'made') {
+        const friend: Look = {
+            skin: SKIN[2],
+            hair: HAIR[3],
+            coat: '#b8402f',
+            pants: PANTS[0],
+            hat: null,
+            bag: null,
+            phone: false,
+            tag: '',
+        }
+        person(ctx, 92, 134, friend, -1, 'stand', 'rider', 0, still ? -1 : g.time * 4)
+    }
+}
+
 function square(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
-    R(ctx, 0, 0, W, 40, C.night)
-    R(ctx, 0, 40, W, 30, C.night2)
-    R(ctx, 0, 70, W, 40, C.night3)
+    const sky = skyOf(g.rush)
+    R(ctx, 0, 0, W, 40, sky[0])
+    R(ctx, 0, 40, W, 30, sky[1])
+    R(ctx, 0, 70, W, 40, sky[2])
 
     // The station building, granite.
     R(ctx, 14, 58, 228, 52, C.granite)
@@ -735,9 +785,10 @@ function square(ctx: Ctx, g: Game, still: boolean) {
         R(ctx, sx + 5, 69, 2, 12, stone)
         R(ctx, sx - 4, 67, 1, 37, '#4b5952')
         R(ctx, sx - 5, 104, 11, 6, C.graniteD)
-        R(ctx, sx - 4, 80, 9, 7, C.glow)
-        R(ctx, sx - 3, 81, 7, 5, '#fff3c4')
-        R(ctx, sx - 1, 82, 3, 3, C.white)
+        // Their lamps are off in the morning.
+        R(ctx, sx - 4, 80, 9, 7, g.rush ? '#8d958f' : C.glow)
+        R(ctx, sx - 3, 81, 7, 5, g.rush ? '#c9cfca' : '#fff3c4')
+        R(ctx, sx - 1, 82, 3, 3, g.rush ? '#dfe3e0' : C.white)
     }
 
     // Clock tower, showing the real time of arrival.
@@ -763,35 +814,57 @@ function square(ctx: Ctx, g: Game, still: boolean) {
     }
     for (let y = 40; y < 104; y += 9) R(ctx, 202, y, 3, 5, '#2b302d')
 
-    // Wet square.
-    R(ctx, 0, 110, W, 34, '#2d2f33')
-    for (let x = 108; x < 150; x += 3) R(ctx, x, 112 + (x % 7), 1, 20, '#4c4232')
-    R(ctx, 0, 110, W, 1, '#3d3f44')
+    // The square: wet at night, dry in the morning.
+    R(ctx, 0, 110, W, 34, g.rush ? '#8a8680' : '#2d2f33')
+    if (!g.rush) for (let x = 108; x < 150; x += 3) R(ctx, x, 112 + (x % 7), 1, 20, '#4c4232')
+    R(ctx, 0, 110, W, 1, g.rush ? '#77736d' : '#3d3f44')
 
-    const k = clamp01(g.t / 1.4)
-    person(ctx, lerp(20, 70, k), 134, g.look, 1, k < 1 ? 'walk' : 'stand', 'player', g.t * 7)
-    if (g.ending === 'made') {
-        const friend: Look = {
-            skin: SKIN[2],
-            hair: HAIR[3],
-            coat: '#b8402f',
-            pants: PANTS[0],
-            hat: null,
-            bag: null,
-            phone: false,
-            tag: '',
+    arrival(ctx, g, still)
+    if (!g.rush) rain(ctx, time, still, '#3d4a6a')
+}
+
+// Kamppi, for the long way: the wooden Chapel of Silence on Narinkka square,
+// the glass shopping center behind it with the time on its screen.
+function kamppi(ctx: Ctx, g: Game, still: boolean) {
+    const time = g.time
+    const sky = skyOf(g.rush)
+    R(ctx, 0, 0, W, 40, sky[0])
+    R(ctx, 0, 40, W, 70, sky[1])
+    R(ctx, 0, 30, W, 80, g.rush ? '#5d6b7a' : '#1f2a3a')
+    for (let y = 34; y < 104; y += 8) {
+        for (let x = 4; x < W; x += 12) {
+            const lit = hash(x * 3 + y) > (g.rush ? 0.8 : 0.35)
+            R(ctx, x, y, 10, 6, lit ? (g.rush ? '#c3d4e4' : '#d8e2ee') : g.rush ? '#6f7f90' : '#2b3850')
         }
-        person(ctx, 92, 134, friend, -1, 'stand', 'rider', 0, still ? -1 : time * 4)
     }
-    rain(ctx, time, still, '#3d4a6a')
+    R(ctx, 176, 38, 44, 12, '#111')
+    drawText(ctx, clockText(g.clock), 198, 42, C.led, 1, 'center')
+    R(ctx, 20, 38, 50, 12, '#111')
+    drawText(ctx, 'Kamppi', 45, 42, C.white, 1, 'center')
+
+    // The chapel: a tall wooden bowl of horizontal planks, wider near the top.
+    for (let y = 46; y < 110; y++) {
+        const half = Math.round(y < 58 ? 30 + (y - 46) * 0.5 : 36 - (y - 58) * 0.27)
+        const plank = Math.floor((y - 46) / 3) % 2 ? '#b9804e' : '#a87244'
+        R(ctx, 112 - half, y, half * 2, 1, plank)
+        R(ctx, 112 - half, y, 3, 1, '#7d5230')
+        R(ctx, 112 + half - 3, y, 3, 1, '#d29a64')
+    }
+    R(ctx, 80, 45, 64, 2, '#7d5230')
+
+    R(ctx, 0, 110, W, 34, g.rush ? '#8f8a84' : '#34363b')
+    for (let x = 0; x < W; x += 16) R(ctx, x, 110, 1, 34, g.rush ? '#827d77' : '#2b2d31')
+    R(ctx, 0, 110, W, 1, g.rush ? '#77736d' : '#45474c')
+
+    arrival(ctx, g, still)
+    if (!g.rush) rain(ctx, time, still, '#3d4a6a')
 }
 
 function card(ctx: Ctx, g: Game) {
     const titles = { made: 'Made it', late: 'Late', fined: 'Fined', fake: 'Busted' }
-    const paid = g.ending === 'made' || g.ending === 'late' ? '0,00 €' : '100,00 €'
     R(ctx, 0, 0, W, 38, 'rgba(10, 13, 24, 0.86)')
     drawText(ctx, titles[g.ending ?? 'late'], W / 2, 6, g.ending === 'made' ? C.yellowL : C.white, 3, 'center')
-    drawText(ctx, `${clockText(g.clock)}   paid ${paid}   waited ${g.waited} min`, W / 2, 27, C.light, 1, 'center')
+    drawText(ctx, `${clockText(g.clock)}   paid ${euro(g.paid)}   waited ${g.waited} min`, W / 2, 27, C.light, 1, 'center')
 }
 
 function dim(ctx: Ctx) {
@@ -812,8 +885,12 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
             title(ctx, time)
             return
         case 'intro':
-            street(ctx, time, still, g.t, g.look, still ? 0 : g.t + 0.8)
+            street(ctx, time, still, g.t, g.look, still ? 0 : g.t + 0.8, g.rush)
             if (g.t > 3.3) phone(ctx, g, 'empty', g.t - 3.3)
+            return
+        case 'buy':
+            street(ctx, time, still, null, g.look, still ? 0 : time, g.rush)
+            phone(ctx, g, 'buying', g.t, 1)
             return
         case 'platform':
         case 'doors':
@@ -826,12 +903,14 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
         case 'ticket':
             behind(ctx, g, still)
             dim(ctx)
-            phone(ctx, g, 'fake', g.t)
+            phone(ctx, g, g.ticket ? 'live' : 'fake', g.t)
             return
         case 'outro':
             if (g.ending === 'fined' || g.ending === 'fake') {
                 fineScene(ctx, g, g.t, still)
                 slip(ctx, g, g.t)
+            } else if (g.long) {
+                kamppi(ctx, g, still)
             } else {
                 square(ctx, g, still)
             }

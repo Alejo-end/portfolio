@@ -233,10 +233,16 @@ export function rain(ctx: Ctx, time: number, still: boolean, color = '#4a5a80') 
     }
 }
 
-// Night-time Helsinki facades, the same for a given seed.
+// Helsinki facades, the same for a given seed. At night the windows are lit,
+// in the morning they reflect the sky.
 const FACADES = ['#6e5a4a', '#56635c', '#7a6a52', '#5f5a66', '#6b5f55', '#4f5a63']
 
-export function facades(ctx: Ctx, seed: number, base: number) {
+export function windowColor(lit: boolean, day: boolean) {
+    if (day) return lit ? '#c3d4e4' : '#55657a'
+    return lit ? '#e8c36a' : '#262833'
+}
+
+export function facades(ctx: Ctx, seed: number, base: number, day = false) {
     let x = 0
     for (let n = 0; x < W; n++) {
         const w = 44 + Math.floor(hash(seed * 31 + n) * 40)
@@ -249,7 +255,7 @@ export function facades(ctx: Ctx, seed: number, base: number) {
         for (let row = 0; top + 7 + row * 11 < base - 16; row++) {
             for (let col = 0; 4 + col * 9 + 4 < w; col++) {
                 const lit = hash(seed * 7 + x * 13 + row * 7 + col) > 0.55
-                R(ctx, x + 4 + col * 9, top + 7 + row * 11, 4, 6, lit ? '#e8c36a' : '#262833')
+                R(ctx, x + 4 + col * 9, top + 7 + row * 11, 4, 6, windowColor(lit, day))
             }
         }
         R(ctx, x, base - 14, w, 14, shade(c, -0.35))

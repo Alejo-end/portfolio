@@ -13,6 +13,8 @@ const notes: Spec[] = [
     { label: 'plain clothes', value: 'in pairs, no phone, lanyard at the collar' },
     { label: 'bus driver', value: 'checks the front door, cannot fine' },
     { label: 'penalty fare', value: '100 €' },
+    { label: 'real ticket', value: '3,20 € in the app, after a login' },
+    { label: 'runs', value: 'night, rush hour, the long way to Kamppi, daily' },
     { label: 'keys', value: 'space, 1 to 4' },
 ]
 

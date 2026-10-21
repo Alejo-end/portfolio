@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, clockText, createGame, sameUi, step, uiOf, type ActionId, type Ui } from './game'
+import { act, createGame, euro, sameUi, step, uiOf, type ActionId, type Ui } from './game'
 import { play, unlock } from './sound'
-import { getServerStats, getStats, recordRun, subscribeStats } from './stats'
+import { ACHIEVEMENTS, getServerStats, getStats, recordRun, subscribeStats } from './stats'
 
 // The game screen: the canvas, a caption line, and the buttons for
 // whatever can be done right now.
@@ -16,6 +16,9 @@ export function NoTicket() {
     const [muted, setMuted] = useState(false)
     const mutedRef = useRef(false)
     const stats = useSyncExternalStore(subscribeStats, getStats, getServerStats)
+    // Achievements the last run unlocked, and whether its result was just copied.
+    const [fresh, setFresh] = useState<string[]>([])
+    const [copied, setCopied] = useState(false)
 
     useEffect(() => {
         const ctx = canvas.current?.getContext('2d')
@@ -30,7 +33,11 @@ export function NoTicket() {
             const g = game.current
             step(g, Math.min(0.1, (now - last) / 1000))
             last = now
-            if (g.phase === 'outro' && seen !== 'outro') recordRun(g)
+            if (g.phase === 'outro' && seen !== 'outro') setFresh(recordRun(g))
+            if (g.phase !== 'outro' && seen === 'outro') {
+                setFresh([])
+                setCopied(false)
+            }
             seen = g.phase
             for (const cue of g.cues.splice(0)) if (!mutedRef.current) play(cue)
             render(ctx, g, still)
@@ -108,11 +115,15 @@ export function NoTicket() {
                     </p>
                 )}
                 {ui.countdown && <p className="uppercase text-muted-foreground">{ui.countdown}</p>}
+                {ui.phase === 'outro' && fresh.length > 0 && (
+                    <p>New: {fresh.map((id) => ACHIEVEMENTS.find((a) => a.id === id)?.name).join(', ')}.</p>
+                )}
                 {(ui.phase === 'title' || ui.phase === 'outro') && stats.runs > 0 && (
                     <p className="text-muted-foreground">
                         {stats.runs} {stats.runs === 1 ? 'run' : 'runs'}
-                        {stats.best !== null && ` · best ${clockText(stats.best)} by ${stats.bestMode}`}
-                        {` · fines paid ${stats.fines},00 €`}
+                        {stats.early !== null &&
+                            ` · best ${stats.early ? `${stats.early} min early` : 'on the minute'} by ${stats.bestMode}`}
+                        {` · fines paid ${euro(stats.fines)}`}
                     </p>
                 )}
             </div>
@@ -129,6 +140,20 @@ export function NoTicket() {
                         <span className="text-muted-foreground [@media(pointer:coarse)]:hidden">{i === 0 ? 'space' : i + 1}</span>
                     </button>
                 ))}
+                {ui.share && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            navigator.clipboard?.writeText(ui.share).then(
+                                () => setCopied(true),
+                                () => {}
+                            )
+                        }}
+                        className="flex h-11 items-center border border-foreground px-3 text-[12px] uppercase hover:bg-foreground hover:text-background"
+                    >
+                        {copied ? 'copied' : 'copy result'}
+                    </button>
+                )}
                 <button
                     type="button"
                     onClick={() => {
@@ -141,6 +166,31 @@ export function NoTicket() {
                     {muted ? 'sound off' : 'sound on'}
                 </button>
             </div>
+            <section aria-labelledby="achievements" className="space-y-3 pt-6 font-[family-name:var(--font-geist-mono)]">
+                <h2 id="achievements" className="label">
+                    achievements {stats.achievements.length}/{ACHIEVEMENTS.length}
+                </h2>
+                <dl className="space-y-2.5 text-[13px]">
+                    {ACHIEVEMENTS.map((a) => {
+                        const done = stats.achievements.includes(a.id)
+                        return (
+                            <div
+                                key={a.id}
+                                className={`flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2 ${done ? '' : 'opacity-40'}`}
+                            >
+                                <dt className="shrink-0">
+                                    {done ? '■' : '□'} {a.name}
+                                </dt>
+                                <span
+                                    aria-hidden
+                                    className="hidden min-w-4 flex-1 border-b-2 border-dotted border-muted-foreground/40 sm:block"
+                                />
+                                <dd className="text-muted-foreground sm:text-right">{a.text}</dd>
+                            </div>
+                        )
+                    })}
+                </dl>
+            </section>
         </section>
     )
 }
