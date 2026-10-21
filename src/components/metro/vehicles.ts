@@ -120,11 +120,13 @@ function cabin(ctx: Ctx, mode: Mode, left: number, inside: Inside) {
     })
 }
 
-// Two leaves per door, each 8 wide with a window, slid apart by `open`.
-function leaves(ctx: Ctx, left: number, open: number, top: number, color: string, lower: string) {
+// Two leaves per door, each 8 wide with a window, slid apart by `open`. The
+// lamp over each door blinks red while `warn` is on.
+function leaves(ctx: Ctx, left: number, open: number, top: number, color: string, lower: string, warn: boolean) {
     const slide = Math.round(open * 8)
     for (const d of DOORS) {
         const cx = slotX(d, left)
+        R(ctx, cx - 2, top - 3, 4, 2, warn ? C.red : '#3a2a22')
         clipped(ctx, [[cx - 8, top, 16, 101 - top]], () => {
             for (const x of [cx - 8 - slide, cx + slide]) {
                 R(ctx, x, top, 8, 6, color)
@@ -137,7 +139,7 @@ function leaves(ctx: Ctx, left: number, open: number, top: number, color: string
     }
 }
 
-export function metroCar(ctx: Ctx, left: number, open: number, inside: Inside) {
+export function metroCar(ctx: Ctx, left: number, open: number, inside: Inside, warn = false) {
     R(ctx, left + 8, 46, 204, 3, '#7f7973')
     R(ctx, left + 2, 49, 216, 3, '#9a948d')
     R(ctx, left, 52, 220, 49, C.orange)
@@ -146,13 +148,13 @@ export function metroCar(ctx: Ctx, left: number, open: number, inside: Inside) {
     R(ctx, left + 220, 58, 4, 40, '#2a2725')
     R(ctx, left + 6, 101, 208, 3, '#2a2725')
     cabin(ctx, 'metro', left, inside)
-    leaves(ctx, left, open, 56, C.orange, C.orangeD)
+    leaves(ctx, left, open, 56, C.orange, C.orangeD, warn)
 }
 
 const CREAM = '#ebe7da'
 
 // A green and cream Helsinki tram, its pantograph up on the wire at y 20.
-export function tram(ctx: Ctx, left: number, open: number, inside: Inside) {
+export function tram(ctx: Ctx, left: number, open: number, inside: Inside, warn: boolean) {
     const px = left + 110
     R(ctx, px - 9, 21, 18, 1, '#2a2a2a')
     for (let i = 0; i < 12; i++) {
@@ -177,11 +179,11 @@ export function tram(ctx: Ctx, left: number, open: number, inside: Inside) {
     R(ctx, left + 1, 91, 3, 2, C.glow)
     R(ctx, left + 216, 91, 3, 2, C.red)
     cabin(ctx, 'tram', left, inside)
-    leaves(ctx, left, open, 60, CREAM, C.tram)
+    leaves(ctx, left, open, 60, CREAM, C.tram, warn)
 }
 
 // An HSL-blue bus. The driver sits behind the windscreen at the left.
-export function bus(ctx: Ctx, left: number, open: number, inside: Inside) {
+export function bus(ctx: Ctx, left: number, open: number, inside: Inside, warn: boolean) {
     R(ctx, left + 6, 47, 70, 3, '#9aa6b0')
     R(ctx, left + 2, 50, 216, 2, C.blueD)
     R(ctx, left, 52, 220, 48, C.blue)
@@ -196,7 +198,7 @@ export function bus(ctx: Ctx, left: number, open: number, inside: Inside) {
     R(ctx, left + 40, 53, 58, 8, '#111')
     drawText(ctx, 'Rautatientori', left + 69, 55, C.led, 1, 'center')
     cabin(ctx, 'bus', left, inside)
-    leaves(ctx, left, open, 56, C.blue, C.blueD)
+    leaves(ctx, left, open, 56, C.blue, C.blueD, warn)
     for (const wx of [left + 48, left + 158]) {
         R(ctx, wx - 2, 92, 22, 3, '#0d2f4f')
         R(ctx, wx + 3, 94, 12, 1, '#151515')
@@ -208,8 +210,8 @@ export function bus(ctx: Ctx, left: number, open: number, inside: Inside) {
     R(ctx, left + 215, 92, 4, 2, C.red)
 }
 
-export function vehicle(ctx: Ctx, mode: Mode, left: number, open: number, inside: Inside) {
-    if (mode === 'tram') tram(ctx, left, open, inside)
-    else if (mode === 'bus') bus(ctx, left, open, inside)
-    else metroCar(ctx, left, open, inside)
+export function vehicle(ctx: Ctx, mode: Mode, left: number, open: number, inside: Inside, warn: boolean) {
+    if (mode === 'tram') tram(ctx, left, open, inside, warn)
+    else if (mode === 'bus') bus(ctx, left, open, inside, warn)
+    else metroCar(ctx, left, open, inside, warn)
 }

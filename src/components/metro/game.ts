@@ -101,7 +101,7 @@ export const OPEN = ARRIVE + 0.5
 export const BOARD = OPEN + 1.4
 export const BOARD_WALK = 0.6
 const DWELL = 4.6
-const CHIME = 1.0
+export const CHIME = 1.0
 export const SHUT = 0.6
 export const DEPART = 2.2
 const JUMP = 0.4
@@ -111,6 +111,8 @@ const STALL = 5
 const STEP = 0.55
 // Seconds after the doors shut before anyone starts checking.
 const SETTLE = 1.2
+// A key pressed for Hide just as an inspector reaches you must not show the ticket.
+const LOCK = 0.4
 
 export type Look = {
     skin: string
@@ -154,6 +156,9 @@ export type Inspector = {
     cue: number
 }
 
+// Someone who only passes through a stop: boarding, or getting off and leaving.
+export type Extra = { look: Look; door: number; dx: number; off: boolean; delay: number; vest?: boolean }
+
 export type Phase =
     | 'title'
     | 'intro'
@@ -194,7 +199,17 @@ export type Game = {
     aboard: boolean
     riders: Rider[]
     crew: Inspector[]
-    player: { slot: number; x: number; door: number; hidden: boolean; cleared: boolean; jump: number; jumping: boolean }
+    player: {
+        slot: number
+        x: number
+        door: number
+        queued: number | null
+        hidden: boolean
+        cleared: boolean
+        jump: number
+        jumping: boolean
+    }
+    crowd: Extra[]
     look: Look
     heat: number
     stalled: boolean
@@ -364,7 +379,31 @@ function stationTip(g: Game, next: number) {
     return `${nick} clear`
 }
 
-const freshPlayer = (slot = 5) => ({ slot, x: slot, door: 5, hidden: false, cleared: false, jump: 0, jumping: false })
+const freshPlayer = (slot = 5) => ({
+    slot,
+    x: slot,
+    door: 5,
+    queued: null,
+    hidden: false,
+    cleared: false,
+    jump: 0,
+    jumping: false,
+})
+
+// Passengers at the doors. They keep clear of the vests (±7) and of you, left of door 5.
+function makeCrowd(g: Game, on: number, off: number) {
+    g.crowd = []
+    for (let n = 0; n < on + off; n++) {
+        const door = pick(g, DOORS)
+        g.crowd.push({
+            look: makeLook(g),
+            door,
+            dx: door === 5 ? 16 : pick(g, [-16, 16]),
+            off: n >= on,
+            delay: g.rand() * 0.8,
+        })
+    }
+}
 
 export function createGame(seed = Date.now()): Game {
     return {
@@ -377,6 +416,7 @@ export function createGame(seed = Date.now()): Game {
         aboard: false,
         riders: [],
         crew: [],
+        crowd: [],
         player: freshPlayer(),
         look: {
             skin: SKIN[1],
@@ -425,6 +465,7 @@ function begin(g: Game) {
         aboard: false,
         riders: [],
         crew: [],
+        crowd: [],
         heat: 0,
         waited: 0,
         ending: null,
@@ -449,6 +490,7 @@ function toPlatform(g: Game, caption: string) {
     g.stalled = false
     g.spotted = false
     fillCar(g)
+    makeCrowd(g, 1 + Math.floor(g.rand() * 3), 0)
     // One team per car: vests only wait on the platform for an empty one.
     if (!g.crew.length && g.rand() < line(g).waiting[g.at]) addPlatformCrew(g)
     g.tip = trainTip(g)
@@ -478,7 +520,19 @@ export function doorOpen(g: Game) {
     return Math.max(0, 1 - (t - g.closeAt) / SHUT)
 }
 
-const canJump = (g: Game) => g.phase === 'doors' && !g.player.jumping && doorOpen(g) > 0.3
+// The door buttons work from the moment the vehicle appears until the doors are nearly shut.
+const canJump = (g: Game) =>
+    g.phase === 'doors' && !g.player.jumping && g.player.queued === null && (g.t < OPEN || doorOpen(g) > 0.3)
+
+// Pressed before the doors open, the jump waits for them.
+function press(g: Game, door: number) {
+    if (g.t < OPEN) {
+        g.player.queued = door
+        g.caption = g.aboard ? 'You wait by the door.' : 'You step up to the door.'
+        return
+    }
+    jump(g, door)
+}
 
 function jump(g: Game, door: number) {
     if (g.t > g.closeAt) {
@@ -576,6 +630,7 @@ function arrive(g: Game) {
         }
     }
     for (const i of g.crew) if (i.aboard && i.busy <= 0 && !hasWork(g, i)) i.leaving = true
+    makeCrowd(g, Math.floor(g.rand() * 2), 1 + Math.floor(g.rand() * 2))
     // Standing up to be ready at the nearest door.
     const door = DOORS.reduce((a, b) => (Math.abs(b - g.player.slot) < Math.abs(a - g.player.slot) ? b : a))
     g.player.slot = g.player.x = door
@@ -795,9 +850,9 @@ export function act(g: Game, id: ActionId) {
             g.clock += WALK_MIN[g.at]
             return finish(g, g.clock <= MEET ? 'made' : 'late')
         case 'jump':
-            return jump(g, g.aboard ? g.player.slot : 5)
+            return press(g, g.aboard ? g.player.slot : 5)
         case 'front':
-            return jump(g, 1)
+            return press(g, 1)
         case 'hide':
             return hide(g)
         case 'stall':
@@ -835,6 +890,7 @@ export function actions(g: Game): Action[] {
                 { id: 'walk', label: 'Walk instead' },
             ]
         case 'doors': {
+            if (g.player.queued !== null) return [{ id: 'jump', label: 'Ready', disabled: true }]
             const disabled = !canJump(g)
             if (g.aboard) return [{ id: 'jump', label: g.at === LAST ? 'Get off' : 'Jump out', disabled }]
             if (g.mode === 'bus') {
@@ -851,11 +907,15 @@ export function actions(g: Game): Action[] {
                 { id: 'hide', label: g.player.hidden ? 'Hiding' : 'Hide', disabled: g.player.hidden },
                 { id: 'stall', label: 'Stall', disabled: g.stalled },
             ]
-        case 'check':
+        case 'check': {
+            const disabled = g.t < LOCK
             return [
-                { id: 'show', label: 'Show ticket' },
-                g.checkFrom === 'driver' ? { id: 'stepoff', label: 'Step off' } : { id: 'giveup', label: 'Give up' },
+                { id: 'show', label: 'Show ticket', disabled },
+                g.checkFrom === 'driver'
+                    ? { id: 'stepoff', label: 'Step off', disabled }
+                    : { id: 'giveup', label: 'Give up', disabled },
             ]
+        }
         case 'outro':
             return [{ id: 'again', label: 'Ride again', disabled: g.t < 2.4 }]
         default:
@@ -882,11 +942,19 @@ export function step(g: Game, dt: number) {
             if (g.t >= PLATFORM_WAIT) toDoors(g, `The ${line(g).vehicle} pulls in.`)
             return
         case 'doors': {
+            if (at(0.05)) g.cues.push(g.mode === 'tram' ? 'bell' : 'rumble')
+            if (at(ARRIVE)) g.cues.push('hiss')
+            if (at(g.closeAt + SHUT)) g.cues.push('rumble')
             if (at(OPEN)) {
                 const leaving = g.crew.filter((i) => i.leaving)
                 if (leaving.length) {
                     g.crew = g.crew.filter((i) => !i.leaving)
                     g.caption = 'The vests get off here.'
+                    // They walk off with everyone else, through the nearest door.
+                    for (const i of leaving) {
+                        const door = DOORS.reduce((a, b) => (Math.abs(b - i.x) < Math.abs(a - i.x) ? b : a))
+                        g.crowd.push({ look: i.look, door, dx: 0, off: true, delay: 0.1, vest: true })
+                    }
                 }
             }
             // Vests waiting at the last stop stay there to check people leaving.
@@ -907,6 +975,10 @@ export function step(g: Game, dt: number) {
                 for (const i of g.crew) {
                     if (i.plain && i.aboard && !i.active && g.rand() < 0.6) i.cue = g.time + 1.4
                 }
+            }
+            if (g.player.queued !== null && doorOpen(g) > 0.3) {
+                jump(g, g.player.queued)
+                g.player.queued = null
             }
             if (g.player.jumping) {
                 g.player.jump += dt / JUMP
@@ -957,7 +1029,9 @@ export function step(g: Game, dt: number) {
         case 'exit': {
             const crew = waiting(g)
             if (at(1.3) && crew.length) {
-                if (g.rand() < 0.55 - 0.15 * g.heat) g.caption = 'Behind a pram. Past them.'
+                // People getting off with you are cover.
+                const cover = g.crowd.filter((e) => e.off && !e.vest).length
+                if (g.rand() < 0.55 - 0.15 * g.heat + 0.1 * cover) g.caption = 'In the crowd. Past them.'
                 else return startCheck(g, crew[0])
             }
             if (g.t > 2.8) {

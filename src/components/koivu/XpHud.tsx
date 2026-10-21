@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { addXp, getServerXp, getXp, levelOf, SNAKE_LEVEL, subscribeXp } from '@/lib/xp'
 import { Snake } from './Snake'
@@ -82,13 +83,21 @@ export function XpHud() {
                     <span>
                         lv {level} <span className={`hidden sm:inline ${flash ? '' : 'text-muted-foreground'}`}>{flash ? 'level up' : name}</span>
                     </span>
-                    {unlocked ? (
-                        <button type="button" onClick={() => setOpen((o) => !o)} className="underline underline-offset-2">
-                            {open ? 'hide' : 'snake'}
-                        </button>
-                    ) : (
-                        <span className="text-muted-foreground tabular-nums">{xp} xp</span>
-                    )}
+                    <span className="flex items-baseline gap-2">
+                        {/* The nav has the metro game from sm up; phones get it here. */}
+                        {pathname !== '/metro' && (
+                            <Link href="/metro" className="underline underline-offset-2 sm:hidden">
+                                metro
+                            </Link>
+                        )}
+                        {unlocked ? (
+                            <button type="button" onClick={() => setOpen((o) => !o)} className="underline underline-offset-2">
+                                {open ? 'hide' : 'snake'}
+                            </button>
+                        ) : (
+                            <span className="text-muted-foreground tabular-nums">{xp} xp</span>
+                        )}
+                    </span>
                 </div>
                 <div aria-hidden className="mt-1.5 flex gap-px">
                     {Array.from({ length: SEGMENTS }, (_, i) => (

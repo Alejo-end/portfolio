@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, createGame, sameUi, step, uiOf, type ActionId, type Ui } from './game'
+import { act, clockText, createGame, sameUi, step, uiOf, type ActionId, type Ui } from './game'
 import { play, unlock } from './sound'
+import { getServerStats, getStats, recordRun, subscribeStats } from './stats'
 
 // The game screen: the canvas, a caption line, and the buttons for
 // whatever can be done right now.
@@ -14,6 +15,7 @@ export function NoTicket() {
     const [ui, setUi] = useState<Ui>(() => uiOf(initial))
     const [muted, setMuted] = useState(false)
     const mutedRef = useRef(false)
+    const stats = useSyncExternalStore(subscribeStats, getStats, getServerStats)
 
     useEffect(() => {
         const ctx = canvas.current?.getContext('2d')
@@ -22,10 +24,14 @@ export function NoTicket() {
         let last = performance.now()
         let frame = 0
         let shown = uiOf(game.current)
+        // Runs can end inside step() or inside a key press, so compare frame to frame.
+        let seen = game.current.phase
         const loop = (now: number) => {
             const g = game.current
             step(g, Math.min(0.1, (now - last) / 1000))
             last = now
+            if (g.phase === 'outro' && seen !== 'outro') recordRun(g)
+            seen = g.phase
             for (const cue of g.cues.splice(0)) if (!mutedRef.current) play(cue)
             render(ctx, g, still)
             const next = uiOf(g)
@@ -96,11 +102,19 @@ export function NoTicket() {
             <div className="min-h-[4.5rem] space-y-1.5 text-[13px] leading-snug" aria-live="polite">
                 <p>{ui.caption}</p>
                 {ui.tip && (
-                    <p className="text-muted-foreground">
+                    // Keyed by the message, so each new tip fades in and catches the eye.
+                    <p key={ui.tip} className="text-muted-foreground duration-700 animate-in fade-in motion-reduce:animate-none">
                         <span className="uppercase">kontrollit hki:</span> {ui.tip}
                     </p>
                 )}
                 {ui.countdown && <p className="uppercase text-muted-foreground">{ui.countdown}</p>}
+                {(ui.phase === 'title' || ui.phase === 'outro') && stats.runs > 0 && (
+                    <p className="text-muted-foreground">
+                        {stats.runs} {stats.runs === 1 ? 'run' : 'runs'}
+                        {stats.best !== null && ` · best ${clockText(stats.best)} by ${stats.bestMode}`}
+                        {` · fines paid ${stats.fines},00 €`}
+                    </p>
+                )}
             </div>
             <div className="flex flex-wrap gap-2">
                 {ui.actions.map((a, i) => (
@@ -112,7 +126,7 @@ export function NoTicket() {
                         className="flex h-11 min-w-[6.5rem] flex-1 items-center justify-between gap-3 border border-foreground px-3 text-[12px] uppercase enabled:hover:bg-foreground enabled:hover:text-background disabled:opacity-40 sm:flex-none"
                     >
                         <span>{a.label}</span>
-                        <span className="text-muted-foreground">{i === 0 ? 'space' : i + 1}</span>
+                        <span className="text-muted-foreground [@media(pointer:coarse)]:hidden">{i === 0 ? 'space' : i + 1}</span>
                     </button>
                 ))}
                 <button

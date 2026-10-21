@@ -25,10 +25,13 @@ import {
     ARRIVE,
     BOARD,
     BOARD_WALK,
+    CHIME,
     DEPART,
     DOORS,
     DRIVER,
     LAST,
+    LINES,
+    OPEN,
     SEAT_FACE,
     SHUT,
     clockText,
@@ -321,6 +324,8 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
 
     const left = vehicleLeft(g)
     const open = doorOpen(g)
+    const t = doorClock(g)
+    const warn = t !== null && t >= g.closeAt - CHIME && t < g.closeAt + SHUT && Math.floor(time * 6) % 2 === 0
     const inside = (l: number) => () => {
         for (const r of g.riders) {
             person(ctx, slotX(r.slot, l) + r.dx, 101, r.look, r.face, r.seated ? 'sit' : 'stand')
@@ -338,17 +343,37 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
                     if (hash(seed + n) < 0.6) person(ctx, x + w / 2, 101, look, n % 2 ? 1 : -1, 'sit')
                 })
             }
-            vehicle(ctx, 'metro', left - 224, open, neighbour(left - 224, 3))
-            vehicle(ctx, 'metro', left + 224, open, neighbour(left + 224, 7))
+            vehicle(ctx, 'metro', left - 224, open, neighbour(left - 224, 3), warn)
+            vehicle(ctx, 'metro', left + 224, open, neighbour(left + 224, 7), warn)
         }
-        vehicle(ctx, g.mode, left, open, inside(left))
+        vehicle(ctx, g.mode, left, open, inside(left), warn)
     }
 
     if (metro) platformFront(ctx)
     else streetFront(ctx, g)
 
+    // Passengers: some wait and get on after the doors open, some get off
+    // first and walk to the way out. Both happen while the vehicle stands
+    // still, so its doors are at their resting x.
+    for (const e of g.crowd) {
+        const door = slotX(e.door)
+        if (g.phase === 'platform' && !e.off) {
+            person(ctx, door + e.dx, 124, e.look, e.dx < 0 ? 1 : -1, 'stand')
+            continue
+        }
+        if (t === null) continue
+        if (e.off) {
+            const k = t - OPEN - e.delay
+            const x = k < 0.4 ? door : door - (k - 0.4) * 40
+            const role = e.vest ? 'vest' : 'rider'
+            if (k >= 0 && x > -10) person(ctx, x, lerp(101, 126, clamp01(k / 0.4)), e.look, -1, 'walk', role, k * 7)
+            continue
+        }
+        const k = clamp01((t - OPEN - 0.6 - e.delay) / 0.5)
+        if (k < 1) person(ctx, lerp(door + e.dx, door, k), lerp(124, 101, k), e.look, e.dx < 0 ? 1 : -1, k > 0 ? 'walk' : 'stand', 'rider', time * 8)
+    }
+
     // Vests waiting to board, walking in through a door, or by the way out.
-    const t = doorClock(g)
     const leaving = g.phase === 'exit' || ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'exit')
     for (const i of g.crew) {
         if (i.aboard) continue
@@ -530,6 +555,13 @@ function qr(ctx: Ctx, x: number, y: number) {
     }
 }
 
+// Door to door: a minute to the platform or stop, then three rides.
+const ROUTES: { mode: Mode; name: string; color: string; minutes: number }[] = [
+    { mode: 'metro', name: 'Metro', color: C.orange, minutes: Math.round(1 + 3 * LINES.metro.rideMin) },
+    { mode: 'tram', name: 'Tram', color: C.tram, minutes: Math.round(1 + 3 * LINES.tram.rideMin) },
+    { mode: 'bus', name: 'Bus', color: C.blue, minutes: Math.round(1 + 3 * LINES.bus.rideMin) },
+]
+
 function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
     const rise = Math.round((1 - ease(clamp01(t / 0.35))) * 120)
     const shake = mode === 'fake' && t < 2.3 ? Math.round(Math.sin(t * 38) * g.heat * 0.6) : 0
@@ -561,11 +593,17 @@ function phone(ctx: Ctx, g: Game, mode: 'empty' | 'fake', t: number) {
     drawText(ctx, 'Tickets', 104, 33, C.white)
 
     if (mode === 'empty') {
-        drawText(ctx, 'No valid tickets', 128, 54, '#3b3b3b', 1, 'center')
-        drawText(ctx, 'Balance', 128, 76, C.grey2, 1, 'center')
-        drawText(ctx, '0,00 €', 128, 84, C.ink, 2, 'center')
-        R(ctx, 98, 112, 60, 13, '#ddd8ce')
-        drawText(ctx, 'Buy', 128, 116, '#a29c92', 1, 'center')
+        drawText(ctx, 'No valid tickets', 128, 49, '#3b3b3b', 1, 'center')
+        drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
+        R(ctx, 89, 72, 78, 1, '#e2ddd3')
+        drawText(ctx, 'To Rautatientori', 91, 77, C.grey2)
+        ROUTES.forEach((r, i) => {
+            const y = 87 + i * 17
+            sign(ctx, r.mode, 90, y, 9, r.color)
+            drawText(ctx, r.name, 103, y + 1, C.ink)
+            drawText(ctx, `${r.minutes} min`, 167, y + 1, C.ink, 1, 'right')
+            drawText(ctx, `every ${LINES[r.mode].waitMin} min`, 103, y + 8, C.grey2)
+        })
     } else {
         R(ctx, 88, 46, 80, 98, '#d9d4ca')
         R(ctx, 89, 47, 78, 97, C.white)

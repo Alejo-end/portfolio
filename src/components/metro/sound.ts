@@ -1,6 +1,6 @@
 // A few synthesized blips. Nothing is sampled.
 
-export type Cue = 'chime' | 'beep' | 'buzz' | 'ok' | 'fail' | 'reveal'
+export type Cue = 'chime' | 'beep' | 'buzz' | 'ok' | 'fail' | 'reveal' | 'rumble' | 'hiss' | 'bell'
 
 let audio: AudioContext | null = null
 
@@ -33,6 +33,32 @@ export function unlock() {
     }
 }
 
+let white: AudioBuffer | null = null
+
+// Filtered white noise: low for wheels on rails, high for door air.
+function noise(at: number, length: number, type: BiquadFilterType, freq: number, volume: number, swell = false) {
+    const ctx = context()
+    if (!white) {
+        white = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
+        const data = white.getChannelData(0)
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+    }
+    const src = ctx.createBufferSource()
+    const filter = ctx.createBiquadFilter()
+    const gain = ctx.createGain()
+    const start = ctx.currentTime + at
+    src.buffer = white
+    src.loop = true
+    filter.type = type
+    filter.frequency.value = freq
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(volume, start + (swell ? length * 0.6 : 0.02))
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + length)
+    src.connect(filter).connect(gain).connect(ctx.destination)
+    src.start(start)
+    src.stop(start + length + 0.05)
+}
+
 export function play(cue: Cue) {
     try {
         switch (cue) {
@@ -55,6 +81,18 @@ export function play(cue: Cue) {
                 break
             case 'fail':
                 tone(196, 0, 0.45, 'sawtooth', 0.05)
+                break
+            case 'rumble':
+                noise(0, 2.4, 'lowpass', 180, 0.12, true)
+                break
+            case 'hiss':
+                noise(0, 0.45, 'highpass', 2500, 0.05)
+                break
+            case 'bell':
+                // The tram's two dings, then its wheels.
+                tone(1320, 0, 0.5, 'triangle', 0.06)
+                tone(1320, 0.28, 0.6, 'triangle', 0.06)
+                noise(0.2, 2.2, 'lowpass', 220, 0.08, true)
                 break
             case 'reveal':
                 tone(440, 0, 0.08)
