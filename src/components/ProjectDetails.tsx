@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useEffectEvent, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
@@ -15,6 +15,7 @@ export interface BlobFile {
   url: string
   pathname?: string
   contentType?: string
+  poster?: string
 }
 
 interface ProjectDetailsProps {
@@ -41,6 +42,40 @@ const mediaName = (file: BlobFile) => {
     .trim()
 }
 
+// Hero clips only play while on screen, and never on their own under reduced
+// motion: the poster stands in and the controls start it.
+function HeroVideo({ src, poster }: { src: string; poster?: string }) {
+  const ref = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      v.controls = true
+      return
+    }
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) v.play().catch(() => {})
+      else v.pause()
+    })
+    io.observe(v)
+    return () => io.disconnect()
+  }, [])
+
+  return (
+    <video
+      ref={ref}
+      src={src}
+      poster={poster}
+      loop
+      muted
+      playsInline
+      preload="none"
+      className="h-auto w-full"
+    />
+  )
+}
+
 function LinkButton({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="plain btn">
@@ -54,7 +89,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
   // One lightbox steps through the main gallery and then the prototype's.
   const media = [...blobs, ...prototypeBlobs]
 
@@ -67,19 +102,13 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
   const nextImage = () => setCurrentIndex((prev) => (prev + 1) % media.length)
   const prevImage = () => setCurrentIndex((prev) => (prev - 1 + media.length) % media.length)
 
-  const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
-    if (e.key === "Escape") closeCarousel()
-    if (e.key === "ArrowRight") nextImage()
-    if (e.key === "ArrowLeft") prevImage()
-  })
-
-  // The lightbox answers the keyboard no matter what has focus while it's open.
+  // A modal <dialog> traps focus, closes on Escape and hands focus back to the
+  // thumbnail that opened it.
   useEffect(() => {
-    if (!carouselOpen) return
-    const handler = (e: KeyboardEvent) => onKeyDown(e)
-    document.addEventListener("keydown", handler)
-    dialogRef.current?.focus()
-    return () => document.removeEventListener("keydown", handler)
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (carouselOpen && !dialog.open) dialog.showModal()
+    if (!carouselOpen && dialog.open) dialog.close()
   }, [carouselOpen])
 
   const handleShare = async () => {
@@ -137,7 +166,17 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
               aria-label={`Open ${name || "media"}${sound ? ", with sound" : ""} (${index + 1} of ${media.length})`}
               className="relative block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {isVideo ? (
+              {isVideo && file.poster ? (
+                <Image
+                  src={file.poster}
+                  alt={`${project.title}, ${name}`}
+                  width={800}
+                  height={600}
+                  quality={60}
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  className="w-full h-auto object-cover"
+                />
+              ) : isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
                 <video
                   src={`${file.url}#t=0.1`}
@@ -149,7 +188,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
               ) : (
                 <Image
                   src={file.url || "/placeholder.svg"}
-                  alt={`${project.title} — ${name}`}
+                  alt={`${project.title}, ${name}`}
                   width={800}
                   height={600}
                   quality={60}
@@ -167,90 +206,96 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
   }
 
   const renderCarousel = () => {
-    if (!carouselOpen || media.length === 0) return null
+    if (media.length === 0) return null
 
     const currentFile = media[currentIndex]
     const isVideo = isVideoFile(currentFile)
     const name = mediaName(currentFile)
 
     return (
-      <div
+      <dialog
         ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
         aria-label={`${project.title} media viewer`}
-        // !mt-0: the dialog is a child of a space-y stack, which would push it down.
-        className="fixed inset-0 !mt-0 bg-black/80 z-50 flex items-center justify-center p-4"
-        onClick={closeCarousel}
-        tabIndex={-1}
+        // !m-0: the dialog is a child of a space-y stack, which would push it down.
+        className="fixed inset-0 !m-0 h-full max-h-none w-full max-w-none items-center justify-center bg-transparent p-4 open:flex backdrop:bg-black/80"
+        onClose={closeCarousel}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeCarousel()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") nextImage()
+          if (e.key === "ArrowLeft") prevImage()
+        }}
       >
-        <div
-          className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close viewer"
-            className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
-            onClick={closeCarousel}
+        {carouselOpen && (
+          <div
+            className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="h-6 w-6" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close viewer"
+              className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
+              onClick={closeCarousel}
+            >
+              <X className="h-6 w-6" />
+            </Button>
 
-          {media.length > 1 && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Previous"
-                className="absolute left-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  prevImage()
-                }}
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
+            {media.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Previous"
+                  className="absolute left-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    prevImage()
+                  }}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Next"
-                className="absolute right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  nextImage()
-                }}
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </>
-          )}
-
-          <div className="w-full h-full flex items-center justify-center">
-            {isVideo ? (
-              <video src={currentFile.url} controls autoPlay className="max-w-full max-h-full object-contain" />
-            ) : (
-              <div className="relative w-full h-full">
-                <Image
-                  src={currentFile.url || "/placeholder.svg"}
-                  alt={`${project.title} — ${name}`}
-                  fill
-                  sizes="100vw"
-                  className="object-contain"
-                />
-              </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Next"
+                  className="absolute right-2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    nextImage()
+                  }}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </>
             )}
-          </div>
 
-          <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">
-            {currentIndex + 1} / {media.length}
-            {name ? ` · ${name}` : ""}
-            {isVideo && hasSound(currentFile.pathname) ? " · sound on" : ""}
+            <div className="w-full h-full flex items-center justify-center">
+              {isVideo ? (
+                <video src={currentFile.url} poster={currentFile.poster} controls autoPlay className="max-w-full max-h-full object-contain" />
+              ) : (
+                <div className="relative w-full h-full">
+                  <Image
+                    src={currentFile.url || "/placeholder.svg"}
+                    alt={`${project.title}, ${name}`}
+                    fill
+                    sizes="100vw"
+                    className="object-contain"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">
+              {currentIndex + 1} / {media.length}
+              {name ? ` · ${name}` : ""}
+              {isVideo && hasSound(currentFile.pathname) ? " · sound on" : ""}
+            </div>
           </div>
-        </div>
-      </div>
+        )}
+      </dialog>
     )
   }
 
@@ -263,17 +308,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
         {videos.map((video, i) => (
           <Figure key={video.src} index={i + 1} caption={video.caption}>
             <div className="overflow-hidden bg-secondary">
-              {/* The poster keeps the frame meaningful when a browser blocks autoplay. */}
-              <video
-                src={video.src}
-                poster={video.poster}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                className="h-auto w-full"
-              />
+              <HeroVideo src={video.src} poster={video.poster} />
             </div>
           </Figure>
         ))}

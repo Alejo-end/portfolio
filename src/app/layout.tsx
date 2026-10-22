@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Cursor } from "@/components/koivu/Cursor";
 import { XpHud } from "@/components/koivu/XpHud";
+import { siteUrl } from "@/lib/site";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff2",
@@ -25,15 +27,11 @@ const silkscreen = localFont({
   weight: "400",
 });
 
-const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "http://localhost:3000";
-
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: "Alejandro?",
-    template: "%s — Alejandro?",
+    template: "%s · Alejandro?",
   },
   description:
     "Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and instruments.",
@@ -58,6 +56,8 @@ export default function RootLayout({
           <XpHud />
           <Cursor />
         </Providers>
+        {/* Real-user Core Web Vitals, free on the Hobby plan. */}
+        <SpeedInsights />
       </body>
     </html>
   );

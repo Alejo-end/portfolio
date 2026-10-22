@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { projects, projectNo } from '@/data/projects'
-import { getGalleryBlobs } from '@/lib/blobs'
+import { getGalleryBlobs, isImagePath } from '@/lib/blobs'
 import { hasSound } from '@/data/sound'
 import { ProjectGrid, type ProjectCard } from '@/components/koivu/ProjectGrid'
 
@@ -13,7 +13,6 @@ export const metadata: Metadata = {
     alternates: { canonical: '/projects' },
 }
 
-const isImage = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname)
 // MOV files are often HEVC, which most browsers will not play, so only MP4.
 const isClip = (pathname: string) => /\.mp4$/i.test(pathname)
 
@@ -21,8 +20,8 @@ export default async function ProjectsPage() {
     const cards: ProjectCard[] = await Promise.all(
         projects.map(async (project) => {
             const blobs = await getGalleryBlobs(project.alias)
-            const images = blobs.filter((b) => isImage(b.pathname)).map((b) => b.url)
-            const cover = project.videos?.[0]?.poster ?? images[0]
+            const images = blobs.filter((b) => isImagePath(b.pathname)).map((b) => b.url)
+            const cover = project.videos?.[0]?.poster ?? images[0] ?? blobs.find((b) => b.poster)?.poster
             const video = project.videos?.[0]?.src ?? blobs.find((b) => isClip(b.pathname))?.url
             return {
                 no: projectNo(project),

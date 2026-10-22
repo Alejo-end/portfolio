@@ -48,7 +48,6 @@ export function XpHud() {
             typed = (typed + e.key.toLowerCase()).slice(-5)
             if (typed === 'snake') setOpen(true)
             if (typed === 'metro') router.push('/metro')
-            if (e.key === 'Escape') setOpen(false)
         }
         const onEsc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
         document.addEventListener('keypress', onKey)

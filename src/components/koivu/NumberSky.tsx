@@ -40,8 +40,14 @@ export function NumberSky({ numbers, picked }: { numbers: SkyNumber[]; picked: (
     const damp = size?.cols === 3 ? 0.5 : 1
 
     useEffect(() => {
+        let last = ''
         const layout = () => {
             const g = grid()
+            // Mobile browsers fire resize as the address bar slides in and out.
+            // Only re-deal when the grid itself changes, or the numbers jump on scroll.
+            const key = `${g.cols}x${g.rows}`
+            if (key === last) return
+            last = key
             setSize(g)
             setPlaced(
                 dealCells(numbers.length, g.cols * g.rows).map((cell) => ({
@@ -59,10 +65,11 @@ export function NumberSky({ numbers, picked }: { numbers: SkyNumber[]; picked: (
     useEffect(() => {
         if (!size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
         const cells = size.cols * size.rows
+        let back: ReturnType<typeof setTimeout> | undefined
         const id = setInterval(() => {
             const i = Math.floor(Math.random() * numbers.length)
             setPlaced((p) => p.map((n, k) => (k === i ? { ...n, shown: false } : n)))
-            setTimeout(() => {
+            back = setTimeout(() => {
                 setPlaced((p) => {
                     const taken = new Set(p.map((n) => n.cell))
                     const free = Array.from({ length: cells }, (_, c) => c).filter((c) => !taken.has(c))
@@ -72,7 +79,10 @@ export function NumberSky({ numbers, picked }: { numbers: SkyNumber[]; picked: (
                 })
             }, 400)
         }, 2600)
-        return () => clearInterval(id)
+        return () => {
+            clearInterval(id)
+            clearTimeout(back)
+        }
     }, [size, numbers.length])
 
     if (!size) return null

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { projects, projectNo } from "@/data/projects";
 import { workExperiences, shortYears } from "@/data/experience";
-import { getGalleryBlobs } from "@/lib/blobs";
+import { getGalleryBlobs, isImagePath } from "@/lib/blobs";
 import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
 import { SpecList } from "@/components/SpecList";
@@ -18,8 +18,6 @@ export const metadata: Metadata = {
         "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, with an enthusiasm for electronics and experimental music.",
 };
 
-const isImage = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname);
-
 export default async function Home() {
     const rows: IndexRow[] = await Promise.all(
         projects.map(async (project) => {
@@ -31,7 +29,10 @@ export default async function Home() {
                 year: project.year,
                 kind: project.kind,
                 description: project.description,
-                cover: project.videos?.[0]?.poster ?? blobs.find((b) => isImage(b.pathname))?.url,
+                cover:
+                    project.videos?.[0]?.poster ??
+                    blobs.find((b) => isImagePath(b.pathname))?.url ??
+                    blobs.find((b) => b.poster)?.poster,
                 sound: blobs.some((b) => hasSound(b.pathname)),
             };
         })

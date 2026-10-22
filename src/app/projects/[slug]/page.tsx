@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { projects, getProjectByAlias, projectNo } from '@/data/projects'
-import { getGalleryBlobs } from '@/lib/blobs'
+import { getGalleryBlobs, isImagePath } from '@/lib/blobs'
 import { ProjectDetails } from '@/components/ProjectDetails'
 import { Pager } from '@/components/koivu/Pager'
 
@@ -19,7 +19,7 @@ export async function generateMetadata(
     const project = getProjectByAlias(slug)
     if (!project) return {}
     const blobs = await getGalleryBlobs(slug).catch(() => [])
-    const image = blobs.find((b) => /\.(png|jpe?g|webp)$/i.test(b.pathname))
+    const image = blobs.find((b) => isImagePath(b.pathname))
     return {
         title: project.title,
         description: project.description,
