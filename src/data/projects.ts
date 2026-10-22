@@ -1,5 +1,4 @@
 import { Project } from "@/app/types"
-import { midihostFirmware } from "./code/midihost"
 
 export const projects: Project[] = [
   {
@@ -77,27 +76,33 @@ export const projects: Project[] = [
     galleryLayout: "grid",
   },
   {
-    title: "MIDI Host-to-Host Bridge",
+    title: "2Host",
     description:
-      "Connects two USB MIDI hosts, for example a laptop and a norns, in both directions. Rev 1, milled at the Fab Lab, runs daily between my norns and Ableton. Rev 3 adds TRS MIDI in and out and a panic button, in a 9.4 mm aluminum case. Ready to order from JLCPCB.",
-    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB", "JLCPCB", "FreeCAD"],
-    codeSnippets: [
-      { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
-    ],
-    alias: "midihost",
+      "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. Every message passes, SysEx included. A panic button stops every note. First batch soon on Tori.",
+    technologies: ["KiCad", "XIAO RP2040", "TinyUSB", "Arduino", "MIDI", "PCB Design", "JLCPCB", "FreeCAD"],
+    alias: "2host",
     kind: "hardware",
     specs: [
+      { label: "ports", value: "2 × USB-C MIDI · TRS in · TRS out" },
       { label: "mcu", value: "2 × XIAO RP2040" },
-      { label: "link", value: "UART" },
-      { label: "firmware", value: "TinyUSB" },
-      { label: "midi", value: "TRS in and out, type A or B" },
-      { label: "case", value: "62.4 × 41.9 × 9.4 mm, aluminum" },
-      { label: "board", value: "rev 1 milled on a Roland SRM-20, rev 3 JLCPCB" },
+      { label: "case", value: "62.4 × 41.9 × 9.4 mm, aluminum, PCB lid" },
+      { label: "board", value: "2 layers, assembled by JLCPCB" },
     ],
-    githubUrl:
-      "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
-    liveUrl:
-      "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
+    prototype: {
+      title: "MIDI Host-to-Host Bridge",
+      alias: "midihost",
+      year: 2026,
+      description:
+        "Rev 1. Two XIAOs linked by UART, milled on the Fab Lab's SRM-20, printed case. In daily use between my norns and Ableton.",
+      specs: [
+        { label: "mcu", value: "2 × XIAO RP2040" },
+        { label: "link", value: "UART" },
+        { label: "board", value: "milled on a Roland SRM-20" },
+      ],
+      technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "Roland SRM-20", "TinyUSB"],
+      githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
+      liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
+    },
     year: 2026,
   },
   {
