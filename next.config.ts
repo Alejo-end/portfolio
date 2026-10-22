@@ -49,6 +49,12 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // The MIDI bridge is 2Host's rev 1 now, shown on its page as the prototype.
+        source: "/projects/midihost",
+        destination: "/projects/2host",
+        permanent: true,
+      },
+      {
         // The MIDI Guitar now lives on the Reins page as its prototype.
         source: "/projects/midiguitar",
         destination: "/projects/reins",
