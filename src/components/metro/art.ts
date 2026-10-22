@@ -817,7 +817,7 @@ function tickets(ctx: Ctx, g: Game, mode: Screen, t: number) {
         if (g.ticket) drawText(ctx, 'Valid', 128, 57, C.green, 2, 'center')
         else drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
         R(ctx, 89, 72, 78, 1, '#e2ddd3')
-        drawText(ctx, `To ${stopsOf(g)[rides].name}`, 91, 77, C.grey2)
+        drawText(ctx, `To ${stopsOf(g)[rides].name}`, 91, 76, C.grey2)
         const way = (i: number, icon: Mode | 'scooter', color: string, name: string, time: string, sub: string) => {
             const y = 82 + i * 12
             sign(ctx, icon, 90, y, 9, color)
@@ -830,7 +830,7 @@ function tickets(ctx: Ctx, g: Game, mode: Screen, t: number) {
         )
         way(3, 'bike', FRAME, 'Bike', `${bikeMinutes(g.long)} min`, 'no ticket needed')
         // A rental scooter wants a card. You have 0,00 €.
-        way(4, 'scooter', '#2f9a6a', 'Scooter', 'locked', 'add a card to unlock')
+        way(4, 'scooter', '#2f9a6a', 'Scooter', 'locked', 'card needed')
     } else if (mode === 'buying') {
         drawText(ctx, 'Single ticket AB', 128, 52, C.ink, 1, 'center')
         drawText(ctx, euro(PRICE), 128, 61, C.ink, 2, 'center')
