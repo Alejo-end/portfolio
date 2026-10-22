@@ -27,7 +27,8 @@ export async function generateMetadata(
         openGraph: {
             title: project.title,
             description: project.description,
-            ...(image ? { images: [{ url: image.url }] } : {}),
+            // Without a gallery image, the site card from app/opengraph-image.tsx.
+            images: [{ url: image ? image.url : '/opengraph-image' }],
         },
     }
 }
