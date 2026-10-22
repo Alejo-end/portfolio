@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { Spec } from '@/app/types'
 import { SpecList } from '@/components/SpecList'
 import { NoTicket } from '@/components/metro/NoTicket'
+import { PRICE, euro } from '@/components/metro/game'
 
 export const metadata: Metadata = {
     title: 'No ticket',
@@ -13,7 +14,7 @@ const notes: Spec[] = [
     { label: 'plain clothes', value: 'in pairs, no phone, lanyard at the collar' },
     { label: 'bus driver', value: 'checks the front door, cannot fine' },
     { label: 'penalty fare', value: '100 €' },
-    { label: 'real ticket', value: '3,20 € in the app, after a login' },
+    { label: 'real ticket', value: `${euro(PRICE)} in the app, after a login` },
     { label: 'busking', value: 'keys 1 2 3 on the line, coins pay for a ticket' },
     { label: 'jammed machine', value: 'hit it on green, three times' },
     { label: 'bike', value: 'hop, bell, brake. Two red lights and the police want a word' },

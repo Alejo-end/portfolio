@@ -1,7 +1,7 @@
 'use client'
 
 import { addXp } from '@/lib/xp'
-import type { Game, Mode } from './game'
+import { PRICE, euro, type Game, type Mode } from './game'
 
 // Runs, best arrival, fines paid and achievements, kept in this browser
 // only. Each new ending, each way of travelling and each achievement also
@@ -21,10 +21,10 @@ export type Stats = {
 export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
     { id: 'three', name: 'Full network', text: 'metro, tram and bus, all on time, all free' },
     { id: 'talker', name: 'Screenshot artist', text: 'an inspector believed the screenshot' },
-    { id: 'driver', name: 'Middle door', text: 'past the bus driver. Nobody said anything' },
+    { id: 'driver', name: "Driver's discretion", text: 'on the bus, nothing paid to the driver' },
     { id: 'ghost', name: 'Furniture', text: 'an inspector walked past you like a seat' },
     { id: 'crowd', name: 'One of many', text: 'lost in the crowd at the way out' },
-    { id: 'free', name: 'Saved 3,20 €', text: 'late, but you paid nothing. Worth it' },
+    { id: 'free', name: `Saved ${euro(PRICE)}`, text: 'late, but you paid nothing. Worth it' },
     { id: 'honest', name: 'Normal person', text: 'on time with a ticket you bought' },
     { id: 'busker', name: 'Street economy', text: 'busked your way to a real ticket' },
     { id: 'jammed', name: 'Percussive maintenance', text: 'hit the machine until it printed' },
@@ -39,6 +39,8 @@ export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
     { id: 'sleeper', name: 'Do not disturb', text: 'slept through a ticket check' },
     { id: 'story', name: 'Long story', text: 'talked until they gave up' },
     { id: 'kurvi', name: 'Pregame', text: 'kebab, bar, and still on time' },
+    { id: 'mitten', name: 'Lost and found', text: 'brought the mitten back to its owner' },
+    { id: 'gull', name: 'Seagull tax', text: 'a gull took your kebab' },
 ]
 
 const KEY = 'no-ticket'
@@ -107,6 +109,8 @@ export function recordRun(g: Game): string[] {
         sleeper: g.flags.includes('sleeper'),
         story: g.flags.includes('story'),
         kurvi: onTime && g.went.length === 2,
+        mitten: onTime && g.mitten,
+        gull: g.flags.includes('gull'),
         collector: s.fines >= 300,
     }
     const fresh = ACHIEVEMENTS.map((a) => a.id).filter((id) => earned[id] && !s.achievements.includes(id))

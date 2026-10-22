@@ -51,6 +51,7 @@ import {
     RED,
     SEAT_FACE,
     SHUT,
+    arriveTime,
     bikeMinutes,
     clockText,
     doorClock,
@@ -59,6 +60,7 @@ import {
     lastStop,
     shotOf,
     stopsOf,
+    transitOf,
     type Game,
     type Inspector,
     type Look,
@@ -78,9 +80,6 @@ export { H, W }
 const NIGHT_SKY = [C.night, C.night2, C.night3]
 const DAY_SKY = ['#8fbbe3', '#a9cbe9', '#c4dbef']
 const skyOf = (day: boolean) => (day ? DAY_SKY : NIGHT_SKY)
-
-// Scenes with a vehicle in them only come up on transit runs.
-const vehicleOf = (g: Game) => g.mode as Transit
 
 // You as the evening has left you: jeans soaked from the puddle, a kebab
 // in hand, red in the face, or asleep on your feet.
@@ -392,7 +391,7 @@ function posters(ctx: Ctx, at: number, stop: string) {
     })
 }
 
-function platformFront(ctx: Ctx) {
+function platformFront(ctx: Ctx, g: Game) {
     R(ctx, 0, 104, W, 40, '#a39b8f')
     R(ctx, 0, 104, W, 1, C.paper)
     R(ctx, 0, 105, W, 3, '#d6ad35')
@@ -409,6 +408,7 @@ function platformFront(ctx: Ctx) {
         R(ctx, c, y, 1, 1, '#a39c92')
     }
     R(ctx, 0, 112, 26, 4, '#4a453f')
+    if (!g.mitten) mitten(ctx, 22, 107)
 }
 
 function streetBack(ctx: Ctx, g: Game) {
@@ -423,7 +423,7 @@ function streetBack(ctx: Ctx, g: Game) {
     R(ctx, 0, 20, W, 1, '#080a12')
     R(ctx, 4, 16, 2, 80, '#2a2a2a')
     gull(ctx, 5, 16, g.time, false)
-    mitten(ctx, 3, 62)
+    if (!g.mitten) mitten(ctx, 3, 62)
     R(ctx, 0, 96, W, 8, '#262628')
     if (g.mode === 'tram') {
         R(ctx, 0, 99, W, 1, '#55524e')
@@ -506,10 +506,10 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
             vehicle(ctx, 'metro', left - 224, open, neighbour(left - 224, 3), warn)
             vehicle(ctx, 'metro', left + 224, open, neighbour(left + 224, 7), warn)
         }
-        vehicle(ctx, vehicleOf(g), left, open, inside(left), warn)
+        vehicle(ctx, transitOf(g), left, open, inside(left), warn)
     }
 
-    if (metro) platformFront(ctx)
+    if (metro) platformFront(ctx, g)
     else streetFront(ctx, g)
     ticketMachine(ctx, metro ? 238 : 212, 120, !g.machines.includes(g.at) && !g.ticket, g.time)
 
@@ -610,7 +610,7 @@ const ADS = [
 
 function interior(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
-    const look = CABINS[vehicleOf(g)]
+    const look = CABINS[transitOf(g)]
     R(ctx, 0, 0, W, 16, shade(look.wall, 0.1))
     R(ctx, 0, 12, W, 2, '#fffbe8')
     R(ctx, 0, 15, W, 1, look.wallD)
@@ -652,7 +652,9 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         R(ctx, cx + 10, 16, 1, 100, look.pole)
     }
     R(ctx, 0, 22, W, 1, shade(look.wallD, -0.1))
-    const next = stopsOf(g)[Math.min(g.at + 1, lastStop(g))].name
+    // The next-stop display takes turns in Finnish and Swedish.
+    const coming = stopsOf(g)[Math.min(g.at + 1, lastStop(g))]
+    const next = !still && Math.floor(time / 2.5) % 2 ? coming.sv : coming.name
     const dw = textWidth(next) + 8
     R(ctx, Math.round(W / 2 - dw / 2), 17, dw, 9, '#111')
     drawText(ctx, next, W / 2, 19, C.led, 1, 'center')
@@ -816,17 +818,19 @@ function tickets(ctx: Ctx, g: Game, mode: Screen, t: number) {
         else drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
         R(ctx, 89, 72, 78, 1, '#e2ddd3')
         drawText(ctx, `To ${stopsOf(g)[rides].name}`, 91, 77, C.grey2)
-        const way = (i: number, icon: Mode, color: string, name: string, min: number, sub: string) => {
-            const y = 84 + i * 14
+        const way = (i: number, icon: Mode | 'scooter', color: string, name: string, time: string, sub: string) => {
+            const y = 82 + i * 12
             sign(ctx, icon, 90, y, 9, color)
-            drawText(ctx, name, 103, y + 1, C.ink)
-            drawText(ctx, `${min} min`, 167, y + 1, C.ink, 1, 'right')
-            drawText(ctx, sub, 103, y + 7, C.grey2)
+            drawText(ctx, name, 103, y, C.ink)
+            drawText(ctx, time, 167, y, C.ink, 1, 'right')
+            drawText(ctx, sub, 103, y + 6, C.grey2)
         }
         WAYS.forEach((r, i) =>
-            way(i, r.mode, r.color, r.name, Math.round(1 + rides * LINES[r.mode].rideMin), `every ${LINES[r.mode].waitMin} min`)
+            way(i, r.mode, r.color, r.name, `${Math.round(1 + rides * LINES[r.mode].rideMin)} min`, `every ${LINES[r.mode].waitMin} min`)
         )
-        way(3, 'bike', FRAME, 'Bike', bikeMinutes(g.long), 'no ticket needed')
+        way(3, 'bike', FRAME, 'Bike', `${bikeMinutes(g.long)} min`, 'no ticket needed')
+        // A rental scooter wants a card. You have 0,00 €.
+        way(4, 'scooter', '#2f9a6a', 'Scooter', 'locked', 'add a card to unlock')
     } else if (mode === 'buying') {
         drawText(ctx, 'Single ticket AB', 128, 52, C.ink, 1, 'center')
         drawText(ctx, euro(PRICE), 128, 61, C.ink, 2, 'center')
@@ -900,7 +904,7 @@ function slip(ctx: Ctx, g: Game, t: number) {
     drawText(ctx, 'Penalty fare', cx, y + 10, '#cfe6f7', 1, 'center')
     drawText(ctx, '100,00 €', cx, y + 22, C.ink, 2, 'center')
     drawText(ctx, `Time  ${clockText(g.clock)}`, x + 6, y + 37, C.grey)
-    drawText(ctx, ROUTE[vehicleOf(g)], x + 6, y + 45, C.grey)
+    drawText(ctx, ROUTE[transitOf(g)], x + 6, y + 45, C.grey)
     drawText(ctx, stopsOf(g)[Math.min(g.at, lastStop(g))].name, x + 6, y + 53, C.grey)
     const stamp = g.ending === 'fake' ? 'Fake ticket' : 'No ticket'
     const color = g.ending === 'fake' ? C.red : C.grey
@@ -917,7 +921,7 @@ function slip(ctx: Ctx, g: Game, t: number) {
 // magnifying glass.
 function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     const time = still ? 0 : g.time
-    const look = CABINS[vehicleOf(g)]
+    const look = CABINS[transitOf(g)]
     if (g.checkFrom === 'ride') {
         R(ctx, 0, 0, W, H, look.wall)
         R(ctx, 0, 0, W, 10, shade(look.wall, 0.1))
@@ -986,8 +990,8 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     }
 
     // The kebab you offered, being eaten.
-    if (g.excuse === 'kebab') kebabWrap(ctx, 108, 104, 1 - clamp01(t / 4) * 0.6, 2)
-    const opener = g.excuse === 'kebab' ? 'Nom.' : 'Name?'
+    if (g.caughtWith === 'kebab') kebabWrap(ctx, 108, 104, 1 - clamp01(t / 4) * 0.6, 2)
+    const opener = g.caughtWith === 'kebab' ? 'Nom.' : 'Name?'
     const said = g.ending === 'fake' ? 'Screenshot.' : t < 1.6 ? opener : 'Sign here.'
     bubble(ctx, g.ending === 'fake' ? 110 : 92, 84, said.toUpperCase())
 }
@@ -1741,7 +1745,8 @@ function excuse(ctx: Ctx, g: Game, t: number, still: boolean) {
         const story = ['SO BASICALLY', 'MY FRIEND', 'IN 2019', 'NO WAIT', 'ANYWAY']
         bubble(ctx, 90, 62, story[Math.floor(t / 0.45) % story.length])
     } else {
-        bubble(ctx, 168, 62, pass ? 'OK. GO.' : 'NAME?')
+        const verdict = g.checkFrom === 'driver' ? (pass ? 'FINE. IN.' : 'OFF.') : pass ? 'OK. GO.' : 'NAME?'
+        bubble(ctx, 168, 62, verdict)
     }
     letterbox(ctx)
 }
@@ -1892,6 +1897,21 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             return excuse(ctx, g, t, still)
         case 'arrive':
             return ending(ctx, g, still)
+        case 'gull': {
+            // On the square, close up: the kebab, then a gull, then no kebab.
+            station(ctx, g)
+            dim(ctx)
+            const took = t > 0.9
+            big(ctx, 2, () => {
+                person(ctx, 56, 68, { ...you(g), kebab: !took }, 1, 'stand', 'player', 0, -1, took ? 'worried' : 'happy')
+                const k = clamp01(t / 0.9)
+                const gx = took ? 61 - (t - 0.9) * 50 : lerp(128, 61, k)
+                const gy = took ? 54 - (t - 0.9) * 40 : lerp(4, 54, k)
+                gull(ctx, gx, gy, g.time, true, took ? -1 : 1)
+                if (took) kebabWrap(ctx, gx - 2, gy + 1, 0.5)
+            })
+            return letterbox(ctx)
+        }
         case 'parked':
             station(ctx, g)
             dim(ctx)
@@ -1927,13 +1947,22 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                 person(ctx, 34, 47, you(g), 1, 'stand', 'player', 0, -1, mood)
                 person(ctx, 54, 47, FRIEND, -1, 'stand', 'rider', 0, -1, 'happy')
             })
-            if (t > 0.3 && t < 1.3) bubble(ctx, 102, 62, g.kebab ? 'GOT U A KEBAB.' : 'MADE IT.')
-            const reply = shh ? 'SHH.' : g.drunk ? 'YOU STARTED WITHOUT ME?' : 'KURVI THEN?'
+            // The gull got the kebab on the way in.
+            if (t > 0.3 && t < 1.3) bubble(ctx, 102, 62, g.kebab ? 'THERE WAS A KEBAB.' : 'MADE IT.')
+            const reply = g.mitten
+                ? shh
+                    ? 'SHH. MY MITTEN!'
+                    : 'MY MITTEN!'
+                : shh
+                  ? 'SHH.'
+                  : g.drunk
+                    ? 'YOU STARTED WITHOUT ME?'
+                    : 'KURVI THEN?'
             if (t > 1.3) bubble(ctx, 162, 62, reply)
             return letterbox(ctx)
         }
         case 'gone':
-            ending(ctx, g, still, 2.4)
+            ending(ctx, g, still, arriveTime(g))
             dim(ctx)
             return chat(ctx, g, 'Kaveri', t, [
                 { text: 'where r u' },
@@ -1941,9 +1970,10 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                 { text: 'at kurvi' },
                 { text: 'got u a kebab' },
                 { text: 'ate it' },
+                ...(g.mitten ? [{ text: 'lost a mitten too' }] : []),
             ])
         case 'gossip': {
-            ending(ctx, g, still, 3.2)
+            ending(ctx, g, still, arriveTime(g))
             dim(ctx)
             const nick = stopsOf(g)[Math.min(g.at, lastStop(g))].nick
             return chat(ctx, g, 'Kontrollit hki', t, [
@@ -1953,9 +1983,9 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                     text:
                         g.ending === 'fake'
                             ? 'with a screenshot'
-                            : g.excuse === 'kebab'
+                            : g.caughtWith === 'kebab'
                               ? 'offered a kebab'
-                              : g.excuse === 'story'
+                              : g.caughtWith === 'story'
                                 ? 'long story guy'
                                 : 'black hoodie',
                 },
