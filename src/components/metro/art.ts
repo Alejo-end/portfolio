@@ -1,26 +1,33 @@
 import {
     DRIVER_LOOK,
     EXTRAS,
+    FRAME,
     H,
     R,
     W,
+    bicycle,
     bubble,
     clamp01,
     clipped,
+    cyclist,
     ease,
     facades,
     gull,
     hash,
+    line,
     pigeon,
     setClock,
     windowColor,
     lerp,
     marker,
     person,
+    rabbit,
     rain,
     sign,
+    snore,
     slotX,
     tick,
+    wheel,
     type Ctx,
     type Mood,
     type Role,
@@ -34,23 +41,30 @@ import {
     CHIME,
     DEPART,
     DOORS,
+    DOWN,
     DRIVER,
     FALL,
+    LANE_SPEED,
     LINES,
     OPEN,
     PRICE,
+    RED,
     SEAT_FACE,
     SHUT,
+    bikeMinutes,
     clockText,
     doorClock,
     doorOpen,
     euro,
     lastStop,
+    shotOf,
     stopsOf,
     type Game,
     type Inspector,
     type Look,
     type Mode,
+    type Obstacle,
+    type Transit,
 } from './game'
 import { C, HAIR, PANTS, SKIN, shade } from './palette'
 import { CABINS, vehicle, windowsOf } from './vehicles'
@@ -64,6 +78,32 @@ export { H, W }
 const NIGHT_SKY = [C.night, C.night2, C.night3]
 const DAY_SKY = ['#8fbbe3', '#a9cbe9', '#c4dbef']
 const skyOf = (day: boolean) => (day ? DAY_SKY : NIGHT_SKY)
+
+// Scenes with a vehicle in them only come up on transit runs.
+const vehicleOf = (g: Game) => g.mode as Transit
+
+// You as the evening has left you: jeans soaked from the puddle, a kebab
+// in hand, red in the face, or asleep on your feet.
+const you = (g: Game): Look => ({
+    ...g.look,
+    pants: g.wet ? '#1f2b44' : g.look.pants,
+    kebab: g.kebab,
+    flushed: g.drunk,
+    asleep: g.player.asleep,
+})
+
+function big(ctx: Ctx, scale: number, draw: () => void) {
+    ctx.save()
+    ctx.scale(scale, scale)
+    draw()
+    ctx.restore()
+}
+
+// Black bars for close-ups.
+function letterbox(ctx: Ctx) {
+    R(ctx, 0, 0, W, 12, '#000')
+    R(ctx, 0, H - 12, W, 12, '#000')
+}
 
 // ——— Hämeentie at night ————————————————————————————————————————————————
 
@@ -130,6 +170,8 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
     R(ctx, 0, 110, W, 2, '#6a6560')
     R(ctx, 0, 112, W, 32, '#262628')
     for (const y of [118, 124, 133, 139]) R(ctx, 0, y, W, 1, '#55524e')
+
+    rabbit(ctx, 92, 108, time, 0.2, -1)
 
     if (walkT !== null && walkT < 3.3) {
         const k = clamp01(walkT / 3.2)
@@ -238,13 +280,15 @@ function chapel(ctx: Ctx, day: boolean) {
 // The landmark at each street stop. Kallio church stands on its hill behind
 // the rooftops; the others are right there in front of them.
 function landmark(ctx: Ctx, g: Game, layer: 'behind' | 'front') {
-    const day = g.rush
     const name = stopsOf(g)[g.at].name
-    if (layer === 'behind') {
-        if (name === 'Sörnäinen') kallioChurch(ctx, 170, day)
-        return
-    }
+    if ((name === 'Sörnäinen') === (layer === 'behind')) landmarkOf(ctx, name, g)
+}
+
+function landmarkOf(ctx: Ctx, name: string, g: Game) {
+    const day = g.rush
     switch (name) {
+        case 'Sörnäinen':
+            return kallioChurch(ctx, 170, day)
         case 'Hakaniemi':
             return marketHall(ctx, day)
         case 'Kaisaniemi':
@@ -379,6 +423,7 @@ function streetBack(ctx: Ctx, g: Game) {
     R(ctx, 0, 20, W, 1, '#080a12')
     R(ctx, 4, 16, 2, 80, '#2a2a2a')
     gull(ctx, 5, 16, g.time, false)
+    mitten(ctx, 3, 62)
     R(ctx, 0, 96, W, 8, '#262628')
     if (g.mode === 'tram') {
         R(ctx, 0, 99, W, 1, '#55524e')
@@ -397,6 +442,7 @@ function streetFront(ctx: Ctx, g: Game) {
 
     // A small shelter past the rear door, so nothing hides the riders.
     R(ctx, 225, 86, 31, 6, '#1c1c1e')
+    cone(ctx, 240, 86)
     R(ctx, 227, 92, 1, 34, '#2a2a2a')
     R(ctx, 254, 92, 1, 34, '#2a2a2a')
     R(ctx, 228, 92, 26, 26, '#3b4a55')
@@ -447,7 +493,7 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
         for (const i of g.crew) {
             if (i.aboard) person(ctx, slotX(i.x, l) + i.dx, 101, i.look, i.dir, 'stand', roleOf(g, i))
         }
-        if (g.aboard && !g.player.jumping) person(ctx, slotX(g.player.slot, l) - 3, 101, g.look, -1, 'stand', 'player')
+        if (g.aboard && !g.player.jumping) person(ctx, slotX(g.player.slot, l) - 3, 101, you(g), -1, 'stand', 'player')
     }
     if (left !== null) {
         if (metro) {
@@ -460,7 +506,7 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
             vehicle(ctx, 'metro', left - 224, open, neighbour(left - 224, 3), warn)
             vehicle(ctx, 'metro', left + 224, open, neighbour(left + 224, 7), warn)
         }
-        vehicle(ctx, g.mode, left, open, inside(left), warn)
+        vehicle(ctx, vehicleOf(g), left, open, inside(left), warn)
     }
 
     if (metro) platformFront(ctx)
@@ -508,16 +554,16 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
         const walked = g.phase === 'exit' ? g.t : g.rideT
         const x = lerp(112, 8, clamp01(walked / 2.8))
         const mood: Mood = g.crew.some((i) => !i.aboard) ? 'worried' : 'calm'
-        const top = person(ctx, x, 126, g.look, -1, g.phase === 'exit' ? 'walk' : 'stand', 'player', walked * 7, -1, mood)
+        const top = person(ctx, x, 126, you(g), -1, g.phase === 'exit' ? 'walk' : 'stand', 'player', walked * 7, -1, mood)
         marker(ctx, x, top, time)
     } else if (g.player.jumping) {
         const k = g.player.jump
         const door = doorX(g.aboard ? g.player.slot : g.player.door)
         const [a, b] = g.aboard ? [door, 112] : [112, door]
         const [fa, fb] = g.aboard ? [101, 126] : [126, 101]
-        person(ctx, lerp(a, b, k), lerp(fa, fb, k) - Math.sin(k * Math.PI) * 7, g.look, a < b ? 1 : -1, 'walk', 'player', 1)
+        person(ctx, lerp(a, b, k), lerp(fa, fb, k) - Math.sin(k * Math.PI) * 7, you(g), a < b ? 1 : -1, 'walk', 'player', 1)
     } else if (!g.aboard && g.phase !== 'busk' && g.phase !== 'machine') {
-        const top = person(ctx, 112, 126, g.look, 1, 'stand', 'player')
+        const top = person(ctx, 112, 126, you(g), 1, 'stand', 'player')
         marker(ctx, 112, top, time)
     } else if (left !== null) {
         marker(ctx, doorX(g.player.slot), 76, time)
@@ -564,7 +610,7 @@ const ADS = [
 
 function interior(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
-    const look = CABINS[g.mode]
+    const look = CABINS[vehicleOf(g)]
     R(ctx, 0, 0, W, 16, shade(look.wall, 0.1))
     R(ctx, 0, 12, W, 2, '#fffbe8')
     R(ctx, 0, 15, W, 1, look.wallD)
@@ -645,14 +691,16 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
     const close = g.crew.some((i) => i.aboard && i.active && Math.abs(i.x - g.player.x) < 3)
     const mood: Mood = g.phase === 'check' || (close && !g.player.cleared && !g.ticket) ? 'worried' : 'calm'
     const drawPlayer = () => {
-        const top = person(ctx, px, 116, g.look, 1, g.player.hidden ? 'crouch' : 'stand', 'player', 0, -1, mood)
+        const top = person(ctx, px, 116, you(g), 1, g.player.hidden ? 'crouch' : 'stand', 'player', 0, -1, mood)
         marker(ctx, px, top, time)
+        if (g.player.asleep && !still) snore(ctx, px, top, time, 0.5)
     }
     if (g.player.hidden) drawPlayer()
     for (const r of g.riders) {
         const x = slotX(r.slot) + r.dx
         const top = person(ctx, x, 116, r.look, r.face, r.seated ? 'sit' : 'stand')
         if (time - r.okAt < 0.8) tick(ctx, x, top - 6)
+        else if (r.look.asleep && !still) snore(ctx, x, top, time, r.look.seed ?? 0)
     }
     for (const i of g.crew) {
         if (!i.aboard) continue
@@ -686,7 +734,7 @@ function qr(ctx: Ctx, x: number, y: number) {
     }
 }
 
-const WAYS: { mode: Mode; name: string; color: string }[] = [
+const WAYS: { mode: Transit; name: string; color: string }[] = [
     { mode: 'metro', name: 'Metro', color: C.orange },
     { mode: 'tram', name: 'Tram', color: C.tram },
     { mode: 'bus', name: 'Bus', color: C.blue },
@@ -698,8 +746,28 @@ type Screen = 'empty' | 'buying' | 'fake' | 'live'
 // for your bank; held up to an inspector it shows a screenshot of an old
 // ticket (frozen, the giveaway) or a real one (its band moves).
 function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t) {
-    const rise = Math.round((1 - ease(clamp01(risen / 0.35))) * 120)
     const shake = mode === 'fake' && t < 2.3 ? Math.round(Math.sin(t * 38) * g.heat * 0.6) : 0
+    // A screenshot keeps the time it was taken at.
+    handset(ctx, g, mode === 'fake' ? '20:58' : clockText(g.clock), risen, shake, () => tickets(ctx, g, mode, t))
+    if ((mode === 'fake' || mode === 'live') && t > 2.3) {
+        if (g.verdict === 'pass') {
+            R(ctx, 95, 58, 66, 32, C.white)
+            R(ctx, 96, 59, 64, 30, C.green)
+            drawText(ctx, 'OK', 128, 63, C.white, 3, 'center')
+            drawText(ctx, 'Thanks', 128, 81, C.white, 1, 'center')
+        } else {
+            R(ctx, 91, 57, 74, 36, C.white)
+            R(ctx, 92, 58, 72, 34, C.red)
+            drawText(ctx, 'Screen', 128, 62, C.white, 2, 'center')
+            drawText(ctx, 'shot', 128, 76, C.white, 2, 'center')
+        }
+    }
+}
+
+// The phone in your hand, rising into view over `risen` seconds. `screen`
+// draws what is on it.
+function handset(ctx: Ctx, g: Game, status: string, risen: number, shake: number, screen: () => void) {
+    const rise = Math.round((1 - ease(clamp01(risen / 0.35))) * 120)
     ctx.save()
     ctx.translate(shake, rise)
     const skin = g.look.skin
@@ -708,12 +776,25 @@ function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t) {
     R(ctx, 80, 14, 96, 136, '#161616')
     R(ctx, 85, 19, 86, 125, C.white)
 
-    // Status bar. A screenshot keeps the time it was taken at.
-    drawText(ctx, mode === 'fake' ? '20:58' : clockText(g.clock), 88, 21, '#333')
+    drawText(ctx, status, 88, 21, '#333')
     R(ctx, 158, 21, 8, 5, '#333')
     R(ctx, 159, 22, 5, 3, C.white)
     R(ctx, 166, 22, 1, 3, '#333')
 
+    screen()
+
+    // The hand holding it.
+    R(ctx, 70, 100, 14, 50, skin)
+    R(ctx, 80, 110, 10, 6, skin)
+    R(ctx, 80, 115, 10, 1, shade(skin, -0.2))
+    for (const fy of [92, 99, 106, 113]) {
+        R(ctx, 175, fy, 6, 6, skin)
+        R(ctx, 175, fy + 6, 6, 1, shade(skin, -0.2))
+    }
+    ctx.restore()
+}
+
+function tickets(ctx: Ctx, g: Game, mode: Screen, t: number) {
     // App bar with a ticket mark.
     R(ctx, 85, 28, 86, 15, C.blue)
     R(ctx, 89, 30, 11, 11, C.white)
@@ -735,13 +816,17 @@ function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t) {
         else drawText(ctx, '0,00 €', 128, 57, C.ink, 2, 'center')
         R(ctx, 89, 72, 78, 1, '#e2ddd3')
         drawText(ctx, `To ${stopsOf(g)[rides].name}`, 91, 77, C.grey2)
-        WAYS.forEach((r, i) => {
-            const y = 87 + i * 17
-            sign(ctx, r.mode, 90, y, 9, r.color)
-            drawText(ctx, r.name, 103, y + 1, C.ink)
-            drawText(ctx, `${Math.round(1 + rides * LINES[r.mode].rideMin)} min`, 167, y + 1, C.ink, 1, 'right')
-            drawText(ctx, `every ${LINES[r.mode].waitMin} min`, 103, y + 8, C.grey2)
-        })
+        const way = (i: number, icon: Mode, color: string, name: string, min: number, sub: string) => {
+            const y = 84 + i * 14
+            sign(ctx, icon, 90, y, 9, color)
+            drawText(ctx, name, 103, y + 1, C.ink)
+            drawText(ctx, `${min} min`, 167, y + 1, C.ink, 1, 'right')
+            drawText(ctx, sub, 103, y + 7, C.grey2)
+        }
+        WAYS.forEach((r, i) =>
+            way(i, r.mode, r.color, r.name, Math.round(1 + rides * LINES[r.mode].rideMin), `every ${LINES[r.mode].waitMin} min`)
+        )
+        way(3, 'bike', FRAME, 'Bike', bikeMinutes(g.long), 'no ticket needed')
     } else if (mode === 'buying') {
         drawText(ctx, 'Single ticket AB', 128, 52, C.ink, 1, 'center')
         drawText(ctx, euro(PRICE), 128, 61, C.ink, 2, 'center')
@@ -773,35 +858,30 @@ function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t) {
         qr(ctx, 116, 113)
         if (t > 1.4 && t < 1.8) R(ctx, 112, 112 + ((t - 1.4) / 0.4) * 26, 32, 1, C.red)
     }
+}
 
-    // The hand holding it.
-    R(ctx, 70, 100, 14, 50, skin)
-    R(ctx, 80, 110, 10, 6, skin)
-    R(ctx, 80, 115, 10, 1, shade(skin, -0.2))
-    for (const fy of [92, 99, 106, 113]) {
-        R(ctx, 175, fy, 6, 6, skin)
-        R(ctx, 175, fy + 6, 6, 1, shade(skin, -0.2))
-    }
-    ctx.restore()
-
-    if ((mode === 'fake' || mode === 'live') && t > 2.3) {
-        if (g.verdict === 'pass') {
-            R(ctx, 95, 58, 66, 32, C.white)
-            R(ctx, 96, 59, 64, 30, C.green)
-            drawText(ctx, 'OK', 128, 63, C.white, 3, 'center')
-            drawText(ctx, 'Thanks', 128, 81, C.white, 1, 'center')
-        } else {
-            R(ctx, 91, 57, 74, 36, C.white)
-            R(ctx, 92, 58, 72, 34, C.red)
-            drawText(ctx, 'Screen', 128, 62, C.white, 2, 'center')
-            drawText(ctx, 'shot', 128, 76, C.white, 2, 'center')
-        }
-    }
+// A chat on the phone: messages arrive one after another, yours on the right.
+function chat(ctx: Ctx, g: Game, name: string, t: number, lines: { text: string; me?: boolean }[]) {
+    handset(ctx, g, clockText(g.clock), t, 0, () => {
+        R(ctx, 85, 28, 86, 15, C.green)
+        R(ctx, 89, 30, 11, 11, C.white)
+        drawText(ctx, name[0], 93, 33, C.green)
+        drawText(ctx, name, 104, 33, C.white)
+        let y = 48
+        lines.forEach((msg, i) => {
+            if (t < 0.5 + i * 0.5) return
+            const w = textWidth(msg.text) + 6
+            const x = msg.me ? 168 - w : 88
+            R(ctx, x, y, w, 9, msg.me ? C.blueL : '#e2ddd3')
+            drawText(ctx, msg.text, x + 3, y + 2, C.ink)
+            y += 12
+        })
+    })
 }
 
 // ——— Endings ——————————————————————————————————————————————————————————
 
-const ROUTE: Record<Mode, string> = {
+const ROUTE: Record<Transit, string> = {
     metro: 'Metro  westbound',
     tram: 'Tram  Hämeentie',
     bus: 'Bus  Hämeentie',
@@ -820,7 +900,7 @@ function slip(ctx: Ctx, g: Game, t: number) {
     drawText(ctx, 'Penalty fare', cx, y + 10, '#cfe6f7', 1, 'center')
     drawText(ctx, '100,00 €', cx, y + 22, C.ink, 2, 'center')
     drawText(ctx, `Time  ${clockText(g.clock)}`, x + 6, y + 37, C.grey)
-    drawText(ctx, ROUTE[g.mode], x + 6, y + 45, C.grey)
+    drawText(ctx, ROUTE[vehicleOf(g)], x + 6, y + 45, C.grey)
     drawText(ctx, stopsOf(g)[Math.min(g.at, lastStop(g))].name, x + 6, y + 53, C.grey)
     const stamp = g.ending === 'fake' ? 'Fake ticket' : 'No ticket'
     const color = g.ending === 'fake' ? C.red : C.grey
@@ -837,7 +917,7 @@ function slip(ctx: Ctx, g: Game, t: number) {
 // magnifying glass.
 function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     const time = still ? 0 : g.time
-    const look = CABINS[g.mode]
+    const look = CABINS[vehicleOf(g)]
     if (g.checkFrom === 'ride') {
         R(ctx, 0, 0, W, H, look.wall)
         R(ctx, 0, 0, W, 10, shade(look.wall, 0.1))
@@ -857,21 +937,15 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     R(ctx, 0, 118, W, 26, look.floor)
     R(ctx, 0, 118, W, 2, shade(look.floor, -0.2))
 
-    const big = (draw: () => void) => {
-        ctx.save()
-        ctx.scale(2, 2)
-        draw()
-        ctx.restore()
-    }
     const bystander = (x: number, n: number) => {
-        big(() => person(ctx, x / 2, 70, EXTRAS[n], 1, 'stand'))
+        big(ctx, 2, () => person(ctx, x / 2, 70, EXTRAS[n], 1, 'stand'))
         // Filming it, of course.
         R(ctx, x + 8, 90, 7, 12, '#151515')
         R(ctx, x + 9, 91, 5, 9, C.screen)
         if (Math.floor(time * 2) % 2 === 0) R(ctx, x + 12, 92, 2, 2, C.red)
     }
     // Someone has popcorn. Every so often a piece goes up to the mouth.
-    big(() => person(ctx, 7, 70, EXTRAS[3], 1, 'stand', 'rider', 0, -1, 'happy'))
+    big(ctx, 2, () => person(ctx, 7, 70, EXTRAS[3], 1, 'stand', 'rider', 0, -1, 'happy'))
     for (let i = 0; i < 4; i++) R(ctx, 18 + i * 2, 106, 2, 10, i % 2 ? C.white : C.red)
     for (const [dx, dy] of [
         [18, 104],
@@ -885,7 +959,7 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     bystander(214, 8)
 
     // You, sweating.
-    big(() => person(ctx, 26, 70, g.look, 1, 'stand', 'player', 0, -1, 'worried'))
+    big(ctx, 2, () => person(ctx, 26, 70, you(g), 1, 'stand', 'player', 0, -1, 'worried'))
     for (const [dx, phase] of [
         [-9, 0],
         [12, 0.5],
@@ -895,11 +969,11 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
     }
 
     // The one writing, and the one with the reader or the magnifying glass.
-    big(() => person(ctx, 46, 70, g.crew[0]?.look ?? EXTRAS[0], -1, 'stand', 'vest'))
+    big(ctx, 2, () => person(ctx, 46, 70, g.crew[0]?.look ?? EXTRAS[0], -1, 'stand', 'vest'))
     R(ctx, 74, 104, 12, 15, C.white)
     for (let ly = 107; ly < 117; ly += 3) R(ctx, 76, ly, 8, 1, '#c9c4ba')
     R(ctx, 78 + Math.round(Math.sin(time * 9) * 3), 100, 2, 9, C.ink)
-    big(() => person(ctx, 62, 70, g.crew[1]?.look ?? EXTRAS[1], -1, 'stand', 'vest'))
+    big(ctx, 2, () => person(ctx, 62, 70, g.crew[1]?.look ?? EXTRAS[1], -1, 'stand', 'vest'))
     // Your phone, held up to the light in front of the second one's face.
     if (g.ending === 'fake') {
         R(ctx, 105, 92, 8, 13, '#151515')
@@ -911,35 +985,68 @@ function fineScene(ctx: Ctx, g: Game, t: number, still: boolean) {
         R(ctx, 113, 103, 2, 9, '#3a3a3a')
     }
 
-    const line = g.ending === 'fake' ? 'Screenshot.' : t < 1.6 ? 'Name?' : 'Sign here.'
-    bubble(ctx, g.ending === 'fake' ? 110 : 92, 84, line.toUpperCase())
+    // The kebab you offered, being eaten.
+    if (g.excuse === 'kebab') kebabWrap(ctx, 108, 104, 1 - clamp01(t / 4) * 0.6, 2)
+    const opener = g.excuse === 'kebab' ? 'Nom.' : 'Name?'
+    const said = g.ending === 'fake' ? 'Screenshot.' : t < 1.6 ? opener : 'Sign here.'
+    bubble(ctx, g.ending === 'fake' ? 110 : 92, 84, said.toUpperCase())
 }
 
-// You, walking onto the square, and your friend if you are on time.
-function arrival(ctx: Ctx, g: Game, still: boolean) {
-    const k = clamp01(g.t / 1.4)
+const FRIEND: Look = {
+    skin: SKIN[2],
+    hair: HAIR[3],
+    coat: '#b8402f',
+    pants: PANTS[0],
+    hat: null,
+    bag: null,
+    phone: false,
+    tag: '',
+    style: 'long',
+    scarf: '#e8c36a',
+    dog: '#c8a46a',
+    seed: 0.9,
+}
+
+// You, walking or riding onto the square, and your friend if you are on time.
+function arrival(ctx: Ctx, g: Game, still: boolean, t: number) {
+    const k = clamp01(t / 1.4)
     const mood: Mood = g.ending === 'made' ? 'happy' : 'calm'
-    person(ctx, lerp(20, 70, k), 134, g.look, 1, k < 1 ? 'walk' : 'stand', 'player', g.t * 7, -1, mood)
-    if (g.ending === 'made') {
-        const friend: Look = {
-            skin: SKIN[2],
-            hair: HAIR[3],
-            coat: '#b8402f',
-            pants: PANTS[0],
-            hat: null,
-            bag: null,
-            phone: false,
-            tag: '',
-            style: 'long',
-            scarf: '#e8c36a',
-            dog: '#c8a46a',
-            seed: 0.9,
-        }
-        person(ctx, 92, 134, friend, -1, 'stand', 'rider', 0, still ? -1 : g.time * 4, 'happy')
+    if (g.mode !== 'bike') {
+        person(ctx, lerp(20, 70, k), 134, you(g), 1, k < 1 ? 'walk' : 'stand', 'player', t * 7, -1, mood)
+    } else if (k < 1) {
+        cyclist(ctx, lerp(-20, 56, k), 134, you(g), 1, t * 9)
+    } else {
+        bicycle(ctx, 56, 134, 0)
+        person(ctx, 72, 134, you(g), 1, 'stand', 'player', 0, -1, mood)
     }
+    if (g.ending === 'made') person(ctx, 92, 134, FRIEND, -1, 'stand', 'rider', 0, still ? -1 : g.time * 4, 'happy')
 }
 
-function square(ctx: Ctx, g: Game, still: boolean) {
+// One of the four stone men holding their lamps, standing on `base`. Someone
+// has given one of them a beanie.
+function stoneMan(ctx: Ctx, sx: number, base: number, day: boolean, beanie = false) {
+    const y = (dy: number) => base - 110 + dy
+    const stone = '#3d4a43'
+    R(ctx, sx - 2, y(61), 5, 6, stone)
+    R(ctx, sx - 5, y(67), 11, 4, stone)
+    R(ctx, sx - 4, y(71), 9, 14, stone)
+    R(ctx, sx - 3, y(85), 7, 19, stone)
+    R(ctx, sx - 6, y(69), 2, 12, stone)
+    R(ctx, sx + 5, y(69), 2, 12, stone)
+    R(ctx, sx - 4, y(67), 1, 37, '#4b5952')
+    R(ctx, sx - 5, y(104), 11, 6, C.graniteD)
+    // Their lamps are off in the morning.
+    R(ctx, sx - 4, y(80), 9, 7, day ? '#8d958f' : C.glow)
+    R(ctx, sx - 3, y(81), 7, 5, day ? '#c9cfca' : '#fff3c4')
+    R(ctx, sx - 1, y(82), 3, 3, day ? '#dfe3e0' : C.white)
+    if (!beanie) return
+    R(ctx, sx - 3, y(58), 7, 4, '#b8402f')
+    R(ctx, sx - 3, y(61), 7, 1, '#dcd7cd')
+    R(ctx, sx - 1, y(56), 3, 2, '#dcd7cd')
+}
+
+// The station building on the square, with its arch, stone men and clock.
+function station(ctx: Ctx, g: Game) {
     const time = g.time
     const sky = skyOf(g.rush)
     R(ctx, 0, 0, W, 40, sky[0])
@@ -965,22 +1072,7 @@ function square(ctx: Ctx, g: Game, still: boolean) {
     for (let y = 70; y < 110; y += 10) R(ctx, 102, y, 52, 1, '#b98f47')
     R(ctx, 112, 96, 32, 14, '#3a3226')
 
-    // Four stone men holding their lamps.
-    for (const sx of [72, 86, 170, 184]) {
-        const stone = '#3d4a43'
-        R(ctx, sx - 2, 61, 5, 6, stone)
-        R(ctx, sx - 5, 67, 11, 4, stone)
-        R(ctx, sx - 4, 71, 9, 14, stone)
-        R(ctx, sx - 3, 85, 7, 19, stone)
-        R(ctx, sx - 6, 69, 2, 12, stone)
-        R(ctx, sx + 5, 69, 2, 12, stone)
-        R(ctx, sx - 4, 67, 1, 37, '#4b5952')
-        R(ctx, sx - 5, 104, 11, 6, C.graniteD)
-        // Their lamps are off in the morning.
-        R(ctx, sx - 4, 80, 9, 7, g.rush ? '#8d958f' : C.glow)
-        R(ctx, sx - 3, 81, 7, 5, g.rush ? '#c9cfca' : '#fff3c4')
-        R(ctx, sx - 1, 82, 3, 3, g.rush ? '#dfe3e0' : C.white)
-    }
+    for (const sx of [72, 86, 170, 184]) stoneMan(ctx, sx, 110, g.rush, sx === 170)
     gull(ctx, 86, 61, time, false)
 
     // Clock tower, showing the real time of arrival.
@@ -1010,20 +1102,25 @@ function square(ctx: Ctx, g: Game, still: boolean) {
     R(ctx, 0, 110, W, 34, g.rush ? '#8a8680' : '#2d2f33')
     if (!g.rush) for (let x = 108; x < 150; x += 3) R(ctx, x, 112 + (x % 7), 1, 20, '#4c4232')
     R(ctx, 0, 110, W, 1, g.rush ? '#77736d' : '#3d3f44')
+}
 
+function square(ctx: Ctx, g: Game, still: boolean, t: number) {
+    const time = g.time
+    station(ctx, g)
     for (const [px, n] of [
         [150, 1],
         [166, 2],
         [184, 3],
     ])
         pigeon(ctx, px, 136, time, n)
-    arrival(ctx, g, still)
+    rabbit(ctx, 236, 140, time, 0.6, -1)
+    arrival(ctx, g, still, t)
     if (!g.rush) rain(ctx, time, still, '#3d4a6a', [112, 142])
 }
 
 // Kamppi, for the long way: the wooden Chapel of Silence on Narinkka square,
 // the glass shopping center behind it with the time on its screen.
-function kamppi(ctx: Ctx, g: Game, still: boolean) {
+function kamppi(ctx: Ctx, g: Game, still: boolean, t: number) {
     const time = g.time
     const sky = skyOf(g.rush)
     R(ctx, 0, 0, W, 40, sky[0])
@@ -1049,6 +1146,7 @@ function kamppi(ctx: Ctx, g: Game, still: boolean) {
         R(ctx, 112 + half - 3, y, 3, 1, '#d29a64')
     }
     R(ctx, 80, 45, 64, 2, '#7d5230')
+    gull(ctx, 100, 45, time, false)
 
     R(ctx, 0, 110, W, 34, g.rush ? '#8f8a84' : '#34363b')
     for (let x = 0; x < W; x += 16) R(ctx, x, 110, 1, 34, g.rush ? '#827d77' : '#2b2d31')
@@ -1060,7 +1158,7 @@ function kamppi(ctx: Ctx, g: Game, still: boolean) {
         [184, 3],
     ])
         pigeon(ctx, px, 136, time, n)
-    arrival(ctx, g, still)
+    arrival(ctx, g, still, t)
     if (!g.rush) rain(ctx, time, still, '#3d4a6a', [112, 142])
 }
 
@@ -1161,7 +1259,7 @@ function buskScene(ctx: Ctx, g: Game, still: boolean) {
     if (!busk) return
     // You, the pocket synth, and the open case.
     const nod = Math.floor(g.time * 4) % 2
-    person(ctx, 64, 126, g.look, 1, 'stand', 'player', 0, -1, 'happy')
+    person(ctx, 64, 126, you(g), 1, 'stand', 'player', 0, -1, 'happy')
     R(ctx, 64, 109 - nod, 12, 4, '#d8d4cc')
     for (let i = 0; i < 4; i++) R(ctx, 65 + i * 3, 110 - nod, 2, 1, LANE_COLORS[i % 3])
     R(ctx, 74, 122, 24, 5, '#3a2a20')
@@ -1184,11 +1282,13 @@ function buskScene(ctx: Ctx, g: Game, still: boolean) {
         for (const n of busk.notes) {
             if (n.lane !== lane) continue
             const y = 100 - ((n.t - g.t) / FALL) * 82
+            // Two shots in, the notes will not keep still.
+            const sway = g.drunk && !still ? Math.round(Math.sin(g.time * 3 + n.t * 5) * 2) : 0
             if (n.hit === 'great' || n.hit === 'ok') {
                 if (g.t - n.t < 0.15) R(ctx, x - 1, 97, 17, 6, C.white)
                 continue
             }
-            if (y > 18 && y < 106) R(ctx, x, y - 2, 15, 4, n.hit === 'miss' ? '#4a4f5a' : LANE_COLORS[lane])
+            if (y > 18 && y < 106) R(ctx, x + sway, y - 2, 15, 4, n.hit === 'miss' ? '#4a4f5a' : LANE_COLORS[lane])
         }
         R(ctx, x, 100, 15, 1, C.white)
         drawText(ctx, ['1', '2', '3'][lane], x + 7, 103, '#8a8f9a', 1, 'center')
@@ -1239,10 +1339,646 @@ function behind(ctx: Ctx, g: Game, still: boolean) {
     else stop(ctx, g, still)
 }
 
+// ——— By bike ——————————————————————————————————————————————————————————
+
+// Where you ride on screen, and the line the wheels run on.
+const RIDER_X = 64
+const LANE = 126
+
+// Things beside the lane, in seconds of riding from the start: a lost
+// mitten on a post, a city bike someone threw off the bridge, a rabbit by
+// the park, a traffic cone on a bin.
+const SIGHTS: { d: number; kind: 'mitten' | 'sunk' | 'rabbit' | 'cone' }[] = [
+    { d: 5.5, kind: 'mitten' },
+    { d: 14.5, kind: 'sunk' },
+    { d: 23, kind: 'rabbit' },
+    { d: 33, kind: 'cone' },
+]
+
+const laneX = (d: number, s: number) => Math.round(RIDER_X + (d - s) * LANE_SPEED)
+
+// A lost mitten, hung up where its owner might see it.
+function mitten(ctx: Ctx, x: number, y: number) {
+    R(ctx, x, y, 4, 5, '#b8402f')
+    R(ctx, x + 4, y + 1, 1, 2, '#b8402f')
+    R(ctx, x + 1, y + 2, 2, 1, '#dcd7cd')
+    R(ctx, x, y + 5, 4, 1, '#dcd7cd')
+}
+
+// A traffic cone standing on `base`, somewhere nobody could have reached.
+function cone(ctx: Ctx, x: number, base: number) {
+    R(ctx, x - 1, base - 7, 2, 2, C.orange)
+    R(ctx, x - 1, base - 5, 2, 1, C.white)
+    R(ctx, x - 2, base - 4, 4, 2, C.orange)
+    R(ctx, x - 2, base - 2, 4, 1, C.white)
+    R(ctx, x - 4, base - 1, 8, 1, C.orangeD)
+}
+
+// A yellow city bike someone threw off the bridge, handlebars out of the water.
+function sunkBike(ctx: Ctx, x: number, day: boolean) {
+    const y = 95
+    R(ctx, x - 14, y, 30, 1, day ? '#8fb3cc' : '#33456a')
+    for (let a = 0; a <= 10; a++) {
+        const ang = Math.PI + (a / 10) * Math.PI
+        R(ctx, x - 8 + Math.round(Math.cos(ang) * 6), y + Math.round(Math.sin(ang) * 6), 1, 1, '#f2c200')
+    }
+    R(ctx, x + 3, y - 8, 2, 8, '#f2c200')
+    R(ctx, x - 1, y - 9, 10, 1, '#2a2a2a')
+    R(ctx, x + 5, y - 6, 6, 4, '#3a3a3a')
+}
+
+// Down in the lane: the bike on its side, you sitting next to it, seeing stars.
+function fallen(ctx: Ctx, x: number, ground: number, look: Look, time: number) {
+    for (const wx of [x - 16, x - 2]) {
+        R(ctx, wx - 5, ground - 2, 11, 1, C.ink)
+        R(ctx, wx - 4, ground - 1, 9, 1, '#3a3a3a')
+    }
+    line(ctx, x - 14, ground - 3, x - 2, ground - 4, FRAME)
+    const top = person(ctx, x + 10, ground, look, -1, 'sit', 'player', 0, -1, 'worried')
+    for (let i = 0; i < 3; i++) {
+        const a = time * 6 + i * 2.1
+        R(ctx, x + 10 + Math.cos(a) * 5, top - 3 + Math.sin(a) * 1.5, 1, 1, C.yellowL)
+    }
+}
+
+function obstacle(ctx: Ctx, g: Game, o: Obstacle, s: number) {
+    const x = laneX(o.d, s)
+    if (x < -40 || x > W + 40) return
+    const time = g.time
+    const day = g.rush
+    const since = time - o.at
+    switch (o.kind) {
+        case 'tracks':
+            // Tram rails crossing the lane at an angle, as they do on Hämeentie.
+            for (let y = 112; y < 138; y++) {
+                const dx = Math.round((y - 125) * 0.8)
+                R(ctx, x + dx - 4, y, 2, 1, '#9a958c')
+                R(ctx, x + dx + 3, y, 2, 1, '#9a958c')
+                R(ctx, x + dx - 2, y, 1, 1, '#151517')
+            }
+            return
+        case 'scooter':
+            // A rental scooter, left on its side.
+            R(ctx, x - 7, LANE - 3, 12, 2, '#2a2a2a')
+            R(ctx, x - 5, LANE - 4, 8, 1, '#3ad18a')
+            R(ctx, x + 5, LANE - 3, 10, 1, '#4a4a4a')
+            R(ctx, x + 14, LANE - 6, 1, 6, '#4a4a4a')
+            R(ctx, x - 8, LANE - 2, 3, 2, C.ink)
+            R(ctx, x + 3, LANE - 2, 3, 2, C.ink)
+            return
+        case 'puddle':
+            R(ctx, x - 10, LANE - 1, 20, 2, day ? '#7d98b0' : '#26344c')
+            R(ctx, x - 7, LANE - 2, 14, 1, day ? '#9ab4c8' : '#33456a')
+            R(ctx, x - 3, LANE - 1, 4, 1, day ? '#c3d4e4' : '#5a7090')
+            if (o.done === 'fail' && since < 0.5) {
+                for (let i = 0; i < 8; i++) {
+                    const a = Math.PI + (i / 7) * Math.PI
+                    const r = 4 + since * 30
+                    R(ctx, RIDER_X + Math.cos(a) * r, LANE - 2 + Math.sin(a) * r * 0.6, 1, 2, C.blueL)
+                }
+            }
+            return
+        case 'walker': {
+            if (!o.look) return
+            // On their phone in the bike lane. The bell sends them back to the pavement.
+            const k = o.done === 'ok' ? clamp01(since / 0.3) : 0
+            const top = person(ctx, x, lerp(LANE, 109, k), o.look, -1, 'stand', 'rider', 0, -1, o.done ? 'worried' : 'calm')
+            if (o.done === 'ok' && since < 0.8) bubble(ctx, x, top - 3, '!')
+            return
+        }
+        case 'gull': {
+            const k = o.done === 'ok' ? clamp01(since / 1.5) : 0
+            big(ctx, 2, () => gull(ctx, x / 2, lerp(LANE, 110, k) / 2, time, false, -1))
+            return
+        }
+        case 'door': {
+            // A car parked on the far side of the lane. Its door opens as you come.
+            const car = o.look?.coat ?? C.grey
+            R(ctx, x - 16, 93, 30, 8, shade(car, -0.1))
+            R(ctx, x - 14, 94, 12, 6, '#1b232b')
+            R(ctx, x, 94, 12, 6, '#1b232b')
+            R(ctx, x - 24, 100, 48, 10, car)
+            R(ctx, x + 22, 103, 2, 2, day ? '#d8d4cc' : C.glow)
+            R(ctx, x - 18, 108, 7, 4, C.ink)
+            R(ctx, x + 11, 108, 7, 4, C.ink)
+            const open = o.done ? 1 : clamp01((1.2 - (o.d - s)) / 0.4)
+            if (open > 0) {
+                const h = Math.round(open * 22)
+                R(ctx, x - 2, 98, 11, h + 2, shade(car, 0.15))
+                R(ctx, x - 1, 99, 9, Math.min(h, 6), '#2a3340')
+            }
+            if (o.done && since < 1.2) bubble(ctx, x + 4, 88, o.done === 'ok' ? 'OH.' : 'SORRY.')
+            return
+        }
+        case 'light': {
+            const red = o.red && !(o.done === 'ok' && since > RED - 0.2)
+            R(ctx, x + 6, 80, 2, 30, '#2a2a2a')
+            R(ctx, x + 4, 70, 6, 13, '#111')
+            R(ctx, x + 5, 71, 4, 4, red ? C.red : '#3a1a18')
+            R(ctx, x + 5, 77, 4, 4, red ? '#123a1a' : '#5be07a')
+            R(ctx, x - 1, 112, 2, 26, '#d8d4cc')
+            return
+        }
+    }
+}
+
+function bikeScene(ctx: Ctx, g: Game, still: boolean) {
+    const ride = g.ride
+    if (!ride) return
+    const time = g.time
+    const day = g.rush
+    const stops = stopsOf(g)
+    const leg = Math.min(g.at, ride.legs.length - 1)
+    const from = leg ? ride.legs[leg - 1] : 0
+    const k = clamp01((ride.s - from) / (ride.legs[leg] - from))
+    const bridge = leg === 1
+    const off = ride.s * LANE_SPEED
+    const sky = skyOf(day)
+    R(ctx, 0, 0, W, 34, sky[0])
+    R(ctx, 0, 34, W, 22, sky[1])
+    R(ctx, 0, 56, W, 40, sky[2])
+
+    // The facades go by slower than the lane, drawn twice so they never run out.
+    const rows = (seed: number, base: number, speed: number) => {
+        ctx.save()
+        ctx.translate(-Math.round((off * speed) % W), 0)
+        facades(ctx, seed, base, day)
+        ctx.translate(W, 0)
+        facades(ctx, seed, base, day)
+        ctx.restore()
+    }
+    rows(leg + 3, bridge ? 82 : 96, bridge ? 0.15 : 0.5)
+
+    // The stop just passed slides away, the next one comes into view.
+    const slide = (name: string, dx: number) => {
+        ctx.save()
+        ctx.translate(Math.round(dx), 0)
+        landmarkOf(ctx, name, g)
+        ctx.restore()
+    }
+    slide(stops[leg].name, -k * 320)
+    slide(stops[leg + 1].name, (1 - k) * 240)
+
+    if (bridge) {
+        // Pitkäsilta: the water under it, and the railing.
+        R(ctx, 0, 82, W, 28, day ? '#5a7d96' : '#121a2c')
+        for (let i = 0; i < 18; i++) {
+            const x = (hash(i) * (W + 40) - off * 0.3 + (W + 40) * 4) % (W + 40)
+            R(ctx, x - 20, 84 + Math.floor(hash(i + 7) * 20), 3 + Math.floor(hash(i + 9) * 6), 1, day ? '#8fb3cc' : '#33456a')
+        }
+        const sunk = SIGHTS.find((x) => x.kind === 'sunk')
+        if (sunk) sunkBike(ctx, laneX(sunk.d, ride.s), day)
+        R(ctx, 0, 100, W, 2, '#8a9096')
+        for (let x = -(off % 12); x < W; x += 12) R(ctx, x, 102, 2, 8, '#6a7076')
+        R(ctx, 0, 108, W, 2, '#6a7076')
+    } else {
+        R(ctx, 0, 96, W, 14, '#4a4744')
+        for (let x = -(off % 16); x < W; x += 16) R(ctx, x, 96, 1, 14, '#423f3c')
+        // Kaisaniemi has the park, the rest have street lamps.
+        if (leg === 2) {
+            for (let x = -(off % 72) + 30; x < W + 20; x += 72) {
+                R(ctx, x, 80, 3, 18, '#3a2a20')
+                R(ctx, x - 8, 62, 19, 20, day ? '#3f7a4c' : '#1f3a28')
+                R(ctx, x - 5, 58, 13, 5, day ? '#4f8a5c' : '#2a4a34')
+            }
+        } else {
+            for (let x = -(off % 128) + 40; x < W + 10; x += 128) {
+                R(ctx, x, 58, 2, 40, '#2a2a2a')
+                R(ctx, x - 3, 56, 8, 2, '#3a3a3a')
+                R(ctx, x - 2, 58, 6, 1, day ? '#9a9a96' : C.glow)
+            }
+        }
+        for (const sight of SIGHTS) {
+            const x = laneX(sight.d, ride.s)
+            if (x < -20 || x > W + 20) continue
+            if (sight.kind === 'mitten') {
+                R(ctx, x, 96, 2, 14, '#5a5a5a')
+                mitten(ctx, x - 1, 91)
+            } else if (sight.kind === 'rabbit') rabbit(ctx, x, 108, time, 0.4, -1)
+            else if (sight.kind === 'cone') {
+                R(ctx, x - 3, 100, 7, 10, '#3a4a3a')
+                cone(ctx, x, 100)
+            }
+        }
+    }
+
+    // Kerb, the bike lane, the road.
+    R(ctx, 0, 110, W, 2, '#6a6560')
+    R(ctx, 0, 112, W, 26, '#2c2b2d')
+    for (let x = -(off % 20); x < W; x += 20) R(ctx, x, 136, 10, 1, '#bdb7ab')
+    R(ctx, 0, 138, W, 6, '#232325')
+
+    for (const o of ride.obstacles) obstacle(ctx, g, o, ride.s)
+
+    if (time - ride.downAt < DOWN) fallen(ctx, RIDER_X, LANE, you(g), time)
+    else {
+        const hk = (time - ride.hopAt) / ride.hopLen
+        const lift = hk >= 0 && hk < 1 ? Math.round(Math.sin(hk * Math.PI) * 10) : 0
+        const top = cyclist(ctx, RIDER_X, LANE - lift, you(g), 1, ride.s * 9)
+        if (time - ride.ringAt < 0.5) drawText(ctx, 'pling', RIDER_X + 4, top - 8, C.yellowL)
+        if (time - ride.brakeAt < 0.4 && !lift) R(ctx, RIDER_X - 24, LANE - 1, 12, 1, '#151515')
+    }
+
+    // The route so far, top left.
+    const total = ride.legs[ride.legs.length - 1]
+    R(ctx, 4, 4, 104, 11, 'rgba(10, 13, 24, 0.7)')
+    R(ctx, 8, 9, 96, 1, C.grey2)
+    for (const d of [0, ...ride.legs]) R(ctx, 7 + (d / total) * 96, 8, 3, 3, C.light)
+    R(ctx, 7 + (Math.min(ride.s, total) / total) * 96, 7, 3, 5, C.yellowL)
+
+    if (!day) rain(ctx, time, still, '#4a5a80', [112, 138])
+}
+
+// ——— Cutscenes ——————————————————————————————————————————————————————
+
+const COPS: Look[] = [
+    { skin: SKIN[0], hair: HAIR[1], coat: C.hivis, pants: C.navyD, hat: null, bag: null, phone: false, tag: '', seed: 0.2 },
+    {
+        skin: SKIN[3],
+        hair: HAIR[0],
+        coat: C.hivis,
+        pants: C.navyD,
+        hat: null,
+        bag: null,
+        phone: false,
+        tag: '',
+        beard: true,
+        seed: 0.6,
+    },
+]
+
+// A kebab in its wrap, `left` of it still uneaten, at `s` times size.
+function kebabWrap(ctx: Ctx, x: number, y: number, left = 1, s = 1) {
+    const w = Math.max(1, Math.round(8 * left)) * s
+    R(ctx, x, y, w, 4 * s, '#e8d8a8')
+    R(ctx, x, y, w, s, '#8a4a2a')
+    R(ctx, x + s, y + s, s, s, '#5a9a4a')
+    R(ctx, x, y + 3 * s, w, s, '#cdb98a')
+}
+
+const COOK: Look = {
+    skin: SKIN[2],
+    hair: HAIR[0],
+    coat: '#f2efe6',
+    pants: PANTS[1],
+    hat: null,
+    bag: null,
+    phone: false,
+    tag: '',
+    beard: true,
+    seed: 0.4,
+}
+
+// The kebab place on Kurvi: white tiles, the menu, the spit turning, and a
+// kebab coming over the counter on the tab.
+function kebabShop(ctx: Ctx, g: Game, t: number) {
+    const time = g.time
+    R(ctx, 0, 0, W, H, '#e8e4dc')
+    for (let x = 0; x < W; x += 8) R(ctx, x, 0, 1, 96, '#d4cfc4')
+    for (let y = 0; y < 96; y += 8) R(ctx, 0, y, W, 1, '#d4cfc4')
+    R(ctx, 14, 14, 112, 36, '#1a1a1a')
+    ;[
+        ['Kebab', '9,50'],
+        ['Pizza', '8,00'],
+        ['Falafel', '8,50'],
+    ].forEach(([dish, price], i) => {
+        drawText(ctx, dish, 20, 19 + i * 9, C.yellowL)
+        drawText(ctx, price, 120, 19 + i * 9, C.white, 1, 'right')
+    })
+    // The spit, turning in front of its heater.
+    R(ctx, 150, 18, 34, 74, '#3a2a20')
+    for (let i = 0; i < 8; i++) R(ctx, 152, 22 + i * 9, 30, 2, '#e8641e')
+    R(ctx, 196, 16, 2, 78, '#bbb6aa')
+    for (let y = 26; y < 88; y++) {
+        const half = Math.round(13 - (y - 26) * 0.12)
+        R(ctx, 197 - half, y, half * 2, 1, (y + Math.floor(time * 12)) % 6 < 3 ? '#9a5a32' : '#7a4426')
+    }
+    // A fridge of drinks.
+    R(ctx, 222, 18, 32, 78, '#d8dcdc')
+    R(ctx, 225, 22, 26, 70, '#9ab4c0')
+    for (let i = 0; i < 12; i++) R(ctx, 227 + (i % 4) * 6, 26 + Math.floor(i / 4) * 22, 3, 12, ['#cf3a2f', '#3a9a4a', '#e2b22d', '#0b74c5'][i % 4])
+    big(ctx, 2, () => person(ctx, 46, 54, COOK, 1, 'stand', 'rider', 0, -1, 'happy'))
+    R(ctx, 0, 96, W, 48, '#8a6a4a')
+    R(ctx, 0, 96, W, 3, '#b8a080')
+    R(ctx, 16, 78, 110, 18, 'rgba(200, 230, 240, 0.25)')
+    const k = clamp01((t - 0.5) / 0.5)
+    kebabWrap(ctx, lerp(108, 150, k), 86, 1, 2)
+    if (t > 0.9) bubble(ctx, 96, 52, 'PAY TOMORROW.')
+    letterbox(ctx)
+}
+
+const BIRTHDAY: Look = { ...EXTRAS[6], phone: false, seed: 0.8 }
+
+// Baari: bottles lit from behind, hockey on the TV, and someone's birthday.
+function bar(ctx: Ctx, g: Game, t: number) {
+    const time = g.time
+    R(ctx, 0, 0, W, H, '#1c1416')
+    R(ctx, 0, 18, W, 56, '#2a1e1a')
+    for (const shelf of [44, 66]) {
+        R(ctx, 0, shelf, W, 2, '#4a3020')
+        for (let x = 6; x < 160; x += 9) {
+            const h = 8 + Math.floor(hash(x + shelf) * 6)
+            R(ctx, x, shelf - h, 4, h, ['#6a8a4a', '#8a5a2a', '#c9c4b8', '#5a2a3a', '#2a4a6a'][(x + shelf) % 5])
+            R(ctx, x + 1, shelf - h - 3, 2, 3, '#3a3a3a')
+        }
+    }
+    neon(ctx, 'Baari', 40, 6, Math.floor(time * 7) % 23 === 0 ? '#4a2a3a' : '#ff6fb0')
+    // Hockey on the TV: two teams, one puck.
+    R(ctx, 172, 8, 64, 40, '#111')
+    R(ctx, 174, 10, 60, 36, '#e8f0f4')
+    R(ctx, 203, 10, 2, 36, '#c83030')
+    R(ctx, 188, 10, 1, 36, '#3060c0')
+    R(ctx, 219, 10, 1, 36, '#3060c0')
+    for (let i = 0; i < 6; i++) {
+        const px = 180 + ((hash(i) * 48 + Math.sin(time * 2 + i) * 6 + 48) % 48)
+        R(ctx, px, 16 + hash(i + 4) * 24, 2, 3, i % 2 ? '#1a2a6a' : '#c83030')
+    }
+    R(ctx, 204 + Math.round(Math.sin(time * 5) * 18), 30, 1, 1, C.ink)
+    big(ctx, 2, () => {
+        person(ctx, 32, 52, DRIVER_LOOK, 1, 'stand', 'rider', 0, -1, 'calm')
+        const top = person(ctx, 92, 52, BIRTHDAY, -1, 'stand', 'rider', 0, g.time * 4, 'happy')
+        // A paper party hat.
+        R(ctx, 91, top - 4, 2, 1, C.yellowL)
+        R(ctx, 90, top - 3, 4, 1, '#cf3a2f')
+        R(ctx, 89, top - 2, 6, 1, C.yellowL)
+        R(ctx, 89, top - 1, 6, 1, '#0b74c5')
+    })
+    R(ctx, 0, 100, W, 44, '#4a2a1a')
+    R(ctx, 0, 100, W, 3, '#7a4a2a')
+    // Two shots slide down the bar to you.
+    const k = clamp01(t / 0.6)
+    for (const dx of [0, 9]) {
+        const x = lerp(230, 118, k) + dx
+        R(ctx, x, 91, 6, 9, 'rgba(230, 230, 230, 0.5)')
+        R(ctx, x + 1, 94, 4, 5, t > 2 && dx === 0 ? 'rgba(230, 230, 230, 0.2)' : '#e8c36a')
+    }
+    if (t > 0.6) bubble(ctx, 184, 74, 'ONNEA!')
+    letterbox(ctx)
+}
+
+// Instead of a ticket, close up: the kebab held out and taken, or the whole
+// story while they nod off.
+function excuse(ctx: Ctx, g: Game, t: number, still: boolean) {
+    behind(ctx, g, still)
+    dim(ctx)
+    const driver = g.checkFrom === 'driver'
+    const insp = g.crew.find((i) => i.id === g.checker)
+    const them = driver ? DRIVER_LOOK : (insp?.look ?? EXTRAS[0])
+    const role: Role = driver ? 'rider' : insp?.plain ? 'badge' : 'vest'
+    const pass = g.verdict === 'pass'
+    const kebab = shotOf(g) === 'bribe'
+    const mood: Mood = t > 2 ? (pass ? 'happy' : 'worried') : 'worried'
+    big(ctx, 3, () => {
+        person(ctx, 30, 47, { ...you(g), kebab: false }, 1, 'stand', 'player', 0, -1, mood)
+        person(ctx, 56, 47, kebab ? them : { ...them, asleep: t > 1 && t < 1.9 }, -1, 'stand', role)
+    })
+    if (kebab) {
+        const k = clamp01((t - 0.6) / 0.5)
+        kebabWrap(ctx, lerp(108, 140, k), 100, t > 1.4 ? 0.6 : 1, 3)
+        const said = driver ? (pass ? 'GET IN.' : 'NO.') : pass ? "DIDN'T SEE YOU." : 'THAT IS A BRIBE.'
+        if (t > 1.6) bubble(ctx, 168, 62, said)
+    } else if (t < 2.2) {
+        const story = ['SO BASICALLY', 'MY FRIEND', 'IN 2019', 'NO WAIT', 'ANYWAY']
+        bubble(ctx, 90, 62, story[Math.floor(t / 0.45) % story.length])
+    } else {
+        bubble(ctx, 168, 62, pass ? 'OK. GO.' : 'NAME?')
+    }
+    letterbox(ctx)
+}
+
+// Each ending's scene, without its card: the square, Kamppi, or the fine.
+function ending(ctx: Ctx, g: Game, still: boolean, t = g.t) {
+    if (g.ending === 'fined' || g.ending === 'fake') {
+        fineScene(ctx, g, t, still)
+        slip(ctx, g, t)
+    } else if (g.long) kamppi(ctx, g, still, t)
+    else square(ctx, g, still, t)
+}
+
+function cutScene(ctx: Ctx, g: Game, still: boolean) {
+    const t = g.t
+    const time = g.time
+    switch (shotOf(g)) {
+        case 'chat': {
+            street(ctx, time, still, null, g.look, still ? 0 : time, g.rush)
+            dim(ctx)
+            return chat(ctx, g, 'Kaveri', t, [
+                { text: `${stopsOf(g)[lastStop(g)].nick} ${clockText(g.meet)}` },
+                { text: 'dont be late' },
+                { text: 'again' },
+                { text: 'on my way', me: true },
+            ])
+        }
+        case 'wallet': {
+            street(ctx, time, still, null, g.look, still ? 0 : time, g.rush)
+            dim(ctx)
+            // Open, empty, and something lives in it.
+            const x = 64
+            const y = 42
+            R(ctx, x + 3, y + 3, 128, 60, 'rgba(0, 0, 0, 0.4)')
+            R(ctx, x, y, 128, 60, '#6a4630')
+            R(ctx, x + 2, y + 2, 124, 56, '#7d5638')
+            R(ctx, x + 63, y, 2, 60, '#4a301f')
+            for (let i = 0; i < 3; i++) R(ctx, x + 8, y + 10 + i * 13, 48, 8, '#5d3e28')
+            R(ctx, x + 74, y + 7, 42, 30, '#f2efe6')
+            drawText(ctx, 'Kebab', x + 78, y + 11, C.grey)
+            drawText(ctx, '9,50 €', x + 78, y + 19, C.ink)
+            R(ctx, x + 78, y + 29, 30, 1, '#c9c4ba')
+            R(ctx, x + 72, y + 42, 46, 12, '#5d3e28')
+            R(ctx, x - 12, y + 16, 14, 30, g.look.skin)
+            R(ctx, x + 126, y + 16, 14, 30, g.look.skin)
+            if (t > 0.6) {
+                const k = t - 0.6
+                const mx = x + 64 + k * 34 + Math.sin(k * 11) * 8
+                const my = y + 28 - k * 26 + Math.cos(k * 9) * 4
+                const up = still || Math.floor(time * 14) % 2 === 0
+                R(ctx, mx, my, 3, 2, '#8a7d66')
+                R(ctx, mx - 3, my + (up ? -2 : 1), 3, 2, '#c8bca2')
+                R(ctx, mx + 3, my + (up ? -2 : 1), 3, 2, '#c8bca2')
+            }
+            return
+        }
+        case 'badge': {
+            // The reveal, close up: lanyard out, reader in hand.
+            R(ctx, 0, 0, W, H, '#3a1a1c')
+            for (let i = 0; i < 18; i++) {
+                const x = W - ((hash(i + 30) * W + (still ? 0 : t) * 600) % (W + 60))
+                R(ctx, x, Math.floor(hash(i) * H), 30 + hash(i + 60) * 30, 1, '#6a3a3a')
+            }
+            const insp = g.crew.find((i) => i.plain)
+            const zoom = 3.6 + clamp01(t / 1.8) * 0.4
+            ctx.save()
+            ctx.translate(128, 0)
+            ctx.scale(zoom, zoom)
+            if (insp) person(ctx, 0, 33, insp.look, -1, 'stand', 'badge')
+            ctx.restore()
+            bubble(ctx, 128, 26, 'LIPUNTARKASTUS!')
+            if (t < 0.12) R(ctx, 0, 0, W, H, 'rgba(255, 255, 255, 0.7)')
+            return letterbox(ctx)
+        }
+        case 'lock': {
+            street(ctx, time, still, null, g.look, 0, g.rush)
+            dim(ctx)
+            const flown = t > 1.3
+            big(ctx, 2, () => {
+                // The rack: your bike, and one wheel someone left the rest of.
+                for (const rx of [36, 64, 92]) {
+                    R(ctx, rx - 6, 56, 1, 10, '#8a8a86')
+                    R(ctx, rx + 6, 56, 1, 10, '#8a8a86')
+                    R(ctx, rx - 6, 56, 13, 1, '#8a8a86')
+                }
+                wheel(ctx, 92, 61, 0)
+                R(ctx, 90, 58, 5, 2, '#2a2a2a')
+                bicycle(ctx, 64, 66, 0)
+                // A cobweb in the back wheel, and the lock through it.
+                line(ctx, 53, 58, 59, 64, '#8a8a8a')
+                line(ctx, 53, 64, 59, 58, '#8a8a8a')
+                R(ctx, 55, 57, 4, 1, '#c9c4b8')
+                R(ctx, 55, 58, 1, 5, '#c9c4b8')
+                R(ctx, 58, 58, 1, 5, '#c9c4b8')
+                R(ctx, 54, 62, 6, 2, '#2a2a2a')
+                person(ctx, 40, 66, you(g), 1, 'stand', 'player', 0, -1, flown ? 'calm' : 'worried')
+                // A gull has been sitting on the saddle.
+                if (!flown) gull(ctx, 59, 54, time, false)
+                else gull(ctx, 59 + (t - 1.3) * 30, 54 - (t - 1.3) * 26, time, true)
+            })
+            return letterbox(ctx)
+        }
+        case 'saddle': {
+            R(ctx, 0, 0, W, H, g.rush ? '#6a7a8a' : '#151a26')
+            R(ctx, 122, 86, 12, 60, '#8a8a86')
+            R(ctx, 60, 64, 120, 22, '#1d1d1f')
+            R(ctx, 180, 68, 30, 14, '#1d1d1f')
+            R(ctx, 60, 64, 150, 3, '#2e2e31')
+            for (let i = 0; i < 14; i++) {
+                if (t > 0.5 + hash(i + 3) * 1.2) continue
+                R(ctx, 66 + hash(i) * 136, 61 + hash(i + 9) * 6, 3, 3, C.blueL)
+            }
+            // Your sleeve, doing what it can.
+            const wx = 130 + Math.sin(t * 7) * 46
+            R(ctx, wx - 30, 46, 44, 18, g.look.coat)
+            R(ctx, wx + 14, 48, 12, 14, g.look.skin)
+            return letterbox(ctx)
+        }
+        case 'police':
+            station(ctx, g)
+            cyclist(ctx, 96, 134, you(g), 1, 0)
+            cyclist(ctx, 156, 134, COPS[0], -1, 0, 'police')
+            cyclist(ctx, 180, 134, COPS[1], -1, 0, 'police')
+            if (t > 0.4) bubble(ctx, 152, 104, 'YOUR LIGHT?')
+            return letterbox(ctx)
+        case 'lamp': {
+            // Your front lamp, close up. Your thumb finds the button.
+            R(ctx, 0, 0, W, H, '#0c0e14')
+            R(ctx, 0, 70, W, 10, '#2a2a2a')
+            R(ctx, 0, 70, W, 2, '#3a3a3a')
+            R(ctx, 96, 52, 56, 40, '#3a3a3a')
+            R(ctx, 98, 54, 52, 36, '#444')
+            R(ctx, 118, 50, 8, 3, '#222')
+            const lit = t > 1.15 && t < 1.3
+            R(ctx, 152, 58, 10, 28, lit ? '#fff3c4' : '#555')
+            if (lit) for (let i = 0; i < 4; i++) R(ctx, 166, 60 + i * 8, 22, 1, '#fff3c4')
+            const press = (t > 0.8 && t < 0.95) || (t > 1.1 && t < 1.25)
+            R(ctx, 114, press ? 40 : 32, 16, 12, g.look.skin)
+            R(ctx, 108, press ? 46 : 38, 22, 6, g.look.coat)
+            return letterbox(ctx)
+        }
+        case 'kebab':
+            return kebabShop(ctx, g, t)
+        case 'bar':
+            return bar(ctx, g, t)
+        case 'bribe':
+        case 'ramble':
+            return excuse(ctx, g, t, still)
+        case 'arrive':
+            return ending(ctx, g, still)
+        case 'parked':
+            station(ctx, g)
+            dim(ctx)
+            big(ctx, 2, () => {
+                stoneMan(ctx, 80, 68, g.rush)
+                bicycle(ctx, 60, 68, 0)
+                // The lock goes round a stone ankle.
+                line(ctx, 69, 60, 77, 56, '#c9c4b8')
+                R(ctx, 77, 55, 6, 1, '#c9c4b8')
+                R(ctx, 77, 56, 1, 4, '#c9c4b8')
+                R(ctx, 82, 56, 1, 4, '#c9c4b8')
+                pigeon(ctx, 55, 56, time, 1)
+                person(ctx, 36, 68, you(g), 1, 'stand', 'player', 0, -1, 'happy')
+            })
+            return letterbox(ctx)
+        case 'kurvi':
+        case 'shh': {
+            const shh = shotOf(g) === 'shh'
+            if (shh) {
+                for (let y = 0; y < H; y++) R(ctx, 0, y, W, 1, Math.floor(y / 6) % 2 ? '#b9804e' : '#a87244')
+            } else {
+                // The arch of the station, out of focus behind you both.
+                R(ctx, 0, 0, W, H, C.granite)
+                for (let y = 0; y < 124; y++) {
+                    const dy = Math.max(0, 60 - y)
+                    const half = Math.round(Math.sqrt(60 * 60 - dy * dy) * 1.1)
+                    R(ctx, 128 - half, 20 + y, half * 2, 1, '#f0c46a')
+                }
+                for (let x = 72; x < 190; x += 16) R(ctx, x, 30, 2, 114, '#b98f47')
+            }
+            const mood: Mood = t < 1.3 ? 'happy' : t > 2.1 ? 'worried' : 'calm'
+            big(ctx, 3, () => {
+                person(ctx, 34, 47, you(g), 1, 'stand', 'player', 0, -1, mood)
+                person(ctx, 54, 47, FRIEND, -1, 'stand', 'rider', 0, -1, 'happy')
+            })
+            if (t > 0.3 && t < 1.3) bubble(ctx, 102, 62, g.kebab ? 'GOT U A KEBAB.' : 'MADE IT.')
+            const reply = shh ? 'SHH.' : g.drunk ? 'YOU STARTED WITHOUT ME?' : 'KURVI THEN?'
+            if (t > 1.3) bubble(ctx, 162, 62, reply)
+            return letterbox(ctx)
+        }
+        case 'gone':
+            ending(ctx, g, still, 2.4)
+            dim(ctx)
+            return chat(ctx, g, 'Kaveri', t, [
+                { text: 'where r u' },
+                { text: 'left' },
+                { text: 'at kurvi' },
+                { text: 'got u a kebab' },
+                { text: 'ate it' },
+            ])
+        case 'gossip': {
+            ending(ctx, g, still, 3.2)
+            dim(ctx)
+            const nick = stopsOf(g)[Math.min(g.at, lastStop(g))].nick
+            return chat(ctx, g, 'Kontrollit hki', t, [
+                { text: g.crew.some((i) => i.plain) ? 'plainclothes again' : `vests on ${nick}` },
+                { text: 'got someone' },
+                {
+                    text:
+                        g.ending === 'fake'
+                            ? 'with a screenshot'
+                            : g.excuse === 'kebab'
+                              ? 'offered a kebab'
+                              : g.excuse === 'story'
+                                ? 'long story guy'
+                                : 'black hoodie',
+                },
+                { text: 'rip' },
+            ])
+        }
+    }
+}
+
 export function render(ctx: Ctx, g: Game, still: boolean) {
     setClock(g.time, still)
+    // Two shots in, the world leans a little.
+    const sway = g.drunk && !still && g.phase !== 'title' && g.phase !== 'outro'
+    ctx.save()
+    if (sway) {
+        ctx.translate(W / 2, H / 2)
+        ctx.rotate(Math.sin(g.time * 1.1) * 0.012)
+        ctx.scale(1.04, 1.04)
+        ctx.translate(-W / 2 + Math.sin(g.time * 0.7) * 2, -H / 2)
+    }
     scene(ctx, g, still)
-    if (g.phase === 'platform' || g.phase === 'doors' || g.phase === 'ride') notification(ctx, g)
+    ctx.restore()
+    if (g.phase === 'platform' || g.phase === 'doors' || g.phase === 'ride' || g.phase === 'bike') notification(ctx, g)
 }
 
 // A new message in the group chat slides in at the top right for a moment.
@@ -1268,7 +2004,7 @@ function scene(ctx: Ctx, g: Game, still: boolean) {
             title(ctx, time)
             return
         case 'intro':
-            street(ctx, time, still, g.t, g.look, still ? 0 : g.t + 0.8, g.rush)
+            street(ctx, time, still, g.t, you(g), still ? 0 : g.t + 0.8, g.rush)
             if (g.t > 3.3) phone(ctx, g, 'empty', g.t - 3.3)
             return
         case 'buy':
@@ -1293,15 +2029,12 @@ function scene(ctx: Ctx, g: Game, still: boolean) {
             return machineScene(ctx, g, still)
         case 'busk':
             return buskScene(ctx, g, still)
+        case 'bike':
+            return bikeScene(ctx, g, still)
+        case 'cut':
+            return cutScene(ctx, g, still)
         case 'outro':
-            if (g.ending === 'fined' || g.ending === 'fake') {
-                fineScene(ctx, g, g.t, still)
-                slip(ctx, g, g.t)
-            } else if (g.long) {
-                kamppi(ctx, g, still)
-            } else {
-                square(ctx, g, still)
-            }
+            ending(ctx, g, still)
             if (g.t > 2.4) card(ctx, g)
             return
     }

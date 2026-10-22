@@ -1,6 +1,6 @@
 import { DRIVER_LOOK, R, clipped, person, slotX, type Ctx } from './draw'
 import { drawText } from './font'
-import { DOORS, SEAT_FACE, type Mode } from './game'
+import { DOORS, SEAT_FACE, type Transit } from './game'
 import { C } from './palette'
 
 // The metro car, the tram and the bus seen from where you wait, and the
@@ -17,7 +17,7 @@ export type Cabin = {
     floor: string
 }
 
-export const CABINS: Record<Mode, Cabin> = {
+export const CABINS: Record<Transit, Cabin> = {
     metro: {
         wall: C.cabin,
         wallD: C.cabinD,
@@ -51,7 +51,7 @@ type Inside = () => void
 type Span = [number, number]
 
 // Body between the doors and the ends, split into windows with thin posts.
-const SPANS: Record<Mode, (l: number) => Span[]> = {
+const SPANS: Record<Transit, (l: number) => Span[]> = {
     metro: (l) => [
         [l + 3, l + 19],
         [l + 41, l + 99],
@@ -72,14 +72,14 @@ const SPANS: Record<Mode, (l: number) => Span[]> = {
 }
 
 // Top and bottom of the side windows, and the top of the doorways.
-const GLASS: Record<Mode, { top: number; bottom: number; door: number }> = {
+const GLASS: Record<Transit, { top: number; bottom: number; door: number }> = {
     metro: { top: 62, bottom: 92, door: 56 },
     tram: { top: 64, bottom: 88, door: 60 },
     bus: { top: 62, bottom: 88, door: 56 },
 }
 
 /** Side windows as [x, width] for a vehicle whose left edge is at `left`. */
-export function windowsOf(mode: Mode, left: number) {
+export function windowsOf(mode: Transit, left: number) {
     const out: [number, number][] = []
     for (const [a, b] of SPANS[mode](left)) {
         const n = Math.max(1, Math.round((b - a) / 30))
@@ -91,7 +91,7 @@ export function windowsOf(mode: Mode, left: number) {
 
 // The far side of the cabin and whoever is in it, seen through the glass
 // and the doorways.
-function cabin(ctx: Ctx, mode: Mode, left: number, inside: Inside) {
+function cabin(ctx: Ctx, mode: Transit, left: number, inside: Inside) {
     const look = CABINS[mode]
     const { top, bottom, door } = GLASS[mode]
     const wins = windowsOf(mode, left)
@@ -213,7 +213,7 @@ export function bus(ctx: Ctx, left: number, open: number, inside: Inside, warn: 
     R(ctx, left + 215, 92, 4, 2, C.red)
 }
 
-export function vehicle(ctx: Ctx, mode: Mode, left: number, open: number, inside: Inside, warn: boolean) {
+export function vehicle(ctx: Ctx, mode: Transit, left: number, open: number, inside: Inside, warn: boolean) {
     if (mode === 'tram') tram(ctx, left, open, inside, warn)
     else if (mode === 'bus') bus(ctx, left, open, inside, warn)
     else metroCar(ctx, left, open, inside, warn)

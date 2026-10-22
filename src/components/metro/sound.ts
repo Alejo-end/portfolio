@@ -17,6 +17,13 @@ export type Cue =
     | 'thump'
     | 'alarm'
     | 'print'
+    | 'hop'
+    | 'ring'
+    | 'skid'
+    | 'crash'
+    | 'splash'
+    | 'honk'
+    | 'click'
 
 // The pocket synth you busk with: C, E and G, a plucked square with a sine under it.
 const LANES = [523.25, 659.25, 783.99]
@@ -140,6 +147,37 @@ export function play(cue: Cue) {
                 tone(1600, 0.07, 0.05)
                 tone(2000, 0.14, 0.08)
                 noise(0.2, 0.5, 'bandpass', 1800, 0.04)
+                break
+            case 'hop':
+                tone(440, 0, 0.05)
+                tone(660, 0.04, 0.07)
+                break
+            case 'ring':
+                // A bicycle bell: two bright rings over each other.
+                tone(2100, 0, 0.25, 'triangle', 0.05)
+                tone(2100, 0.12, 0.3, 'triangle', 0.05)
+                tone(2650, 0, 0.2, 'sine', 0.03)
+                break
+            case 'skid':
+                noise(0, 0.35, 'highpass', 3000, 0.05)
+                break
+            case 'crash':
+                // You, the bike, and the bell hitting the tarmac.
+                noise(0, 0.4, 'lowpass', 600, 0.25)
+                tone(90, 0, 0.25, 'square', 0.05)
+                tone(2100, 0.12, 0.2, 'triangle', 0.03)
+                break
+            case 'splash':
+                noise(0, 0.5, 'bandpass', 900, 0.12)
+                break
+            case 'honk':
+                tone(330, 0, 0.35, 'sawtooth', 0.04)
+                tone(415, 0, 0.35, 'sawtooth', 0.03)
+                break
+            case 'click':
+                // Your thumb on the lamp button, twice.
+                tone(2400, 0.85, 0.02, 'square', 0.03)
+                tone(2400, 1.15, 0.02, 'square', 0.03)
                 break
             case 'reveal':
                 tone(440, 0, 0.08)

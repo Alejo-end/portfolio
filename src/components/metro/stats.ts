@@ -19,19 +19,26 @@ export type Stats = {
 }
 
 export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
-    { id: 'three', name: 'All three', text: 'on time by metro, tram and bus, paying nothing' },
-    { id: 'talker', name: 'Smooth talker', text: 'a screenshot got past an inspector' },
-    { id: 'driver', name: 'Past the driver', text: 'on the bus without paying the driver' },
-    { id: 'ghost', name: 'Ghost', text: 'an inspector walked right past you' },
-    { id: 'crowd', name: 'In the crowd', text: 'slipped past the vests at the way out' },
-    { id: 'free', name: 'Late but free', text: 'late, but you paid nothing' },
-    { id: 'honest', name: 'Honest', text: 'on time with a ticket you bought' },
-    { id: 'busker', name: 'Busker', text: 'paid for a ticket with coins from busking' },
-    { id: 'jammed', name: 'Percussive maintenance', text: 'a jammed machine printed you a ticket' },
-    { id: 'rush', name: 'Rush hour', text: 'on time in rush hour, paying nothing' },
-    { id: 'long', name: 'Long way', text: 'on time at Kamppi, paying nothing' },
-    { id: 'daily', name: 'Daily', text: 'finished a daily run' },
-    { id: 'collector', name: 'Collector', text: '300 € in fines' },
+    { id: 'three', name: 'Full network', text: 'metro, tram and bus, all on time, all free' },
+    { id: 'talker', name: 'Screenshot artist', text: 'an inspector believed the screenshot' },
+    { id: 'driver', name: 'Middle door', text: 'past the bus driver. Nobody said anything' },
+    { id: 'ghost', name: 'Furniture', text: 'an inspector walked past you like a seat' },
+    { id: 'crowd', name: 'One of many', text: 'lost in the crowd at the way out' },
+    { id: 'free', name: 'Saved 3,20 €', text: 'late, but you paid nothing. Worth it' },
+    { id: 'honest', name: 'Normal person', text: 'on time with a ticket you bought' },
+    { id: 'busker', name: 'Street economy', text: 'busked your way to a real ticket' },
+    { id: 'jammed', name: 'Percussive maintenance', text: 'hit the machine until it printed' },
+    { id: 'rush', name: 'Commuter', text: 'free and on time at 9:00, with everyone else' },
+    { id: 'long', name: 'Scenic route', text: 'on time at Kamppi, paying nothing' },
+    { id: 'daily', name: 'Routine', text: 'did the daily run. Same as everyone' },
+    { id: 'collector', name: 'Sponsor', text: '300 € in fines. They should name a tram after you' },
+    { id: 'bike', name: 'No ticket needed', text: 'on time by bike' },
+    { id: 'reds', name: 'Model citizen', text: 'stopped at every red light. On time anyway' },
+    { id: 'cycled', name: 'Just in case', text: 'bought a ticket, then cycled' },
+    { id: 'bribe', name: 'Kebab diplomacy', text: 'a kebab got you through a check' },
+    { id: 'sleeper', name: 'Do not disturb', text: 'slept through a ticket check' },
+    { id: 'story', name: 'Long story', text: 'talked until they gave up' },
+    { id: 'kurvi', name: 'Pregame', text: 'kebab, bar, and still on time' },
 ]
 
 const KEY = 'no-ticket'
@@ -81,7 +88,7 @@ export function recordRun(g: Game): string[] {
     if (g.ending === 'fined' || g.ending === 'fake') s.fines += 100
 
     const earned: Record<string, boolean> = {
-        three: s.madeFree.length === 3,
+        three: (['metro', 'tram', 'bus'] as const).every((m) => s.madeFree.includes(m)),
         talker: g.flags.includes('talker'),
         driver: g.flags.includes('driver'),
         ghost: g.flags.includes('ghost'),
@@ -93,6 +100,13 @@ export function recordRun(g: Game): string[] {
         rush: onTime && g.rush && free,
         long: onTime && g.long && free,
         daily: g.daily !== null,
+        bike: onTime && g.mode === 'bike',
+        reds: onTime && g.flags.includes('reds'),
+        cycled: g.flags.includes('cycled'),
+        bribe: g.flags.includes('bribe'),
+        sleeper: g.flags.includes('sleeper'),
+        story: g.flags.includes('story'),
+        kurvi: onTime && g.went.length === 2,
         collector: s.fines >= 300,
     }
     const fresh = ACHIEVEMENTS.map((a) => a.id).filter((id) => earned[id] && !s.achievements.includes(id))
