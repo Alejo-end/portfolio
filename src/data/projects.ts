@@ -79,8 +79,8 @@ export const projects: Project[] = [
   {
     title: "MIDI Host-to-Host Bridge",
     description:
-      "Connects two USB MIDI hosts, for example a laptop and a norns, in both directions. Milled, soldered, printed case. In daily use between my norns and Ableton.",
-    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB"],
+      "Connects two USB MIDI hosts, for example a laptop and a norns, in both directions. Rev 1, milled at the Fab Lab, runs daily between my norns and Ableton. Rev 3 adds TRS MIDI in and out and a panic button, in a 9.4 mm aluminum case. Ready to order from JLCPCB.",
+    technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "PCB Design", "Roland SRM-20", "TinyUSB", "JLCPCB", "FreeCAD"],
     codeSnippets: [
       { filename: "MIDIHost2Host.ino", language: "cpp", code: midihostFirmware },
     ],
@@ -90,7 +90,9 @@ export const projects: Project[] = [
       { label: "mcu", value: "2 × XIAO RP2040" },
       { label: "link", value: "UART" },
       { label: "firmware", value: "TinyUSB" },
-      { label: "board", value: "milled on a Roland SRM-20" },
+      { label: "midi", value: "TRS in and out, type A or B" },
+      { label: "case", value: "62.4 × 41.9 × 9.4 mm, aluminum" },
+      { label: "board", value: "rev 1 milled on a Roland SRM-20, rev 3 JLCPCB" },
     ],
     githubUrl:
       "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
