@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "./Providers";
 import { SiteNav } from "@/components/SiteNav";
@@ -58,6 +59,8 @@ export default function RootLayout({
         </Providers>
         {/* Real-user Core Web Vitals, free on the Hobby plan. */}
         <SpeedInsights />
+        {/* Page views without cookies, also free on Hobby. */}
+        <Analytics />
       </body>
     </html>
   );
