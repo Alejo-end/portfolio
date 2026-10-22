@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
         projects.map(async (project) => {
             const blobs = await getGalleryBlobs(project.alias)
             const images = blobs.filter((b) => isImagePath(b.pathname)).map((b) => b.url)
-            const cover = project.videos?.[0]?.poster ?? images[0]
+            const cover = project.videos?.[0]?.poster ?? images[0] ?? blobs.find((b) => b.poster)?.poster
             const video = project.videos?.[0]?.src ?? blobs.find((b) => isClip(b.pathname))?.url
             return {
                 no: projectNo(project),

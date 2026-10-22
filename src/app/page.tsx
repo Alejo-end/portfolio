@@ -29,7 +29,10 @@ export default async function Home() {
                 year: project.year,
                 kind: project.kind,
                 description: project.description,
-                cover: project.videos?.[0]?.poster ?? blobs.find((b) => isImagePath(b.pathname))?.url,
+                cover:
+                    project.videos?.[0]?.poster ??
+                    blobs.find((b) => isImagePath(b.pathname))?.url ??
+                    blobs.find((b) => b.poster)?.poster,
                 sound: blobs.some((b) => hasSound(b.pathname)),
             };
         })

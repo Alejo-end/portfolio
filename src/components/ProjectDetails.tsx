@@ -15,6 +15,7 @@ export interface BlobFile {
   url: string
   pathname?: string
   contentType?: string
+  poster?: string
 }
 
 interface ProjectDetailsProps {
@@ -165,7 +166,17 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
               aria-label={`Open ${name || "media"}${sound ? ", with sound" : ""} (${index + 1} of ${media.length})`}
               className="relative block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {isVideo ? (
+              {isVideo && file.poster ? (
+                <Image
+                  src={file.poster}
+                  alt={`${project.title}, ${name}`}
+                  width={800}
+                  height={600}
+                  quality={60}
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  className="w-full h-auto object-cover"
+                />
+              ) : isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
                 <video
                   src={`${file.url}#t=0.1`}
@@ -263,7 +274,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
 
             <div className="w-full h-full flex items-center justify-center">
               {isVideo ? (
-                <video src={currentFile.url} controls autoPlay className="max-w-full max-h-full object-contain" />
+                <video src={currentFile.url} poster={currentFile.poster} controls autoPlay className="max-w-full max-h-full object-contain" />
               ) : (
                 <div className="relative w-full h-full">
                   <Image
