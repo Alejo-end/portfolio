@@ -347,11 +347,11 @@ function platformBack(ctx: Ctx, g: Game) {
     drawText(ctx, sv, sx + 19, 30, C.grey2)
 
     // Departure board.
-    R(ctx, 19, 10, 1, 3, '#111')
-    R(ctx, 63, 10, 1, 3, '#111')
-    R(ctx, 13, 13, 58, 16, '#0d0d0d')
-    drawText(ctx, 'M1 Matinkylä', 16, 16, C.led)
-    if (g.phase === 'platform') drawText(ctx, '1 min', 16, 22, C.led)
+    R(ctx, 13, 10, 1, 3, '#111')
+    R(ctx, 57, 10, 1, 3, '#111')
+    R(ctx, 7, 13, 58, 16, '#0d0d0d')
+    drawText(ctx, 'M1 Matinkylä', 10, 16, C.led)
+    if (g.phase === 'platform') drawText(ctx, '1 min', 10, 22, C.led)
 
     R(ctx, 0, 96, W, 8, '#1a1817')
     R(ctx, 0, 100, W, 1, '#77706a')
