@@ -57,7 +57,7 @@ export const projects: Project[] = [
   {
     title: "Mangler",
     description:
-      "Live stereo sampler for norns. Record a phrase, then granular, time-stretch, slice, filter, delay, reverb. Scenes store settings, orbit morphs between them, erosion degrades the loop on each pass.",
+      "Live stereo sampler for norns. Granular, time-stretch, slices, filter, delay, reverb, and two layer decks that loop like a pedal. Scenes store whole sounds, orbit wanders between them, erosion wears the take down on each pass.",
     technologies: ["Lua", "SuperCollider", "norns", "softcut", "MIDI"],
     alias: "mangler",
     kind: "sound",
