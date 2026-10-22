@@ -5,7 +5,7 @@ import { NoTicket } from '@/components/metro/NoTicket'
 
 export const metadata: Metadata = {
     title: 'No ticket',
-    description: 'Sörnäinen to Rautatientori without a ticket, by metro, tram or bus. A pixel transit game.',
+    description: 'Sörnäinen to Rautatientori without a ticket, by metro, tram, bus or bike. A pixel transit game.',
 }
 
 const notes: Spec[] = [
@@ -16,8 +16,10 @@ const notes: Spec[] = [
     { label: 'real ticket', value: '3,20 € in the app, after a login' },
     { label: 'busking', value: 'keys 1 2 3 on the line, coins pay for a ticket' },
     { label: 'jammed machine', value: 'hit it on green, three times' },
+    { label: 'bike', value: 'hop, bell, brake. Two red lights and the police want a word' },
+    { label: 'kurvi', value: 'kebab on the tab, free shots at the bar. Both cost minutes, both open options' },
     { label: 'runs', value: 'night, easy, rush hour, the long way to Kamppi, daily' },
-    { label: 'keys', value: 'space, 1 to 4' },
+    { label: 'keys', value: 'space, 1 to 7' },
 ]
 
 export default function Metro() {

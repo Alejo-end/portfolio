@@ -9,8 +9,8 @@ export const W = 256
 export const H = 144
 
 export type Ctx = CanvasRenderingContext2D
-type Pose = 'stand' | 'walk' | 'sit' | 'crouch'
-export type Role = 'rider' | 'vest' | 'plain' | 'badge' | 'player' | 'driver'
+type Pose = 'stand' | 'walk' | 'sit' | 'crouch' | 'ride'
+export type Role = 'rider' | 'vest' | 'plain' | 'badge' | 'player' | 'driver' | 'police'
 
 export function R(ctx: Ctx, x: number, y: number, w: number, h: number, color: string) {
     ctx.fillStyle = color
@@ -113,24 +113,27 @@ export function person(
     mood: Mood = 'calm'
 ) {
     const x = Math.round(cx)
-    const height = pose === 'sit' ? 20 : pose === 'crouch' ? 18 : 24
+    const height = pose === 'sit' ? 20 : pose === 'crouch' ? 18 : pose === 'ride' ? 26 : 24
+    // Sitting down, or on a saddle: no room for a pram, a dog or a guitar case.
+    const seated = pose === 'sit' || pose === 'ride'
     const top = Math.round(feet) - height
     const rr = (dx: number, dy: number, w: number, h: number, color: string) =>
         R(ctx, face > 0 ? x + dx : x - dx - w + 1, top + dy, w, h, color)
-    const coat = role === 'vest' ? C.navy : look.coat
+    const coat = role === 'vest' ? C.navy : role === 'police' ? C.hivis : look.coat
     const dark = shade(coat, -0.28)
     const phone = look.phone && role === 'rider'
     const reader = role === 'vest' || role === 'badge'
-    const feel: Mood = mood !== 'calm' ? mood : reader ? 'stern' : 'calm'
+    const feel: Mood = mood !== 'calm' ? mood : reader || role === 'police' ? 'stern' : 'calm'
     const seed = look.seed ?? 0.5
     // Now and then people blink, and at rest they nod a pixel.
-    const blink = !frozen && (now * 0.31 + seed * 7) % 1 < 0.04
-    const nod = pose !== 'walk' && !frozen && Math.sin(now * (phone ? 2.4 : 1.3) + seed * 40) > 0.75 ? 1 : 0
+    // The asleep keep their eyes shut and their heads down.
+    const blink = look.asleep || (!frozen && (now * 0.31 + seed * 7) % 1 < 0.04)
+    const nod = look.asleep || (pose !== 'walk' && !frozen && Math.sin(now * (phone ? 2.4 : 1.3) + seed * 40) > 0.75) ? 1 : 0
     const hd = (dx: number, dy: number, w: number, h: number, color: string) => rr(dx, dy + nod, w, h, color)
     const style = look.style ?? 'short'
 
     // Behind the body: guitar case, backpack, long hair.
-    if (look.guitar && pose !== 'sit') {
+    if (look.guitar && !seated) {
         rr(-7, 2, 3, 3, '#2b2622')
         rr(-8, 5, 4, 15, '#2b2622')
         rr(-7, 6, 1, 12, '#3d3630')
@@ -165,6 +168,7 @@ export function person(
         // A bead of sweat running down the back of the head.
         hd(-3, 1 + Math.floor((now * 3 + seed * 5) % 4), 1, 1, C.blueL)
     }
+    if (look.flushed) hd(2, 5, 1, 1, '#d8606a')
     if (look.glasses) {
         hd(0, 3, 3, 1, '#1a1a1a')
         hd(2, 3, 1, 1, '#9fd4ff')
@@ -183,6 +187,12 @@ export function person(
         hd(-2, -1, 5, 1, look.headphones)
         hd(-1, 2, 2, 3, look.headphones)
     }
+    if (role === 'police') {
+        // A peaked cap.
+        hd(-2, -1, 5, 2, C.navyD)
+        hd(3, 0, 2, 1, C.navyD)
+        hd(0, -1, 1, 1, C.lanyard)
+    }
 
     // Body and legs.
     let chest: number
@@ -194,6 +204,26 @@ export function person(
         rr(-2, 14, 7, 2, look.pants)
         rr(3, 16, 2, 3, look.pants)
         rr(3, 19, 3, 1, C.ink)
+    } else if (pose === 'ride') {
+        // On the saddle, the pedals going round with `frame`.
+        chest = 8
+        rr(-1, 7, 2, 1, shade(look.skin, -0.15))
+        rr(-3, 8, 7, 7, coat)
+        rr(-3, 8, 1, 7, dark)
+        const leg = (near: boolean, up: boolean) => {
+            const c = near ? look.pants : shade(look.pants, -0.15)
+            if (up) {
+                rr(0, 15, 4, 2, c)
+                rr(3, 17, 2, 4, c)
+                rr(3, 21, 3, 1, C.ink)
+            } else {
+                rr(-1, 15, 2, 7, c)
+                rr(-1, 22, 3, 1, C.ink)
+            }
+        }
+        const up = Math.floor(frame) % 2 === 0
+        leg(false, !up)
+        leg(true, up)
     } else if (pose === 'crouch') {
         chest = 7
         rr(-3, 7, 7, 6, coat)
@@ -226,6 +256,9 @@ export function person(
     if (role === 'vest') {
         rr(-3, chest + 3, 7, 1, C.band)
         rr(1, chest + 1, 2, 2, C.white)
+    } else if (role === 'police') {
+        rr(-3, chest + 4, 7, 1, C.white)
+        rr(-3, chest, 7, 1, C.navyD)
     } else if (role === 'plain') {
         rr(-2, chest, 1, 1, C.lanyard)
         rr(1, chest, 1, 1, C.lanyard)
@@ -243,7 +276,12 @@ export function person(
 
     // Front arm.
     const y = chest + 1
-    if (wave >= 0) {
+    if (pose === 'ride') {
+        // Reaching for the handlebars.
+        rr(1, y, 3, 2, dark)
+        rr(4, y + 1, 4, 1, dark)
+        rr(8, y + 1, 1, 2, look.skin)
+    } else if (wave >= 0) {
         const up = Math.floor(wave) % 2
         rr(2, y - 7 + up, 2, 7, dark)
         rr(2, y - 8 + up, 2, 1, look.skin)
@@ -257,7 +295,7 @@ export function person(
         rr(0, y, 2, 3, dark)
         rr(1, y + 2, 4, 2, dark)
         rr(5, y + 1, 1, 2, look.skin)
-    } else if (look.pram && pose !== 'sit') {
+    } else if (look.pram && !seated) {
         // Both hands on the pram handle.
         rr(0, y, 2, 3, dark)
         rr(1, y + 3, 4, 2, dark)
@@ -276,6 +314,13 @@ export function person(
         }
     }
 
+    // A kebab to go, in the free hand.
+    if (look.kebab && pose !== 'ride' && wave < 0) {
+        rr(2, y + 3, 4, 3, '#e8d8a8')
+        rr(2, y + 3, 4, 1, '#8a4a2a')
+        rr(3, y + 4, 1, 1, '#5a9a4a')
+    }
+
     // In front: a pram, or a dog on the floor wagging its tail.
     const feetY = Math.round(feet)
     const sprite = (rows: string[], from: number, color: (c: number, r: number) => string) =>
@@ -284,16 +329,86 @@ export function person(
                 if (ch === '#') R(ctx, face > 0 ? x + from + c : x - from - c, feetY - rows.length + r, 1, 1, color(c, r))
             })
         )
-    if (look.pram && pose !== 'sit') {
+    if (look.pram && !seated) {
         const body = shade(look.coat, -0.4)
         sprite(PRAM, 6, (c, r) => (r >= 9 ? C.ink : r < 3 ? shade(body, -0.25) : r > 6 ? '#555' : body))
     }
-    if (look.dog && pose !== 'sit') {
+    if (look.dog && !seated) {
         const wag = Math.floor(now * 6 + seed * 9) % 2
         sprite(DOG, 4, (c, r) => (c === 5 && r === 1 ? C.ink : c === 6 && r === 1 ? C.ink : look.dog ?? C.ink))
         R(ctx, face > 0 ? x + 3 : x - 3, feetY - 4 + wag, 1, 1, look.dog)
     }
     return top - (look.hat ? 3 : 0)
+}
+
+/** A dot-by-dot line, for bike frames. */
+export function line(ctx: Ctx, x0: number, y0: number, x1: number, y1: number, color: string) {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1)
+    for (let i = 0; i <= n; i++) R(ctx, x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, 1, 1, color)
+}
+
+export function wheel(ctx: Ctx, cx: number, cy: number, turn: number) {
+    for (let a = 0; a < 24; a++) {
+        const ang = (a / 24) * Math.PI * 2
+        R(ctx, cx + Math.round(Math.cos(ang) * 5), cy + Math.round(Math.sin(ang) * 5), 1, 1, C.ink)
+    }
+    const dx = Math.round(Math.cos(turn) * 4)
+    const dy = Math.round(Math.sin(turn) * 4)
+    line(ctx, cx - dx, cy - dy, cx + dx, cy + dy, '#7d7a74')
+    R(ctx, cx, cy, 1, 1, '#c9c4b8')
+}
+
+export const FRAME = '#4f7a8c'
+
+/** A bike on `ground`, facing right (1) or left (-1). `turn` spins the wheels. */
+export function bicycle(ctx: Ctx, x: number, ground: number, turn: number, face: 1 | -1 = 1, lamp = false) {
+    const y = ground - 5
+    const X = (dx: number) => x + dx * face
+    const rr = (dx: number, dy: number, w: number, h: number, color: string) =>
+        R(ctx, face > 0 ? x + dx : x - dx - w + 1, y + dy, w, h, color)
+    wheel(ctx, X(-8), y, turn)
+    wheel(ctx, X(8), y, turn + 1)
+    line(ctx, X(-8), y, X(-1), y, '#3a3a3a')
+    line(ctx, X(-8), y, X(-4), y - 6, FRAME)
+    line(ctx, X(-1), y, X(-4), y - 6, FRAME)
+    line(ctx, X(-4), y - 6, X(5), y - 8, FRAME)
+    line(ctx, X(-1), y, X(5), y - 8, FRAME)
+    line(ctx, X(5), y - 8, X(8), y, FRAME)
+    rr(-7, -7, 5, 1, C.ink)
+    rr(5, -10, 1, 2, '#2a2a2a')
+    rr(4, -10, 4, 1, '#2a2a2a')
+    rr(3, -11, 1, 1, C.yellow)
+    // The front lamp. Yours has been dead since August.
+    rr(7, -7, 2, 2, lamp ? C.glow : '#3a3a3a')
+}
+
+/** Someone riding a bike. Returns the top of the head. */
+export function cyclist(ctx: Ctx, x: number, ground: number, look: Look, face: 1 | -1, turn: number, role: Role = 'player') {
+    bicycle(ctx, x, ground, turn, face, role === 'police')
+    return person(ctx, x - 3 * face, ground, look, face, 'ride', role, turn / 1.5)
+}
+
+/** A rabbit, sitting up now and then hopping. Helsinki has plenty. */
+export function rabbit(ctx: Ctx, x: number, y: number, time: number, seed: number, face: 1 | -1 = 1) {
+    const up = Math.max(0, Math.sin(time * 2.2 + seed * 9) - 0.85) * 20
+    const rows = ['.....#.#', '.....###', '.######.', '########', '.##..##.']
+    rows.forEach((row, r) =>
+        [...row].forEach((ch, c) => {
+            if (ch === '#') R(ctx, x + (c - 4) * face, y - rows.length + r - up, 1, 1, '#8a7a68')
+        })
+    )
+    R(ctx, x + 2 * face, y - 4 - up, 1, 1, C.ink)
+    R(ctx, x - 4 * face, y - 3 - up, 1, 1, C.white)
+}
+
+/** A small z floating up from someone asleep. */
+export function snore(ctx: Ctx, x: number, top: number, time: number, seed: number) {
+    const k = (time * 0.7 + seed) % 1
+    const y = Math.round(top - 3 - k * 8)
+    const zx = Math.round(x + 3 + k * 4)
+    R(ctx, zx, y, 3, 1, C.white)
+    R(ctx, zx + 1, y + 1, 1, 1, C.white)
+    R(ctx, zx, y + 2, 3, 1, C.white)
 }
 
 export function marker(ctx: Ctx, x: number, top: number, time: number) {
@@ -321,8 +436,9 @@ export function tick(ctx: Ctx, x: number, y: number) {
     R(ctx, x + 2, y - 1, 1, 1, C.green)
 }
 
-// A 7×7 white pictogram on a colored square: the metro "M", a tram or a bus.
+// A 7×7 white pictogram on a colored square: the metro "M", a tram, a bus or a bike.
 const ICONS = {
+    bike: ['....##.', '.##.#..', '..###..', '.#...#.', '#.#.#.#', '.#...#.', '.......'],
     metro: ['#.....#', '##...##', '#.#.#.#', '#..#..#', '#.....#', '#.....#', '#.....#'],
     tram: ['...#...', '..#.#..', '#######', '#.#.#.#', '#######', '#######', '.#...#.'],
     bus: ['.#####.', '#.#.#.#', '#######', '#######', '#######', '.#...#.', '.......'],

@@ -42,6 +42,7 @@ export const C = {
     granite: '#58625a',
     graniteD: '#444d47',
     copper: '#5f9a7f',
+    hivis: '#c9d43a',
 }
 
 export const SKIN = ['#f1c8a6', '#e0aa82', '#c28660', '#8d5b3d', '#5f3d2a']
