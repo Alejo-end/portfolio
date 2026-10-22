@@ -87,7 +87,10 @@ export function NoTicket() {
     return (
         <section className="space-y-3 font-pixel" aria-label="No ticket, a metro game">
             <div className="flex items-baseline justify-between gap-3 text-[11px] uppercase">
-                <span className="tabular-nums">{ui.clock}</span>
+                <span className="tabular-nums">
+                    {ui.clock}
+                    {ui.cash && <span className="text-muted-foreground"> · {ui.cash}</span>}
+                </span>
                 <span className="truncate">{ui.where}</span>
                 <span aria-label={`Attention ${ui.heat} of 3`} className="flex shrink-0 items-center gap-1">
                     <span className="hidden text-muted-foreground sm:inline">attention</span>

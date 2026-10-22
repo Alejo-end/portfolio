@@ -1,6 +1,25 @@
 // A few synthesized blips. Nothing is sampled.
 
-export type Cue = 'chime' | 'beep' | 'buzz' | 'ok' | 'fail' | 'reveal' | 'rumble' | 'hiss' | 'bell'
+export type Cue =
+    | 'chime'
+    | 'beep'
+    | 'buzz'
+    | 'ok'
+    | 'fail'
+    | 'reveal'
+    | 'rumble'
+    | 'hiss'
+    | 'bell'
+    | 'note0'
+    | 'note1'
+    | 'note2'
+    | 'thud'
+    | 'thump'
+    | 'alarm'
+    | 'print'
+
+// The pocket synth you busk with: C, E and G, a plucked square with a sine under it.
+const LANES = [523.25, 659.25, 783.99]
 
 let audio: AudioContext | null = null
 
@@ -93,6 +112,34 @@ export function play(cue: Cue) {
                 tone(1320, 0, 0.5, 'triangle', 0.06)
                 tone(1320, 0.28, 0.6, 'triangle', 0.06)
                 noise(0.2, 2.2, 'lowpass', 220, 0.08, true)
+                break
+            case 'note0':
+            case 'note1':
+            case 'note2': {
+                const f = LANES[Number(cue[4])]
+                tone(f, 0, 0.28, 'square', 0.035)
+                tone(f / 2, 0, 0.4, 'sine', 0.06)
+                break
+            }
+            case 'thud':
+                tone(98, 0, 0.12, 'square', 0.03)
+                break
+            case 'thump':
+                // A fist on a ticket machine.
+                noise(0, 0.15, 'lowpass', 300, 0.2)
+                tone(70, 0, 0.15, 'sine', 0.12)
+                break
+            case 'alarm':
+                for (let i = 0; i < 4; i++) {
+                    tone(880, i * 0.3, 0.14, 'square', 0.05)
+                    tone(660, i * 0.3 + 0.15, 0.14, 'square', 0.05)
+                }
+                break
+            case 'print':
+                tone(1200, 0, 0.05)
+                tone(1600, 0.07, 0.05)
+                tone(2000, 0.14, 0.08)
+                noise(0.2, 0.5, 'bandpass', 1800, 0.04)
                 break
             case 'reveal':
                 tone(440, 0, 0.08)

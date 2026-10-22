@@ -205,6 +205,9 @@ export function bus(ctx: Ctx, left: number, open: number, inside: Inside, warn: 
         R(ctx, wx + 1, 95, 16, 1, '#151515')
         R(ctx, wx, 96, 18, 10, '#151515')
         R(ctx, wx + 6, 98, 6, 4, '#7d7d7d')
+        // A bolt on the hub, which goes round as the bus moves.
+        const spin = Math.floor(Math.abs(left) / 3) % 4
+        R(ctx, wx + 6 + (spin === 1 || spin === 2 ? 4 : 0), 98 + (spin >= 2 ? 2 : 0), 2, 2, '#3a3a3a')
     }
     R(ctx, left + 1, 92, 4, 2, C.glow)
     R(ctx, left + 215, 92, 4, 2, C.red)
