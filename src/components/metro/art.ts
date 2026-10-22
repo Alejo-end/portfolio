@@ -1483,16 +1483,16 @@ function obstacle(ctx: Ctx, g: Game, o: Obstacle, s: number) {
 }
 
 function bikeScene(ctx: Ctx, g: Game, still: boolean) {
-    const ride = g.ride
-    if (!ride) return
+    const bike = g.bike
+    if (!bike) return
     const time = g.time
     const day = g.rush
     const stops = stopsOf(g)
-    const leg = Math.min(g.at, ride.legs.length - 1)
-    const from = leg ? ride.legs[leg - 1] : 0
-    const k = clamp01((ride.s - from) / (ride.legs[leg] - from))
+    const leg = Math.min(g.at, bike.legs.length - 1)
+    const from = leg ? bike.legs[leg - 1] : 0
+    const k = clamp01((bike.s - from) / (bike.legs[leg] - from))
     const bridge = leg === 1
-    const off = ride.s * LANE_SPEED
+    const off = bike.s * LANE_SPEED
     const sky = skyOf(day)
     R(ctx, 0, 0, W, 34, sky[0])
     R(ctx, 0, 34, W, 22, sky[1])
@@ -1527,7 +1527,7 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
             R(ctx, x - 20, 84 + Math.floor(hash(i + 7) * 20), 3 + Math.floor(hash(i + 9) * 6), 1, day ? '#8fb3cc' : '#33456a')
         }
         const sunk = SIGHTS.find((x) => x.kind === 'sunk')
-        if (sunk) sunkBike(ctx, laneX(sunk.d, ride.s), day)
+        if (sunk) sunkBike(ctx, laneX(sunk.d, bike.s), day)
         R(ctx, 0, 100, W, 2, '#8a9096')
         for (let x = -(off % 12); x < W; x += 12) R(ctx, x, 102, 2, 8, '#6a7076')
         R(ctx, 0, 108, W, 2, '#6a7076')
@@ -1549,7 +1549,7 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
             }
         }
         for (const sight of SIGHTS) {
-            const x = laneX(sight.d, ride.s)
+            const x = laneX(sight.d, bike.s)
             if (x < -20 || x > W + 20) continue
             if (sight.kind === 'mitten') {
                 R(ctx, x, 96, 2, 14, '#5a5a5a')
@@ -1568,23 +1568,23 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
     for (let x = -(off % 20); x < W; x += 20) R(ctx, x, 136, 10, 1, '#bdb7ab')
     R(ctx, 0, 138, W, 6, '#232325')
 
-    for (const o of ride.obstacles) obstacle(ctx, g, o, ride.s)
+    for (const o of bike.obstacles) obstacle(ctx, g, o, bike.s)
 
-    if (time - ride.downAt < DOWN) fallen(ctx, RIDER_X, LANE, you(g), time)
+    if (time - bike.downAt < DOWN) fallen(ctx, RIDER_X, LANE, you(g), time)
     else {
-        const hk = (time - ride.hopAt) / ride.hopLen
+        const hk = (time - bike.hopAt) / bike.hopLen
         const lift = hk >= 0 && hk < 1 ? Math.round(Math.sin(hk * Math.PI) * 10) : 0
-        const top = cyclist(ctx, RIDER_X, LANE - lift, you(g), 1, ride.s * 9)
-        if (time - ride.ringAt < 0.5) drawText(ctx, 'pling', RIDER_X + 4, top - 8, C.yellowL)
-        if (time - ride.brakeAt < 0.4 && !lift) R(ctx, RIDER_X - 24, LANE - 1, 12, 1, '#151515')
+        const top = cyclist(ctx, RIDER_X, LANE - lift, you(g), 1, bike.s * 9)
+        if (time - bike.ringAt < 0.5) drawText(ctx, 'pling', RIDER_X + 4, top - 8, C.yellowL)
+        if (time - bike.brakeAt < 0.4 && !lift) R(ctx, RIDER_X - 24, LANE - 1, 12, 1, '#151515')
     }
 
     // The route so far, top left.
-    const total = ride.legs[ride.legs.length - 1]
+    const total = bike.legs[bike.legs.length - 1]
     R(ctx, 4, 4, 104, 11, 'rgba(10, 13, 24, 0.7)')
     R(ctx, 8, 9, 96, 1, C.grey2)
-    for (const d of [0, ...ride.legs]) R(ctx, 7 + (d / total) * 96, 8, 3, 3, C.light)
-    R(ctx, 7 + (Math.min(ride.s, total) / total) * 96, 7, 3, 5, C.yellowL)
+    for (const d of [0, ...bike.legs]) R(ctx, 7 + (d / total) * 96, 8, 3, 3, C.light)
+    R(ctx, 7 + (Math.min(bike.s, total) / total) * 96, 7, 3, 5, C.yellowL)
 
     if (!day) rain(ctx, time, still, '#4a5a80', [112, 138])
 }

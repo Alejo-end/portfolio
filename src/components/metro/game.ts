@@ -303,7 +303,7 @@ export type Obstacle = {
     done: 'ok' | 'fail' | null
     at: number
 }
-export type Ride = {
+export type Bike = {
     s: number
     // Where each leg ends.
     legs: number[]
@@ -400,7 +400,7 @@ export type Game = {
     machines: number[]
     busk: Busk | null
     jam: Jam | null
-    ride: Ride | null
+    bike: Bike | null
     cut: Cut | null
     // The opening plays once per visit, not on every retry.
     opened: boolean
@@ -690,7 +690,7 @@ export function createGame(seed = Date.now()): Game {
         machines: [],
         busk: null,
         jam: null,
-        ride: null,
+        bike: null,
         cut: null,
         opened: false,
         wet: false,
@@ -777,7 +777,7 @@ function begin(g: Game, kind: Kind) {
         machines: [],
         busk: null,
         jam: null,
-        ride: null,
+        bike: null,
         cut: null,
         wet: false,
         kebab: false,
@@ -1106,7 +1106,7 @@ function hazard(g: Game, kind: Hazard, d: number): Obstacle {
     return { kind, d, red: kind === 'light' && g.rand() < 0.6, look, done: null, at: -9 }
 }
 
-function makeRide(g: Game): Ride {
+function makeBike(g: Game): Bike {
     const legs: number[] = []
     const obstacles: Obstacle[] = []
     // Rush hour crowds the lane with people on their phones. The easy run spaces things out.
@@ -1137,7 +1137,7 @@ function makeRide(g: Game): Ride {
 }
 
 function startBike(g: Game) {
-    g.ride = makeRide(g)
+    g.bike = makeBike(g)
     g.tip = `police on bikes at ${stopsOf(g)[lastStop(g)].nick}`
     g.tipAt = g.time
     g.cues.push('buzz')
@@ -1162,52 +1162,52 @@ const FALLS: Partial<Record<Hazard, string>> = {
 }
 
 function pedal(g: Game, move: Move) {
-    const ride = g.ride
-    if (!ride) return
+    const bike = g.bike
+    if (!bike) return
     if (move === 'ring') {
-        ride.ringAt = g.time
+        bike.ringAt = g.time
         g.cues.push('ring')
     }
     // On the ground or at a red light, only the bell works.
-    if (ride.hold > 0 && move !== 'ring') return
+    if (bike.hold > 0 && move !== 'ring') return
     if (move === 'hop') {
-        if (g.time - ride.hopAt < ride.hopLen) return
-        ride.hopAt = g.time
-        ride.hopLen = HOP
+        if (g.time - bike.hopAt < bike.hopLen) return
+        bike.hopAt = g.time
+        bike.hopLen = HOP
         g.cues.push('hop')
     }
     if (move === 'brake') {
-        ride.brakeAt = g.time
+        bike.brakeAt = g.time
         g.cues.push('skid')
     }
     const reach = REACH[move] * (g.easy ? 1.4 : 1) * (g.drunk ? 0.75 : 1)
-    const o = ride.obstacles.find(
+    const o = bike.obstacles.find(
         (o) =>
             !o.done &&
             NEEDS[o.kind] === move &&
             (o.kind !== 'light' || o.red) &&
-            o.d - ride.s >= -0.05 &&
-            o.d - ride.s <= reach
+            o.d - bike.s >= -0.05 &&
+            o.d - bike.s <= reach
     )
     if (!o) {
         // Braking for nothing still costs a moment.
-        if (move === 'brake') ride.hold = 0.3
+        if (move === 'brake') bike.hold = 0.3
         return
     }
     o.done = 'ok'
     o.at = g.time
     g.caption = SAVES[o.kind]
     // A hop that clears something peaks right over it.
-    if (move === 'hop') ride.hopLen = Math.max(0.3, Math.min(0.9, (o.d - ride.s) * 2))
+    if (move === 'hop') bike.hopLen = Math.max(0.3, Math.min(0.9, (o.d - bike.s) * 2))
     if (o.kind === 'light') {
-        ride.hold = RED
-        ride.stops += 1
+        bike.hold = RED
+        bike.stops += 1
     }
-    if (o.kind === 'door') ride.hold = 0.6
+    if (o.kind === 'door') bike.hold = 0.6
 }
 
 // Reached something without the right move.
-function hit(g: Game, ride: Ride, o: Obstacle) {
+function hit(g: Game, bike: Bike, o: Obstacle) {
     o.at = g.time
     o.done = 'fail'
     switch (o.kind) {
@@ -1216,11 +1216,11 @@ function hit(g: Game, ride: Ride, o: Obstacle) {
                 o.done = 'ok'
                 return
             }
-            ride.reds += 1
+            bike.reds += 1
             g.heat = Math.min(3, g.heat + 1)
             g.cues.push('honk')
             g.caption =
-                ride.reds >= POLICE_REDS
+                bike.reds >= POLICE_REDS
                     ? 'Another red. Someone in a yellow jacket takes note.'
                     : 'Through the red. A taxi honks.'
             return
@@ -1230,7 +1230,7 @@ function hit(g: Game, ride: Ride, o: Obstacle) {
             g.caption = 'Straight through the puddle. Soaked to the knee.'
             return
         case 'gull':
-            ride.hold = 0.8
+            bike.hold = 0.8
             g.cues.push('thud')
             g.caption = 'The gull does not move. You go round it.'
             if (g.kebab) {
@@ -1239,20 +1239,20 @@ function hit(g: Game, ride: Ride, o: Obstacle) {
             }
             return
     }
-    ride.hold = DOWN
-    ride.downAt = g.time
+    bike.hold = DOWN
+    bike.downAt = g.time
     g.clock += 1
     g.cues.push('crash')
     g.caption = FALLS[o.kind] ?? ''
 }
 
 function bikeEnd(g: Game) {
-    const ride = g.ride
-    if (!ride) return
-    if (ride.reds === 0 && ride.stops > 0) g.flags.push('reds')
+    const bike = g.bike
+    if (!bike) return
+    if (bike.reds === 0 && bike.stops > 0) g.flags.push('reds')
     if (g.ticket) g.flags.push('cycled')
     const done = (g: Game) => finish(g, g.clock <= g.meet ? 'made' : 'late')
-    if (ride.reds < POLICE_REDS) return done(g)
+    if (bike.reds < POLICE_REDS) return done(g)
     cut(
         g,
         [
@@ -1777,17 +1777,17 @@ export function step(g: Game, dt: number) {
             return endCut(g)
         }
         case 'bike': {
-            const ride = g.ride
-            if (!ride) return
+            const bike = g.bike
+            if (!bike) return
             // Waiting at a light or picking yourself up takes time too.
             g.clock += dt * BIKE_RATE
-            if (ride.hold > 0) {
-                ride.hold -= dt
+            if (bike.hold > 0) {
+                bike.hold -= dt
                 return
             }
-            ride.s += dt
-            for (const o of ride.obstacles) if (!o.done && ride.s >= o.d) hit(g, ride, o)
-            if (ride.s < ride.legs[g.at]) return
+            bike.s += dt
+            for (const o of bike.obstacles) if (!o.done && bike.s >= o.d) hit(g, bike, o)
+            if (bike.s < bike.legs[g.at]) return
             g.at += 1
             if (g.at === lastStop(g)) return bikeEnd(g)
             g.caption = BIKE_NOTES[stopsOf(g)[g.at].name] ?? ''
