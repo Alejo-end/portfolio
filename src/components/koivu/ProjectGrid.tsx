@@ -111,8 +111,9 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
     const frames = card.burst.length
 
     useEffect(() => {
-        if (!active || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        if (!active) return
         addXp(`project:${card.alias}`)
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
         const wake = setTimeout(() => setWoken(true), 0)
         if (card.video || frames === 0) return () => clearTimeout(wake)
         const id = setInterval(() => setFrame((f) => (f + 1) % (frames + 1)), 320)

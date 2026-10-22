@@ -156,10 +156,20 @@
   }
 }
 
+/* The page under an open lightbox stays put. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
 /* The custom cursor (Cursor.tsx) replaces the arrow on mouse devices. */
 @media (pointer: fine) {
   html.has-cursor,
   html.has-cursor * {
     cursor: none !important;
+  }
+
+  /* Text fields keep the I-beam so the caret position stays readable. */
+  html.has-cursor :is(input, textarea, [contenteditable="true"]) {
+    cursor: text !important;
   }
 }

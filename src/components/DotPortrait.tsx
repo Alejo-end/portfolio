@@ -18,7 +18,7 @@ const gridSource = (src: string) =>
     src.startsWith('/') ? `/_next/image?url=${encodeURIComponent(src)}&w=384&q=60` : src
 
 /**
- * Renders a photo as a halftone dot grid on canvas — the same dot-matrix
+ * Renders a photo as a halftone dot grid on canvas, in the same dot-matrix
  * language as a norns screen. Dots are drawn in the current foreground color
  * (sized by "ink": dark areas in light mode, bright areas in dark mode), and
  * resolve in with a scattered stagger on load. Hovering or tapping "develops"
@@ -127,8 +127,11 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
     }, [src, width, height])
 
     return (
-        <div
-            className="group relative w-full cursor-pointer select-none"
+        <button
+            type="button"
+            aria-pressed={revealed}
+            aria-label={`Develop photo: ${alt}`}
+            className="group relative block w-full cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             style={{ aspectRatio: `${width} / ${height}` }}
             onClick={() => setRevealed((v) => !v)}
         >
@@ -146,6 +149,6 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
                 aria-hidden
                 className={`absolute inset-0 h-full w-full text-foreground transition-opacity duration-700 ${revealed ? 'opacity-0' : 'opacity-100'} group-hover:opacity-0`}
             />
-        </div>
+        </button>
     )
 }

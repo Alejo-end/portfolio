@@ -6,14 +6,18 @@ import { getXp, levelOf } from '@/lib/xp'
 const CELL = 8
 const MAX_TAIL = 14
 
+const isTarget = (el: Element | null) => !!el?.closest?.('a, button, [role="application"], [role="tab"]')
+
 // A square cursor that drags a pixel snake behind it. The snake grows a
-// little with every level. Mouse and trackpad only.
+// little with every level. Mouse and trackpad only, and never when the OS asks
+// for more contrast, since that is where people set a larger system cursor.
 export function Cursor() {
     const head = useRef<HTMLDivElement>(null)
     const tail = useRef<(HTMLDivElement | null)[]>([])
 
     useEffect(() => {
         if (!window.matchMedia('(pointer: fine)').matches) return
+        if (window.matchMedia('(forced-colors: active), (prefers-contrast: more)').matches) return
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         document.documentElement.classList.add('has-cursor')
         const cells: { x: number; y: number }[] = []
@@ -48,7 +52,13 @@ export function Cursor() {
                 cells.unshift({ x: cx, y: cy })
                 cells.length = Math.min(cells.length, MAX_TAIL + 1)
             }
-            over = !!(e.target as Element | null)?.closest?.('a, button, [role="application"], [role="tab"]')
+            over = isTarget(e.target as Element | null)
+            if (!frame) frame = requestAnimationFrame(render)
+        }
+        // Scrolling slides links under a still pointer, so look again.
+        const scroll = () => {
+            if (x < 0) return
+            over = isTarget(document.elementFromPoint(x, y))
             if (!frame) frame = requestAnimationFrame(render)
         }
         const leave = () => {
@@ -58,9 +68,11 @@ export function Cursor() {
         }
 
         window.addEventListener('pointermove', move)
+        window.addEventListener('scroll', scroll, { passive: true })
         document.documentElement.addEventListener('pointerleave', leave)
         return () => {
             window.removeEventListener('pointermove', move)
+            window.removeEventListener('scroll', scroll)
             document.documentElement.removeEventListener('pointerleave', leave)
             document.documentElement.classList.remove('has-cursor')
             cancelAnimationFrame(frame)

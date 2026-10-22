@@ -1,5 +1,27 @@
 import type { NextConfig } from "next";
 
+const blobHost = "https://kskxrvod79sqlfxd.public.blob.vercel-storage.com";
+const dev = process.env.NODE_ENV === "development";
+// Preview deployments load the Vercel toolbar and its comment socket.
+const preview = process.env.VERCEL_ENV === "preview";
+
+// Next inlines its bootstrap scripts, and nonces would make every page
+// dynamic, so scripts stay on 'unsafe-inline' but only from this origin.
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval' https://va.vercel-scripts.com" : ""}${preview ? " https://vercel.live" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: ${blobHost}${preview ? " https://vercel.live https://vercel.com" : ""}`,
+  `media-src 'self' ${blobHost}`,
+  "font-src 'self' data:",
+  `connect-src 'self'${preview ? " https://vercel.live wss://ws-us3.pusher.com" : ""}`,
+  `frame-src ${preview ? "https://vercel.live" : "'none'"}`,
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   //reactStrictMode: true,
   poweredByHeader: false,
@@ -12,7 +34,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "kskxrvod79sqlfxd.public.blob.vercel-storage.com",
+        hostname: new URL(blobHost).hostname,
         pathname: "/**",
       },
     ],
@@ -39,6 +61,8 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
+          // Vercel already sends HSTS with preload on every deployment.
+          { key: "Content-Security-Policy", value: csp },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

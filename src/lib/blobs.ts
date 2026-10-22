@@ -8,12 +8,21 @@ export interface GalleryBlob {
     pathname: string
 }
 
+export const isImagePath = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname)
+
 // One store listing shared by every page, refreshed on the same 5 minute
 // cadence the project pages revalidate on.
 const listAllowed = cache(
     unstable_cache(
         async (): Promise<GalleryBlob[]> => {
             const token = process.env.BLOB_READ_WRITE_TOKEN
+            // A build without the token (a fork, a fresh checkout) renders the
+            // text index without media instead of failing. Real API errors still
+            // throw, so ISR keeps serving the last good page.
+            if (!token) {
+                console.warn('BLOB_READ_WRITE_TOKEN is not set; galleries render empty.')
+                return []
+            }
             const found: GalleryBlob[] = []
             // Only expose files the site actually displays, not the whole store.
             const aliases = projects.flatMap((p) => (p.prototype ? [p.alias, p.prototype.alias] : [p.alias]))
