@@ -24,6 +24,7 @@ export type Cue =
     | 'splash'
     | 'honk'
     | 'click'
+    | 'announce'
 
 // The pocket synth you busk with: C, E and G, a plucked square with a sine under it.
 const LANES = [523.25, 659.25, 783.99]
@@ -178,6 +179,12 @@ export function play(cue: Cue) {
                 // Your thumb on the lamp button, twice.
                 tone(2400, 0.85, 0.02, 'square', 0.03)
                 tone(2400, 1.15, 0.02, 'square', 0.03)
+                break
+            case 'announce':
+                // The chime before the next stop is announced, after the phone buzz.
+                tone(784, 0.5, 0.35, 'sine', 0.06)
+                tone(659, 0.8, 0.35, 'sine', 0.06)
+                tone(523, 1.1, 0.5, 'sine', 0.06)
                 break
             case 'reveal':
                 tone(440, 0, 0.08)

@@ -303,7 +303,7 @@ export type Obstacle = {
     done: 'ok' | 'fail' | null
     at: number
 }
-export type Ride = {
+export type Bike = {
     s: number
     // Where each leg ends.
     legs: number[]
@@ -338,6 +338,7 @@ export type ShotId =
     | 'bar'
     | 'bribe'
     | 'ramble'
+    | 'gull'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -378,6 +379,7 @@ export type ActionId =
     | 'bribe'
     | 'ramble'
     | 'sleep'
+    | 'mitten'
 export type Action = { id: ActionId; label: string; disabled?: boolean }
 
 export type Game = {
@@ -400,7 +402,7 @@ export type Game = {
     machines: number[]
     busk: Busk | null
     jam: Jam | null
-    ride: Ride | null
+    bike: Bike | null
     cut: Cut | null
     // The opening plays once per visit, not on every retry.
     opened: boolean
@@ -410,8 +412,10 @@ export type Game = {
     kebab: boolean
     drunk: boolean
     went: ('kebab' | 'bar')[]
-    // What you tried instead of a ticket, for the group chat.
-    excuse: 'kebab' | 'story' | null
+    // What you were fined after trying instead of a ticket, for the group chat.
+    caughtWith: 'kebab' | 'story' | null
+    // A red mitten picked up at a stop. It is your friend's.
+    mitten: boolean
     paid: number
     flags: string[]
     t: number
@@ -485,8 +489,9 @@ function mulberry32(seed: number) {
 }
 
 const pick = <T>(g: Game, list: readonly T[]): T => list[Math.floor(g.rand() * list.length)]
-// Only transit runs ask: a bike run never waits for anything.
-const line = (g: Game) => LINES[g.mode as Transit]
+/** The vehicle a run takes. Only transit scenes ask: a bike run never waits for one. */
+export const transitOf = (g: Game) => g.mode as Transit
+const line = (g: Game) => LINES[transitOf(g)]
 
 export const clockText = (minutes: number) => {
     const m = Math.floor(minutes)
@@ -690,14 +695,15 @@ export function createGame(seed = Date.now()): Game {
         machines: [],
         busk: null,
         jam: null,
-        ride: null,
+        bike: null,
         cut: null,
         opened: false,
         wet: false,
         kebab: false,
         drunk: false,
         went: [],
-        excuse: null,
+        caughtWith: null,
+        mitten: false,
         paid: 0,
         flags: [],
         t: 0,
@@ -777,13 +783,14 @@ function begin(g: Game, kind: Kind) {
         machines: [],
         busk: null,
         jam: null,
-        ride: null,
+        bike: null,
         cut: null,
         wet: false,
         kebab: false,
         drunk: false,
         went: [],
-        excuse: null,
+        caughtWith: null,
+        mitten: false,
         paid: 0,
         flags: [],
         clock: times.start,
@@ -987,7 +994,7 @@ function startRide(g: Game) {
     if (!g.crew.length && g.rand() < waitingOdds(g, next)) addPlatformCrew(g)
     g.tip = stationTip(g, next)
     g.tipAt = g.time
-    g.cues.push('buzz')
+    g.cues.push('buzz', 'announce')
     let caption = `Next: ${stopsOf(g)[next].name}.`
     if (g.sweep) caption = fresh.length ? 'The vests start checking.' : 'The check goes on.'
     enter(g, 'ride', caption)
@@ -1065,11 +1072,20 @@ function finish(g: Game, ending: Ending) {
 
 const REST = 1.6
 
+const caught = (g: Game) => g.ending === 'fined' || g.ending === 'fake'
+
+/** How long the wide shot of an ending runs: the walk in, or the slip sliding in. */
+export const arriveTime = (g: Game) => (caught(g) ? 3.2 : 2.4)
+
 // How each ending plays out: the wide shot, then a close-up or a phone.
 function epilogue(g: Game, caption: string): Shot[] {
-    const caught = g.ending === 'fined' || g.ending === 'fake'
-    const shots: Shot[] = [{ id: 'arrive', dur: caught ? 3.2 : 2.4, caption }]
-    if (caught) return [...shots, { id: 'gossip', dur: 3.2, caption: 'The group chat, a minute later.', cue: 'buzz' }]
+    const shots: Shot[] = [{ id: 'arrive', dur: arriveTime(g), caption }]
+    if (caught(g)) return [...shots, { id: 'gossip', dur: 3.2, caption: 'The group chat, a minute later.', cue: 'buzz' }]
+    // Arrive with a kebab in hand and the square has a gull for it.
+    if (g.kebab) {
+        g.flags.push('gull')
+        shots.push({ id: 'gull', dur: 2.2, caption: 'A gull.' })
+    }
     if (g.mode === 'bike' && !g.long) shots.push({ id: 'parked', dur: 2.4, caption: 'No rack. You lock it to a stone man.' })
     if (g.ending === 'late') shots.push({ id: 'gone', dur: 3.4, caption: 'Five new messages.', cue: 'buzz' })
     else if (g.long) shots.push({ id: 'shh', dur: 2.8, caption: 'The Chapel of Silence.' })
@@ -1106,7 +1122,7 @@ function hazard(g: Game, kind: Hazard, d: number): Obstacle {
     return { kind, d, red: kind === 'light' && g.rand() < 0.6, look, done: null, at: -9 }
 }
 
-function makeRide(g: Game): Ride {
+function makeBike(g: Game): Bike {
     const legs: number[] = []
     const obstacles: Obstacle[] = []
     // Rush hour crowds the lane with people on their phones. The easy run spaces things out.
@@ -1137,7 +1153,7 @@ function makeRide(g: Game): Ride {
 }
 
 function startBike(g: Game) {
-    g.ride = makeRide(g)
+    g.bike = makeBike(g)
     g.tip = `police on bikes at ${stopsOf(g)[lastStop(g)].nick}`
     g.tipAt = g.time
     g.cues.push('buzz')
@@ -1162,52 +1178,52 @@ const FALLS: Partial<Record<Hazard, string>> = {
 }
 
 function pedal(g: Game, move: Move) {
-    const ride = g.ride
-    if (!ride) return
+    const bike = g.bike
+    if (!bike) return
     if (move === 'ring') {
-        ride.ringAt = g.time
+        bike.ringAt = g.time
         g.cues.push('ring')
     }
-    // On the ground or at a red light, only the bell works.
-    if (ride.hold > 0 && move !== 'ring') return
+    // While stopped, only the bell works.
+    if (bike.hold > 0 && move !== 'ring') return
     if (move === 'hop') {
-        if (g.time - ride.hopAt < ride.hopLen) return
-        ride.hopAt = g.time
-        ride.hopLen = HOP
+        if (g.time - bike.hopAt < bike.hopLen) return
+        bike.hopAt = g.time
+        bike.hopLen = HOP
         g.cues.push('hop')
     }
     if (move === 'brake') {
-        ride.brakeAt = g.time
+        bike.brakeAt = g.time
         g.cues.push('skid')
     }
     const reach = REACH[move] * (g.easy ? 1.4 : 1) * (g.drunk ? 0.75 : 1)
-    const o = ride.obstacles.find(
+    const o = bike.obstacles.find(
         (o) =>
             !o.done &&
             NEEDS[o.kind] === move &&
             (o.kind !== 'light' || o.red) &&
-            o.d - ride.s >= -0.05 &&
-            o.d - ride.s <= reach
+            o.d - bike.s >= -0.05 &&
+            o.d - bike.s <= reach
     )
     if (!o) {
         // Braking for nothing still costs a moment.
-        if (move === 'brake') ride.hold = 0.3
+        if (move === 'brake') bike.hold = 0.3
         return
     }
     o.done = 'ok'
     o.at = g.time
     g.caption = SAVES[o.kind]
     // A hop that clears something peaks right over it.
-    if (move === 'hop') ride.hopLen = Math.max(0.3, Math.min(0.9, (o.d - ride.s) * 2))
+    if (move === 'hop') bike.hopLen = Math.max(0.3, Math.min(0.9, (o.d - bike.s) * 2))
     if (o.kind === 'light') {
-        ride.hold = RED
-        ride.stops += 1
+        bike.hold = RED
+        bike.stops += 1
     }
-    if (o.kind === 'door') ride.hold = 0.6
+    if (o.kind === 'door') bike.hold = 0.6
 }
 
 // Reached something without the right move.
-function hit(g: Game, ride: Ride, o: Obstacle) {
+function hit(g: Game, bike: Bike, o: Obstacle) {
     o.at = g.time
     o.done = 'fail'
     switch (o.kind) {
@@ -1216,11 +1232,11 @@ function hit(g: Game, ride: Ride, o: Obstacle) {
                 o.done = 'ok'
                 return
             }
-            ride.reds += 1
+            bike.reds += 1
             g.heat = Math.min(3, g.heat + 1)
             g.cues.push('honk')
             g.caption =
-                ride.reds >= POLICE_REDS
+                bike.reds >= POLICE_REDS
                     ? 'Another red. Someone in a yellow jacket takes note.'
                     : 'Through the red. A taxi honks.'
             return
@@ -1230,29 +1246,30 @@ function hit(g: Game, ride: Ride, o: Obstacle) {
             g.caption = 'Straight through the puddle. Soaked to the knee.'
             return
         case 'gull':
-            ride.hold = 0.8
+            bike.hold = 0.8
             g.cues.push('thud')
             g.caption = 'The gull does not move. You go round it.'
             if (g.kebab) {
                 g.kebab = false
+                g.flags.push('gull')
                 g.caption = 'The gull takes your kebab and leaves.'
             }
             return
     }
-    ride.hold = DOWN
-    ride.downAt = g.time
+    bike.hold = DOWN
+    bike.downAt = g.time
     g.clock += 1
     g.cues.push('crash')
     g.caption = FALLS[o.kind] ?? ''
 }
 
 function bikeEnd(g: Game) {
-    const ride = g.ride
-    if (!ride) return
-    if (ride.reds === 0 && ride.stops > 0) g.flags.push('reds')
+    const bike = g.bike
+    if (!bike) return
+    if (bike.reds === 0 && bike.stops > 0) g.flags.push('reds')
     if (g.ticket) g.flags.push('cycled')
     const done = (g: Game) => finish(g, g.clock <= g.meet ? 'made' : 'late')
-    if (ride.reds < POLICE_REDS) return done(g)
+    if (bike.reds < POLICE_REDS) return done(g)
     cut(
         g,
         [
@@ -1466,19 +1483,15 @@ function excuse(g: Game, kind: 'kebab' | 'story') {
             : { id: 'ramble', dur: 3, caption: 'You explain. From the beginning.' }
     cut(g, [shot], (g) => {
         g.cues.push(pass ? 'ok' : 'fail')
+        const kebab = kind === 'kebab'
+        if (pass) g.flags.push(kebab ? 'bribe' : 'story')
         if (driver) {
-            if (pass) {
-                g.flags.push('bribe')
-                return backToDoors(g, true, 'The driver takes the kebab and waves you in.')
-            }
+            if (pass) return backToDoors(g, true, kebab ? 'The driver takes the kebab and waves you in.' : 'The driver sighs and waves you in.')
             g.heat = Math.min(3, g.heat + 1)
-            return backToDoors(g, false, 'The driver keeps the kebab. And points at the door.')
+            return backToDoors(g, false, kebab ? 'The driver keeps the kebab. And points at the door.' : 'The driver points at the door.')
         }
-        if (pass) {
-            g.flags.push(kind === 'kebab' ? 'bribe' : 'story')
-            return letGo(g, kind === 'kebab' ? 'They take the kebab and walk on.' : 'They lose the thread and walk on.')
-        }
-        g.excuse = kind
+        if (pass) return letGo(g, kebab ? 'They take the kebab and walk on.' : 'They lose the thread and walk on.')
+        g.caughtWith = kind
         g.note = kind === 'kebab' ? 'They kept the kebab.' : 'The story did not help.'
         finish(g, 'fined')
     })
@@ -1659,6 +1672,10 @@ export function act(g: Game, id: ActionId) {
             return excuse(g, 'story')
         case 'sleep':
             return sleep(g)
+        case 'mitten':
+            g.mitten = true
+            g.caption = 'A red mitten, hung up where its owner might see it. You take it along.'
+            return
     }
 }
 
@@ -1692,6 +1709,7 @@ export function actions(g: Game): Action[] {
             ]
             if (!g.busked.includes(g.at)) list.push({ id: 'busk', label: 'Busk' })
             if (!g.ticket && !g.machines.includes(g.at)) list.push({ id: 'machine', label: 'Ticket machine' })
+            if (!g.mitten) list.push({ id: 'mitten', label: 'Mitten' })
             return list
         }
         case 'machine': {
@@ -1739,7 +1757,7 @@ export function actions(g: Game): Action[] {
             const driver = g.checkFrom === 'driver'
             const list: Action[] = [{ id: 'show', label: 'Show ticket', disabled }]
             if (g.kebab) list.push({ id: 'bribe', label: 'Offer kebab', disabled })
-            if (g.drunk && !driver) list.push({ id: 'ramble', label: 'Explain', disabled })
+            if (g.drunk) list.push({ id: 'ramble', label: 'Explain', disabled })
             list.push(driver ? { id: 'stepoff', label: 'Step off', disabled } : { id: 'giveup', label: 'Give up', disabled })
             return list
         }
@@ -1777,17 +1795,17 @@ export function step(g: Game, dt: number) {
             return endCut(g)
         }
         case 'bike': {
-            const ride = g.ride
-            if (!ride) return
+            const bike = g.bike
+            if (!bike) return
             // Waiting at a light or picking yourself up takes time too.
             g.clock += dt * BIKE_RATE
-            if (ride.hold > 0) {
-                ride.hold -= dt
+            if (bike.hold > 0) {
+                bike.hold -= dt
                 return
             }
-            ride.s += dt
-            for (const o of ride.obstacles) if (!o.done && ride.s >= o.d) hit(g, ride, o)
-            if (ride.s < ride.legs[g.at]) return
+            bike.s += dt
+            for (const o of bike.obstacles) if (!o.done && bike.s >= o.d) hit(g, bike, o)
+            if (bike.s < bike.legs[g.at]) return
             g.at += 1
             if (g.at === lastStop(g)) return bikeEnd(g)
             g.caption = BIKE_NOTES[stopsOf(g)[g.at].name] ?? ''
