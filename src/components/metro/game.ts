@@ -6,7 +6,9 @@ import type { Cue } from './sound'
 // game state and rules. Drawing lives in art.ts, sound in sound.ts.
 
 export type Mode = 'metro' | 'tram' | 'bus'
-export type Stop = { name: string; sv: string; nick: string }
+// A stop, its Swedish name, what the group chat calls it, and a line about
+// the neighborhood for when you pull in.
+export type Stop = { name: string; sv: string; nick: string; note: string }
 
 type Line = {
     stops: Stop[]
@@ -28,10 +30,10 @@ type Line = {
 }
 
 const STREET: Stop[] = [
-    { name: 'Sörnäinen', sv: 'Sörnäs', nick: 'sörkka' },
-    { name: 'Hakaniemi', sv: 'Hagnäs', nick: 'hakis' },
-    { name: 'Kaisaniemi', sv: 'Kajsaniemi', nick: 'kaisaniemi' },
-    { name: 'Rautatientori', sv: 'Järnvägstorget', nick: 'rautsikka' },
+    { name: 'Sörnäinen', sv: 'Sörnäs', nick: 'sörkka', note: 'Kurvi, the bars still open.' },
+    { name: 'Hakaniemi', sv: 'Hagnäs', nick: 'hakis', note: 'The red brick market hall on the square.' },
+    { name: 'Kaisaniemi', sv: 'Kajsaniemi', nick: 'kaisaniemi', note: 'The botanic garden glasshouses behind the railings.' },
+    { name: 'Rautatientori', sv: 'Järnvägstorget', nick: 'rautsikka', note: 'The stone men keep watch over the square.' },
 ]
 
 export const LINES: Record<Mode, Line> = {
@@ -39,7 +41,12 @@ export const LINES: Record<Mode, Line> = {
         stops: [
             STREET[0],
             STREET[1],
-            { name: 'Helsingin yliopisto', sv: 'Helsingfors universitet', nick: 'yliopisto' },
+            {
+                name: 'Helsingin yliopisto',
+                sv: 'Helsingfors universitet',
+                nick: 'yliopisto',
+                note: 'Students with tote bags, the Kaisa library upstairs.',
+            },
             STREET[3],
         ],
         vehicle: 'train',
@@ -80,7 +87,7 @@ export const LINES: Record<Mode, Line> = {
     },
 }
 // The long way carries on one stop to Kamppi.
-const KAMPPI: Stop = { name: 'Kamppi', sv: 'Kampen', nick: 'kamppi' }
+const KAMPPI: Stop = { name: 'Kamppi', sv: 'Kampen', nick: 'kamppi', note: 'Narinkka square and the wooden chapel.' }
 const LONG_STOPS: Record<Mode, Stop[]> = {
     metro: [...LINES.metro.stops, KAMPPI],
     tram: [...STREET, KAMPPI],
@@ -102,6 +109,7 @@ export const DRIVER = -2
 const NIGHT = { start: 21 * 60 + 45, meet: 22 * 60 }
 const LONG = { start: 21 * 60 + 40, meet: 22 * 60 }
 const RUSH = { start: 8 * 60 + 40, meet: 9 * 60 }
+const EASY = { start: 21 * 60 + 38, meet: 22 * 60 }
 // Minutes on foot from each stop to the meeting point.
 const WALK_MIN = [33, 21, 9, 0]
 const WALK_LONG = [40, 28, 16, 8, 0]
@@ -111,8 +119,22 @@ const WALK_LONG = [40, 28, 16, 8, 0]
 export const PRICE = 3.2
 const BUYING = 2.6
 
+// Side games while you wait on a platform or at a stop. Each costs time,
+// and each can be played once per stop.
+// Busking: notes fall in three lanes for BUSK seconds, FALL seconds from
+// appearing to the line. Hits pay into the open case.
+export const BUSK = 13
+export const FALL = 1.6
+const BUSK_MIN = 3
+const GREAT = 0.3
+const GOOD = 0.15
+// The jammed ticket machine: three hits in the green, each faster and narrower.
+const MACHINE_MIN = 1
+const ZONES = [0.3, 0.22, 0.15]
+const SPEEDS = [0.7, 1.0, 1.3]
+
 const CALM = 4.5
-const PLATFORM_WAIT = 4
+const PLATFORM_WAIT = 6
 const CHOOSE = 3.4
 
 // Door timeline, in seconds from the moment the vehicle appears.
@@ -134,6 +156,8 @@ const SETTLE = 1.2
 // A key pressed for Hide just as an inspector reaches you must not show the ticket.
 const LOCK = 0.4
 
+export type Hair = 'short' | 'long' | 'bun' | 'bald' | 'curly'
+
 export type Look = {
     skin: string
     hair: string
@@ -143,6 +167,17 @@ export type Look = {
     bag: 'backpack' | 'shopping' | 'handbag' | null
     phone: boolean
     tag: string
+    // What makes a crowd a crowd. All optional, so a plain look still draws.
+    style?: Hair
+    beard?: boolean
+    glasses?: boolean
+    scarf?: string | null
+    headphones?: string | null
+    dog?: string | null
+    pram?: boolean
+    guitar?: boolean
+    // Sets when this person blinks and nods, so a crowd does not do it in step.
+    seed?: number
 }
 
 export type Rider = {
@@ -190,11 +225,27 @@ export type Phase =
     | 'ticket'
     | 'exit'
     | 'outro'
+    | 'machine'
+    | 'busk'
 
 export type Ending = 'made' | 'late' | 'fined' | 'fake'
-export type Kind = 'night' | 'rush' | 'long' | 'daily'
+export type Kind = 'night' | 'easy' | 'rush' | 'long' | 'daily'
+
+export type Note = { t: number; lane: number; hit: 'great' | 'ok' | 'miss' | null }
+export type Busk = { notes: Note[]; earned: number; said: string; saidAt: number }
+export type Jam = {
+    stage: 'menu' | 'play' | 'done'
+    round: number
+    pos: number
+    dir: 1 | -1
+    zone: [number, number]
+    speed: number
+    result: 'win' | 'fail' | 'paid' | 'left' | null
+    hitAt: number
+}
 export type ActionId =
     | 'start'
+    | 'easy'
     | 'daily'
     | 'rush'
     | 'long'
@@ -212,6 +263,14 @@ export type ActionId =
     | 'giveup'
     | 'stepoff'
     | 'again'
+    | 'machine'
+    | 'busk'
+    | 'hit'
+    | 'pay'
+    | 'leave'
+    | 'lane0'
+    | 'lane1'
+    | 'lane2'
 export type Action = { id: ActionId; label: string; disabled?: boolean }
 
 export type Game = {
@@ -219,11 +278,21 @@ export type Game = {
     mode: Mode
     kind: Kind
     rush: boolean
+    easy: boolean
     long: boolean
     daily: string | null
     start: number
     meet: number
     ticket: boolean
+    // Where the ticket came from: the app, coins at the machine, or a jammed machine.
+    ticketFrom: 'app' | 'cash' | 'glitch' | null
+    // Coins in your pocket, from busking.
+    cash: number
+    // Stops where you already busked or tried the machine.
+    busked: number[]
+    machines: number[]
+    busk: Busk | null
+    jam: Jam | null
     paid: number
     flags: string[]
     t: number
@@ -263,6 +332,8 @@ export type Game = {
     waited: number
     caption: string
     tip: string
+    // When the last tip arrived, for the phone notification on screen.
+    tipAt: number
     bubble: { id: number; text: string; until: number } | null
     cues: Cue[]
     rand: () => number
@@ -278,6 +349,7 @@ export type Ui = {
     heat: number
     countdown: string
     share: string
+    cash: string
     actions: Action[]
 }
 
@@ -302,11 +374,20 @@ export const clockText = (minutes: number) => {
 
 export const euro = (n: number) => `${n.toFixed(2).replace('.', ',')} €`
 
-// Rush hour fills the cars, and the inspectors come out for it.
-const busy = (g: Game) => (g.rush ? 1.4 : 1)
+// Rush hour fills the cars, and the inspectors come out for it. The easy
+// run has half as many.
+const busy = (g: Game) => (g.rush ? 1.4 : g.easy ? 0.5 : 1)
+// The easy run's inspectors walk and check a third slower.
+const pace = (g: Game) => (g.easy ? 1.3 : 1)
+// The easy run's odds of getting past someone, added on top.
+const luck = (g: Game) => (g.easy ? 0.15 : 0)
 const odds = (g: Game, kind: 'plain' | 'vests', st: number) => Math.min(0.6, line(g)[kind][st] * busy(g))
 const waitingOdds = (g: Game, st: number) =>
     Math.min(0.7, (st === lastStop(g) ? line(g).exit : line(g).waiting[st]) * busy(g))
+
+const STYLES: Hair[] = ['short', 'short', 'long', 'long', 'bun', 'bald', 'curly']
+const DOGS = ['#c8a46a', '#3a2a20', '#e8e4dc', '#8a6a4a', '#1f1f1f']
+const PHONES = ['#e8e4dc', '#1a1a1a', '#d84a3a']
 
 function makeLook(g: Game): Look {
     const coat = pick(g, CLOTH)
@@ -321,6 +402,14 @@ function makeLook(g: Game): Look {
         bag: r < 0.15 ? 'backpack' : r < 0.22 ? 'shopping' : r < 0.32 ? 'handbag' : null,
         phone: g.rand() < 0.6,
         tag: hat ? `${hat.name} beanie` : `${coat.name} coat`,
+        style: pick(g, STYLES),
+        beard: g.rand() < 0.18,
+        glasses: g.rand() < 0.2,
+        scarf: g.rand() < 0.3 ? pick(g, CLOTH).color : null,
+        headphones: g.rand() < 0.15 ? pick(g, PHONES) : null,
+        dog: g.rand() < 0.07 ? pick(g, DOGS) : null,
+        guitar: g.rand() < 0.05,
+        seed: g.rand(),
     }
 }
 
@@ -333,14 +422,21 @@ const vestLook = (g: Game): Look => ({
     bag: null,
     phone: false,
     tag: 'vest',
+    style: pick(g, STYLES),
+    beard: g.rand() < 0.25,
+    glasses: g.rand() < 0.3,
+    seed: g.rand(),
 })
 
 function rider(g: Game, slot: number, seated: boolean, face: 1 | -1, dx = 0): Rider {
-    return { id: g.ids++, slot, dx, seated, face, look: makeLook(g), checked: false, claimed: false, slow: 0, okAt: -9 }
+    const look = makeLook(g)
+    if (seated) look.dog = null
+    else if (g.rand() < 0.12) look.pram = true
+    return { id: g.ids++, slot, dx, seated, face, look, checked: false, claimed: false, slow: 0, okAt: -9 }
 }
 
 function inspector(g: Game, door: number, dx: number, plain: boolean, aboard: boolean): Inspector {
-    const look = plain ? { ...makeLook(g), phone: false, bag: null } : vestLook(g)
+    const look = plain ? { ...makeLook(g), phone: false, bag: null, dog: null, guitar: false } : vestLook(g)
     return {
         id: g.ids++,
         x: door,
@@ -406,7 +502,8 @@ function trainTip(g: Game) {
     const on = g.mode === 'metro' ? 'the westbound' : `the ${vehicle}`
     const plain = g.crew.find((i) => i.plain)
     const vests = waiting(g).length
-    const r = g.rand()
+    // On the easy run the chat is always right.
+    const r = g.easy ? (plain || vests ? 0 : 0.5) : g.rand()
     if (plain && r < 0.75) return `plainclothes on ${on}, ${plain.look.tag}`
     if (vests && r < 0.75) return `${vests} vests on ${nick} ${place}`
     if (r < 0.15) return `plainclothes on ${on}, ${pick(g, CLOTH).name} beanie`
@@ -418,7 +515,7 @@ function stationTip(g: Game, next: number) {
     const nick = stopsOf(g)[next].nick
     const place = line(g).place
     const ahead = waiting(g).length
-    const r = g.rand()
+    const r = g.easy ? (ahead ? 0 : 0.5) : g.rand()
     if (ahead && r < 0.75) return `${ahead} vests on ${nick} ${place}`
     if (!ahead && r < 0.25) return `vests on ${nick} ${place}?`
     return `${nick} clear`
@@ -440,8 +537,10 @@ function makeCrowd(g: Game, on: number, off: number) {
     g.crowd = []
     for (let n = 0; n < on + off; n++) {
         const door = pick(g, DOORS)
+        const look = makeLook(g)
+        if (g.rand() < 0.12) look.pram = true
         g.crowd.push({
-            look: makeLook(g),
+            look,
             door,
             dx: door === 5 ? 16 : pick(g, [-16, 16]),
             off: n >= on,
@@ -456,11 +555,18 @@ export function createGame(seed = Date.now()): Game {
         mode: 'metro',
         kind: 'night',
         rush: false,
+        easy: false,
         long: false,
         daily: null,
         start: NIGHT.start,
         meet: NIGHT.meet,
         ticket: false,
+        ticketFrom: null,
+        cash: 0,
+        busked: [],
+        machines: [],
+        busk: null,
+        jam: null,
         paid: 0,
         flags: [],
         t: 0,
@@ -481,6 +587,7 @@ export function createGame(seed = Date.now()): Game {
             bag: null,
             phone: false,
             tag: 'you',
+            seed: 0.3,
         },
         heat: 0,
         stalled: false,
@@ -500,6 +607,7 @@ export function createGame(seed = Date.now()): Game {
         waited: 0,
         caption: 'Get to Rautatientori by 22:00. You have no ticket.',
         tip: '',
+        tipAt: -9,
         bubble: null,
         cues: [],
         rand: mulberry32(seed),
@@ -524,13 +632,20 @@ function begin(g: Game, kind: Kind) {
         g.rand = mulberry32(d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate())
         variant = pick(g, ['night', 'rush', 'long'] as const)
     }
-    const times = variant === 'rush' ? RUSH : variant === 'long' ? LONG : NIGHT
+    const times = variant === 'rush' ? RUSH : variant === 'long' ? LONG : variant === 'easy' ? EASY : NIGHT
     Object.assign(g, {
         rush: variant === 'rush',
+        easy: variant === 'easy',
         long: variant === 'long',
         start: times.start,
         meet: times.meet,
         ticket: false,
+        ticketFrom: null,
+        cash: 0,
+        busked: [],
+        machines: [],
+        busk: null,
+        jam: null,
         paid: 0,
         flags: [],
         clock: times.start,
@@ -548,7 +663,8 @@ function begin(g: Game, kind: Kind) {
         bubble: null,
     })
     const to = g.long ? 'Kamppi' : 'Rautatientori'
-    enter(g, 'intro', `Hämeentie, ${clockText(g.start)}. Meeting at ${to} at ${clockText(g.meet)}.`)
+    const lead = g.easy ? 'Easy run. ' : ''
+    enter(g, 'intro', `${lead}Kurvi, Hämeentie, ${clockText(g.start)}. Meeting at ${to} at ${clockText(g.meet)}.`)
 }
 
 function choose(g: Game, mode: Mode) {
@@ -569,6 +685,7 @@ function toPlatform(g: Game, caption: string) {
     // One team per car: vests only wait on the platform for an empty one.
     if (!g.crew.length && g.rand() < waitingOdds(g, g.at)) addPlatformCrew(g)
     g.tip = trainTip(g)
+    g.tipAt = g.time
     g.cues.push('buzz')
     enter(g, 'platform', caption)
 }
@@ -688,6 +805,7 @@ function startRide(g: Game) {
     const next = g.at + 1
     if (!g.crew.length && g.rand() < waitingOdds(g, next)) addPlatformCrew(g)
     g.tip = stationTip(g, next)
+    g.tipAt = g.time
     g.cues.push('buzz')
     let caption = `Next: ${stopsOf(g)[next].name}.`
     const plain = fresh.find((i) => i.plain)
@@ -718,8 +836,8 @@ function arrive(g: Game) {
     const door = DOORS.reduce((a, b) => (Math.abs(b - g.player.slot) < Math.abs(a - g.player.slot) ? b : a))
     g.player.slot = g.player.x = door
     standUp(g)
-    const name = stopsOf(g)[g.at].name
-    toDoors(g, g.at === lastStop(g) ? `${name}. Get off here.` : `${name}.`)
+    const { name, note } = stopsOf(g)[g.at]
+    toDoors(g, `${name}. ${note}${g.at === lastStop(g) ? ' Get off here.' : ''}`)
 }
 
 function toExit(g: Game) {
@@ -809,7 +927,7 @@ function backToDoors(g: Game, aboard: boolean, caption: string) {
 function reachPlayer(g: Game, insp: Inspector) {
     if (g.player.hidden) {
         const crowd = g.riders.some((r) => r.slot === g.player.slot)
-        if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2)) {
+        if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2) + luck(g)) {
             insp.passed = true
             g.flags.push('ghost')
             g.caption = 'They walk right past you.'
@@ -839,7 +957,7 @@ function updateInspector(g: Game, insp: Inspector, dt: number) {
     }
     if (insp.goal !== null) {
         const d = insp.goal - insp.x
-        const len = dt / STEP
+        const len = dt / (STEP * pace(g))
         if (Math.abs(d) > len) {
             insp.x += Math.sign(d) * len
             return
@@ -855,7 +973,7 @@ function updateInspector(g: Game, insp: Inspector, dt: number) {
         if (!r) return
         r.claimed = true
         insp.target = work
-        insp.busy = CHECK + r.slow
+        insp.busy = CHECK * pace(g) + r.slow
         return
     }
     const back = insp.dir === 1 ? -1 : 1
@@ -915,11 +1033,99 @@ function skip(g: Game) {
     else if (g.phase === 'ride') g.t = g.sweep ? g.segment : CALM
 }
 
+// ——— Side games ———————————————————————————————————————————————————————
+
+function nextZone(g: Game, jam: Jam) {
+    const w = ZONES[jam.round]
+    const a = 0.1 + g.rand() * (0.8 - w)
+    jam.zone = [a, a + w]
+    jam.speed = SPEEDS[jam.round]
+}
+
+function hitMachine(g: Game) {
+    const jam = g.jam
+    if (!jam) return
+    if (jam.stage === 'menu') {
+        jam.stage = 'play'
+        nextZone(g, jam)
+        g.caption = 'Hit it when the light is in the green. Three times.'
+        return
+    }
+    jam.hitAt = g.time
+    g.cues.push('thump')
+    if (jam.pos < jam.zone[0] || jam.pos > jam.zone[1]) {
+        g.heat = Math.min(3, g.heat + 1)
+        g.cues.push('alarm')
+        return doneMachine(g, 'fail', 'Alarm. Everyone on the platform looks at you.')
+    }
+    jam.round += 1
+    if (jam.round < ZONES.length) {
+        nextZone(g, jam)
+        g.caption = jam.round === 1 ? 'Something moved. Again.' : 'Nearly. Once more.'
+        return
+    }
+    g.ticket = true
+    g.ticketFrom = 'glitch'
+    g.flags.push('jammed')
+    g.cues.push('print')
+    doneMachine(g, 'win', 'It coughs up a ticket. The ink is smudged, but it is a ticket.')
+}
+
+function payMachine(g: Game) {
+    g.cash -= PRICE
+    g.paid += PRICE
+    g.ticket = true
+    g.ticketFrom = 'cash'
+    g.cues.push('print')
+    doneMachine(g, 'paid', `You pay ${euro(PRICE)} in coins. A ticket slides out.`)
+}
+
+function doneMachine(g: Game, result: Jam['result'], caption: string) {
+    if (!g.jam) return
+    g.jam.stage = 'done'
+    g.jam.result = result
+    g.jam.hitAt = g.time
+    g.caption = caption
+}
+
+// Back to the platform. The train you were waiting for has gone.
+function leaveMachine(g: Game) {
+    g.machines.push(g.at)
+    g.jam = null
+    g.clock += MACHINE_MIN
+    toPlatform(g, `Next ${line(g).vehicle}.`)
+}
+
+function startBusk(g: Game) {
+    const notes: Note[] = []
+    for (let t = 1.4; t < BUSK - 0.8; t += 0.45 + g.rand() * 0.35) notes.push({ t, lane: Math.floor(g.rand() * 3), hit: null })
+    g.busk = { notes, earned: 0, said: '', saidAt: -9 }
+    enter(g, 'busk', 'You open the case and play the pocket synth. Low, mid, high, on the line.')
+}
+
+function strum(g: Game, lane: number) {
+    const busk = g.busk
+    if (!busk) return
+    const n = busk.notes.find((n) => n.lane === lane && !n.hit && Math.abs(n.t - g.t) < 0.25)
+    busk.saidAt = g.time
+    if (!n) {
+        busk.said = 'Miss'
+        g.cues.push('thud')
+        return
+    }
+    const great = Math.abs(n.t - g.t) < 0.1
+    n.hit = great ? 'great' : 'ok'
+    busk.earned += great ? GREAT : GOOD
+    busk.said = great ? 'Great' : 'Ok'
+    g.cues.push(`note${lane}` as Cue)
+}
+
 export function act(g: Game, id: ActionId) {
     if (!actions(g).some((a) => a.id === id && !a.disabled)) return
     switch (id) {
         case 'start':
             return begin(g, 'night')
+        case 'easy':
         case 'daily':
         case 'rush':
         case 'long':
@@ -953,10 +1159,26 @@ export function act(g: Game, id: ActionId) {
                 return enter(g, 'ticket', 'You hold up your ticket. A real one.')
             }
             const fail =
-                g.checkFrom === 'driver' ? 0.25 + 0.1 * g.heat : 0.4 + 0.12 * g.heat + (insp?.plain ? 0.15 : 0)
+                (g.checkFrom === 'driver' ? 0.25 + 0.1 * g.heat : 0.4 + 0.12 * g.heat + (insp?.plain ? 0.15 : 0)) -
+                luck(g)
             g.verdict = g.rand() < fail ? 'fail' : 'pass'
             return enter(g, 'ticket', 'You hold up a screenshot of an old ticket.')
         }
+        case 'machine':
+            g.jam = { stage: 'menu', round: 0, pos: 0, dir: 1, zone: [0, 0], speed: 0, result: null, hitAt: 0 }
+            return enter(g, 'machine', 'The ticket machine. Out of order, the screen says. Maybe not.')
+        case 'hit':
+            return hitMachine(g)
+        case 'pay':
+            return payMachine(g)
+        case 'leave':
+            return doneMachine(g, 'left', 'You leave it alone.')
+        case 'busk':
+            return startBusk(g)
+        case 'lane0':
+        case 'lane1':
+        case 'lane2':
+            return strum(g, Number(id[4]))
         case 'giveup':
             return finish(g, 'fined')
         case 'stepoff':
@@ -969,6 +1191,7 @@ export function actions(g: Game): Action[] {
         case 'title':
             return [
                 { id: 'start', label: 'Start' },
+                { id: 'easy', label: 'Easy' },
                 { id: 'daily', label: 'Daily' },
                 { id: 'rush', label: 'Rush hour' },
                 { id: 'long', label: 'Long way' },
@@ -982,10 +1205,31 @@ export function actions(g: Game): Action[] {
             ]
             return g.ticket ? ways : [...ways, { id: 'buy', label: 'Buy ticket' }]
         }
-        case 'platform':
-            return [
+        case 'platform': {
+            const list: Action[] = [
                 { id: 'next', label: 'Wait for it' },
                 { id: 'walk', label: 'Walk instead' },
+            ]
+            if (!g.busked.includes(g.at)) list.push({ id: 'busk', label: 'Busk' })
+            if (!g.ticket && !g.machines.includes(g.at)) list.push({ id: 'machine', label: 'Ticket machine' })
+            return list
+        }
+        case 'machine': {
+            const jam = g.jam
+            if (!jam || jam.stage === 'done') return []
+            if (jam.stage === 'play') return [{ id: 'hit', label: 'Hit' }]
+            return [
+                { id: 'hit', label: 'Hit it' },
+                { id: 'pay', label: `Pay ${euro(PRICE)}`, disabled: g.cash < PRICE },
+                { id: 'leave', label: 'Leave' },
+            ]
+        }
+        case 'busk':
+            if (g.t > BUSK) return []
+            return [
+                { id: 'lane0', label: 'Low' },
+                { id: 'lane1', label: 'Mid' },
+                { id: 'lane2', label: 'High' },
             ]
         case 'doors': {
             if (g.player.queued !== null) return [{ id: 'jump', label: 'Ready', disabled: true }]
@@ -1037,6 +1281,7 @@ export function step(g: Game, dt: number) {
             if (at(1.2)) g.caption = 'Strong authentication. Your bank, then back.'
             if (g.t > BUYING) {
                 g.ticket = true
+                g.ticketFrom = 'app'
                 g.paid += PRICE
                 g.clock += 2
                 g.cues.push('ok')
@@ -1049,6 +1294,37 @@ export function step(g: Game, dt: number) {
         case 'platform':
             if (g.t >= PLATFORM_WAIT) toDoors(g, `The ${line(g).vehicle} pulls in.`)
             return
+        case 'machine': {
+            const jam = g.jam
+            if (!jam) return
+            if (jam.stage === 'play') {
+                jam.pos += jam.dir * jam.speed * dt
+                if (jam.pos > 1 || jam.pos < 0) {
+                    jam.dir = jam.dir === 1 ? -1 : 1
+                    jam.pos = Math.max(0, Math.min(1, jam.pos))
+                }
+            }
+            if (jam.stage === 'done' && g.time - jam.hitAt > 1.6) leaveMachine(g)
+            return
+        }
+        case 'busk': {
+            const busk = g.busk
+            if (!busk) return
+            for (const n of busk.notes) if (!n.hit && g.t > n.t + 0.25) n.hit = 'miss'
+            if (at(BUSK)) {
+                g.cues.push('ok')
+                g.caption = `You made ${euro(busk.earned)}.`
+            }
+            if (g.t > BUSK + 1.6) {
+                g.cash += busk.earned
+                if (busk.earned > 0) g.flags.push('busked')
+                g.busked.push(g.at)
+                g.busk = null
+                g.clock += BUSK_MIN
+                toPlatform(g, `${euro(g.cash)} in your pocket. Next ${line(g).vehicle}.`)
+            }
+            return
+        }
         case 'doors': {
             if (at(0.05)) g.cues.push(g.mode === 'tram' ? 'bell' : 'rumble')
             if (at(ARRIVE)) g.cues.push('hiss')
@@ -1141,7 +1417,7 @@ export function step(g: Game, dt: number) {
             if (at(1.3) && crew.length) {
                 // People getting off with you are cover.
                 const cover = g.crowd.filter((e) => e.off && !e.vest).length
-                if (g.rand() < 0.55 - 0.15 * g.heat + 0.1 * cover) {
+                if (g.rand() < 0.55 - 0.15 * g.heat + 0.1 * cover + luck(g)) {
                     g.flags.push('crowd')
                     g.caption = 'In the crowd. Past them.'
                 }
@@ -1188,7 +1464,7 @@ export function uiOf(g: Game): Ui {
     const outcome = { made: 'on time', late: 'late', fined: 'fined', fake: 'busted' }
     const share =
         g.phase === 'outro' && g.ending
-            ? `No ticket${g.daily ? ` daily ${g.daily}` : ''}: ${g.mode} to ${stops[lastStop(g)].name}, ` +
+            ? `No ticket${g.daily ? ` daily ${g.daily}` : g.easy ? ' easy' : ''}: ${g.mode} to ${stops[lastStop(g)].name}, ` +
               `${outcome[g.ending]} at ${clockText(g.clock)}, paid ${euro(g.paid)}`
             : ''
     return {
@@ -1200,6 +1476,7 @@ export function uiOf(g: Game): Ui {
         heat: g.heat,
         countdown: g.phase === 'ride' && g.sweep ? `next stop ${Math.max(0, left)} s` : '',
         share,
+        cash: g.cash > 0 ? euro(g.cash) : '',
         actions: actions(g),
     }
 }

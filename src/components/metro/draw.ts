@@ -50,6 +50,11 @@ export const EXTRAS: Look[] = Array.from({ length: 12 }, (_, i) => ({
     bag: null,
     phone: hash(i + 100) < 0.6,
     tag: '',
+    style: (['short', 'long', 'bun', 'bald', 'curly'] as const)[Math.floor(hash(i + 110) * 5)],
+    glasses: hash(i + 120) < 0.2,
+    beard: hash(i + 130) < 0.2,
+    scarf: hash(i + 140) < 0.3 ? CLOTH[Math.floor(hash(i + 145) * CLOTH.length)].color : null,
+    seed: hash(i + 150),
 }))
 
 export const DRIVER_LOOK: Look = {
@@ -61,7 +66,38 @@ export const DRIVER_LOOK: Look = {
     bag: null,
     phone: false,
     tag: '',
+    beard: true,
+    glasses: true,
+    seed: 0.7,
 }
+
+export type Mood = 'calm' | 'worried' | 'stern' | 'happy'
+
+let now = 0
+let frozen = false
+
+/** The scene clock, for blinks, nods and wagging tails. Frozen when motion is reduced. */
+export function setClock(time: number, still: boolean) {
+    now = still ? 0 : time
+    frozen = still
+}
+
+// A dog on its four legs, facing right, five rows from ears to paws.
+const DOG = ['.....#.', '....###', '#######', '.#####.', '.#...#.']
+// A pram, facing right, from the hood down to the wheels.
+const PRAM = [
+    '..####....',
+    '.######...',
+    '########..',
+    '##########',
+    '##########',
+    '.########.',
+    '..######..',
+    '...#..#...',
+    '...#..#...',
+    '.##....##.',
+    '.##....##.',
+]
 
 /** Draws a person standing on `feet`, facing right (1) or left (-1). Returns the top of the head. */
 export function person(
@@ -73,7 +109,8 @@ export function person(
     pose: Pose = 'stand',
     role: Role = 'rider',
     frame = 0,
-    wave = -1
+    wave = -1,
+    mood: Mood = 'calm'
 ) {
     const x = Math.round(cx)
     const height = pose === 'sit' ? 20 : pose === 'crouch' ? 18 : 24
@@ -84,22 +121,67 @@ export function person(
     const dark = shade(coat, -0.28)
     const phone = look.phone && role === 'rider'
     const reader = role === 'vest' || role === 'badge'
+    const feel: Mood = mood !== 'calm' ? mood : reader ? 'stern' : 'calm'
+    const seed = look.seed ?? 0.5
+    // Now and then people blink, and at rest they nod a pixel.
+    const blink = !frozen && (now * 0.31 + seed * 7) % 1 < 0.04
+    const nod = pose !== 'walk' && !frozen && Math.sin(now * (phone ? 2.4 : 1.3) + seed * 40) > 0.75 ? 1 : 0
+    const hd = (dx: number, dy: number, w: number, h: number, color: string) => rr(dx, dy + nod, w, h, color)
+    const style = look.style ?? 'short'
 
+    // Behind the body: guitar case, backpack, long hair.
+    if (look.guitar && pose !== 'sit') {
+        rr(-7, 2, 3, 3, '#2b2622')
+        rr(-8, 5, 4, 15, '#2b2622')
+        rr(-7, 6, 1, 12, '#3d3630')
+    }
     if (look.bag === 'backpack') rr(-6, pose === 'stand' || pose === 'walk' ? 9 : 8, 3, 7, '#4b5a3c')
+    if (style === 'long' && !look.hat && role !== 'player') hd(-3, 2, 2, 8, look.hair)
 
-    // Head, hair, eye, nose.
-    rr(-2, 1, 5, 6, look.skin)
-    rr(-2, 0, 5, 2, look.hair)
-    rr(-2, 2, 1, 3, look.hair)
-    rr(1, phone ? 4 : 3, 1, 1, C.ink)
-    rr(3, 4, 1, 1, look.skin)
+    // Head.
+    hd(-2, 1, 5, 6, look.skin)
+    hd(-2, 6, 5, 1, shade(look.skin, -0.12))
+    if (style !== 'bald' || role === 'player') {
+        hd(-2, 0, 5, 2, look.hair)
+        hd(-2, 2, 1, 3, look.hair)
+        hd(0, 0, 2, 1, shade(look.hair, 0.25))
+    } else {
+        hd(-2, 3, 1, 2, look.hair)
+    }
+    if (style === 'curly' && !look.hat) {
+        hd(-3, -1, 6, 3, look.hair)
+        hd(-3, 2, 2, 3, look.hair)
+    }
+    if (style === 'bun' && !look.hat) hd(-3, -2, 3, 2, look.hair)
+    if (look.beard) hd(-1, 5, 4, 2, look.hair)
+
+    // Eye, nose, brow and mouth.
+    hd(1, phone ? 4 : 3, 1, 1, blink ? shade(look.skin, -0.3) : C.ink)
+    hd(3, 4, 1, 1, look.skin)
+    if (feel === 'stern') hd(0, 2, 2, 1, shade(look.hair, -0.3))
+    if (feel === 'happy') hd(1, 5, 2, 1, '#7a3a2a')
+    if (feel === 'worried') {
+        hd(1, 5, 1, 1, '#5a2020')
+        // A bead of sweat running down the back of the head.
+        hd(-3, 1 + Math.floor((now * 3 + seed * 5) % 4), 1, 1, C.blueL)
+    }
+    if (look.glasses) {
+        hd(0, 3, 3, 1, '#1a1a1a')
+        hd(2, 3, 1, 1, '#9fd4ff')
+    }
+
+    // Hats and hoods.
     if (role === 'player' && look.hat) {
-        rr(-3, -1, 7, 3, look.hat)
-        rr(-3, 2, 2, 5, look.hat)
+        hd(-3, -1, 7, 3, look.hat)
+        hd(-3, 2, 2, 5, look.hat)
     } else if (look.hat) {
-        rr(-3, -1, 7, 3, look.hat)
-        rr(-2, -2, 5, 1, look.hat)
-        rr(0, -3, 1, 1, shade(look.hat, 0.35))
+        hd(-3, -1, 7, 3, look.hat)
+        hd(-2, -2, 5, 1, look.hat)
+        hd(0, -3, 1, 1, shade(look.hat, 0.35))
+    }
+    if (look.headphones) {
+        hd(-2, -1, 5, 1, look.headphones)
+        hd(-1, 2, 2, 3, look.headphones)
     }
 
     // Body and legs.
@@ -108,6 +190,7 @@ export function person(
         chest = 7
         rr(-3, 7, 7, 7, coat)
         rr(-3, 7, 1, 7, dark)
+        rr(3, 7, 1, 7, shade(coat, 0.12))
         rr(-2, 14, 7, 2, look.pants)
         rr(3, 16, 2, 3, look.pants)
         rr(3, 19, 3, 1, C.ink)
@@ -125,13 +208,18 @@ export function person(
         rr(-1, 7, 2, 1, shade(look.skin, -0.15))
         rr(-3, 8, 7, 8, coat)
         rr(-3, 8, 1, 8, dark)
+        rr(3, 8, 1, 8, shade(coat, 0.12))
         const apart = pose === 'walk' && Math.floor(frame) % 2 === 0
         const back = apart ? -3 : -2
         const front = apart ? 2 : 1
-        rr(back, 16, 2, 7, look.pants)
+        rr(back, 16, 2, 7, shade(look.pants, -0.15))
         rr(front, 16, 2, 7, look.pants)
         rr(back - (apart ? 1 : 0), 23, 3, 1, C.ink)
         rr(front, 23, 3, 1, C.ink)
+    }
+    if (look.scarf) {
+        rr(-3, chest - 1, 7, 2, look.scarf)
+        rr(-3, chest + 1, 2, 4, shade(look.scarf, -0.15))
     }
 
     // What gives inspectors away.
@@ -169,6 +257,11 @@ export function person(
         rr(0, y, 2, 3, dark)
         rr(1, y + 2, 4, 2, dark)
         rr(5, y + 1, 1, 2, look.skin)
+    } else if (look.pram && pose !== 'sit') {
+        // Both hands on the pram handle.
+        rr(0, y, 2, 3, dark)
+        rr(1, y + 3, 4, 2, dark)
+        rr(5, y + 3, 1, 2, look.skin)
     } else if (phone || pose === 'sit' || pose === 'crouch') {
         rr(0, y, 2, 3, dark)
         rr(1, y + 3, 2, 2, dark)
@@ -181,6 +274,24 @@ export function person(
             rr(0, y + 8, 4, 5, '#ece7da')
             rr(1, y + 7, 2, 1, '#b9b3a5')
         }
+    }
+
+    // In front: a pram, or a dog on the floor wagging its tail.
+    const feetY = Math.round(feet)
+    const sprite = (rows: string[], from: number, color: (c: number, r: number) => string) =>
+        rows.forEach((row, r) =>
+            [...row].forEach((ch, c) => {
+                if (ch === '#') R(ctx, face > 0 ? x + from + c : x - from - c, feetY - rows.length + r, 1, 1, color(c, r))
+            })
+        )
+    if (look.pram && pose !== 'sit') {
+        const body = shade(look.coat, -0.4)
+        sprite(PRAM, 6, (c, r) => (r >= 9 ? C.ink : r < 3 ? shade(body, -0.25) : r > 6 ? '#555' : body))
+    }
+    if (look.dog && pose !== 'sit') {
+        const wag = Math.floor(now * 6 + seed * 9) % 2
+        sprite(DOG, 4, (c, r) => (c === 5 && r === 1 ? C.ink : c === 6 && r === 1 ? C.ink : look.dog ?? C.ink))
+        R(ctx, face > 0 ? x + 3 : x - 3, feetY - 4 + wag, 1, 1, look.dog)
     }
     return top - (look.hat ? 3 : 0)
 }
@@ -224,13 +335,59 @@ export function sign(ctx: Ctx, kind: keyof typeof ICONS, x: number, y: number, s
     ICONS[kind].forEach((row, j) => [...row].forEach((c, i) => c === '#' && R(ctx, ox + i, oy + j, 1, 1, C.white)))
 }
 
-export function rain(ctx: Ctx, time: number, still: boolean, color = '#4a5a80') {
+export function rain(ctx: Ctx, time: number, still: boolean, color = '#4a5a80', ground?: [number, number]) {
     if (still) return
     for (let i = 0; i < 46; i++) {
         const x = (hash(i) * (W + 40) + time * 24) % (W + 40)
         const y = (hash(i + 500) * H + time * (130 + hash(i + 900) * 50)) % H
         R(ctx, x, y, 1, 3, color)
     }
+    if (!ground) return
+    // Small splashes where drops land on the pavement.
+    for (let i = 0; i < 16; i++) {
+        const k = (time * 1.7 + hash(i + 40)) % 1
+        if (k > 0.25) continue
+        const cycle = Math.floor(time * 1.7 + hash(i + 40))
+        const x = Math.floor(hash(i * 3 + cycle * 17) * W)
+        const y = ground[0] + Math.floor(hash(i * 5 + cycle * 13) * (ground[1] - ground[0]))
+        R(ctx, x, y - 1, 1, 1, color)
+        if (k > 0.1) {
+            R(ctx, x - 2, y, 1, 1, color)
+            R(ctx, x + 2, y, 1, 1, color)
+        }
+    }
+}
+
+/** A gull: flying with its wings beating, or standing on whatever it found. */
+export function gull(ctx: Ctx, x: number, y: number, time: number, flying: boolean, face: 1 | -1 = 1) {
+    const px = (dx: number, dy: number, color: string) => R(ctx, x + dx * face, y + dy, 1, 1, color)
+    if (flying) {
+        const up = Math.floor(time * 6) % 2 === 0
+        for (const dx of [-3, 3]) px(dx, up ? -1 : 1, '#d9dde0')
+        for (const dx of [-2, 2]) px(dx, up ? -1 : 0, '#eef0f2')
+        for (const dx of [-1, 0, 1]) px(dx, 0, '#f6f7f8')
+        px(2, 0, C.yellow)
+        return
+    }
+    for (const dx of [-2, -1, 0, 1]) px(dx, -2, '#f6f7f8')
+    for (const dx of [-3, -2, -1]) px(dx, -3, '#9aa3aa')
+    px(1, -3, '#f6f7f8')
+    px(1, -4, '#f6f7f8')
+    px(2, -4, C.yellow)
+    px(1, -4, C.ink)
+    px(-1, -1, '#e0904a')
+    px(0, -1, '#e0904a')
+}
+
+/** A pigeon pecking at the ground now and then. */
+export function pigeon(ctx: Ctx, x: number, y: number, time: number, seed: number) {
+    const peck = Math.floor(time * 2 + seed * 7) % 3 === 0
+    R(ctx, x - 2, y - 3, 4, 2, '#7d8088')
+    R(ctx, x - 2, y - 3, 2, 1, '#6a6d75')
+    R(ctx, x + 2, peck ? y - 2 : y - 4, 2, 2, '#8d9098')
+    R(ctx, x + 3, peck ? y - 2 : y - 4, 1, 1, C.ink)
+    R(ctx, x - 1, y - 1, 1, 1, '#c06040')
+    R(ctx, x + 1, y - 1, 1, 1, '#c06040')
 }
 
 // Helsinki facades, the same for a given seed. At night the windows are lit,

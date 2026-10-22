@@ -14,7 +14,9 @@ const notes: Spec[] = [
     { label: 'bus driver', value: 'checks the front door, cannot fine' },
     { label: 'penalty fare', value: '100 €' },
     { label: 'real ticket', value: '3,20 € in the app, after a login' },
-    { label: 'runs', value: 'night, rush hour, the long way to Kamppi, daily' },
+    { label: 'busking', value: 'keys 1 2 3 on the line, coins pay for a ticket' },
+    { label: 'jammed machine', value: 'hit it on green, three times' },
+    { label: 'runs', value: 'night, easy, rush hour, the long way to Kamppi, daily' },
     { label: 'keys', value: 'space, 1 to 4' },
 ]
 
