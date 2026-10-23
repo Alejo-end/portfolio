@@ -85,7 +85,8 @@ export const projects: Project[] = [
     specs: [
       { label: "ports", value: "2 × USB-C MIDI · TRS in · TRS out" },
       { label: "mcu", value: "2 × XIAO RP2040" },
-      { label: "case", value: "62.4 × 41.9 × 9.4 mm, aluminum, PCB lid" },
+      { label: "case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
+      { label: "alt case", value: "65.7 × 44.9 × 9.9 mm, PCB sandwich" },
       { label: "board", value: "2 layers, assembled by JLCPCB" },
     ],
     prototype: {
