@@ -178,6 +178,9 @@ const POLICE_REDS = 2
 const POLICE_MIN = 6
 
 const CALM = 4.5
+// How long one line of chatter stays up, and the pause before the reply.
+const SAY = 1.6
+const REPLY = 0.25
 const PLATFORM_WAIT = 6
 const CHOOSE = 3.4
 
@@ -459,6 +462,10 @@ export type Game = {
     // When the last tip arrived, for the phone notification on screen.
     tipAt: number
     bubble: { id: number; text: string; until: number } | null
+    // Chatter between riders: the lines still to say, and when the next one
+    // is due. -1 means this stretch of the ride has not rolled for it yet.
+    chat: { id: number; text: string }[]
+    chatAt: number
     cues: Cue[]
     rand: () => number
     ids: number
@@ -746,6 +753,8 @@ export function createGame(seed = Date.now()): Game {
         tip: '',
         tipAt: -9,
         bubble: null,
+        chat: [],
+        chatAt: -1,
         cues: [],
         rand: mulberry32(seed),
         ids: 0,
@@ -806,6 +815,8 @@ function begin(g: Game, kind: Kind) {
         note: '',
         tip: '',
         bubble: null,
+        chat: [],
+        chatAt: -1,
     })
     const to = g.long ? 'Kamppi' : 'Rautatientori'
     const lead = g.easy ? 'Easy run. ' : ''
@@ -1006,6 +1017,53 @@ function startRide(g: Game) {
         enter(g, 'ride', reveal)
         g.bubble = { id: plain.id, text: 'LIPUNTARKASTUS!', until: g.time + 2 }
     })
+}
+
+// Somebody on board says something now and then, alone or to the person
+// next to them. It is only for the look of the ride, so it draws from
+// Math.random and leaves the seeded run, and the daily, as they were.
+const CHATTER: readonly (readonly string[])[] = [
+    ['SACAPUNTAS.'],
+    ['SACAPUNTAS!'],
+    ['SACAPUNTAS.', 'BLESS YOU.'],
+    ['SACAPUNTAS.', 'SACAPUNTAS.'],
+    ['VIVA LA HERMANDAD!'],
+    ['VIVA LA HERMANDAD!', 'VIVA!'],
+    ['NO NIIN.'],
+    ['JOO JOO.'],
+    ['PERKELE.'],
+    ['ÄLÄ NYT.'],
+    ['MITÄ KUULUU?', 'EI MITÄÄN.'],
+    ['KYLMÄ.', 'NIIN ON.'],
+    ['ONKS SULLA LIPPU?', 'EI.'],
+    ['MOI.', 'MOI MOI.'],
+]
+
+function chatter(g: Game) {
+    if (g.t < 0.6) {
+        g.chat = []
+        g.chatAt = -1
+        return
+    }
+    if (g.chatAt < 0) {
+        g.chatAt = Infinity
+        const awake = g.riders.filter((r) => !r.look.asleep)
+        if (!awake.length || Math.random() > 0.55) return
+        const talk = CHATTER[Math.floor(Math.random() * CHATTER.length)]
+        const first = awake[Math.floor(Math.random() * awake.length)]
+        // The reply comes from whoever stands or sits nearest.
+        const second = awake
+            .filter((r) => r !== first)
+            .sort((a, b) => Math.abs(a.slot - first.slot) - Math.abs(b.slot - first.slot))[0]
+        if (talk.length > 1 && !second) return
+        g.chat = talk.map((text, n) => ({ id: (n % 2 ? second : first).id, text }))
+        g.chatAt = g.time
+    }
+    if (g.bubble || g.time < g.chatAt) return
+    const said = g.chat.shift()
+    if (!said) return
+    if (g.riders.some((r) => r.id === said.id)) g.bubble = { ...said, until: g.time + SAY }
+    g.chatAt = g.time + SAY + REPLY
 }
 
 function arrive(g: Game) {
@@ -1916,6 +1974,7 @@ export function step(g: Game, dt: number) {
                     if (g.phase !== 'ride') return
                 }
             }
+            chatter(g)
             if (g.t >= dur) arrive(g)
             return
         }

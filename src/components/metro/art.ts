@@ -703,6 +703,7 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         const top = person(ctx, x, 116, r.look, r.face, r.seated ? 'sit' : 'stand')
         if (time - r.okAt < 0.8) tick(ctx, x, top - 6)
         else if (r.look.asleep && !still) snore(ctx, x, top, time, r.look.seed ?? 0)
+        if (g.bubble?.id === r.id) bubble(ctx, x, top - 3, g.bubble.text)
     }
     for (const i of g.crew) {
         if (!i.aboard) continue
