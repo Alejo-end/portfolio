@@ -1,5 +1,5 @@
 // A 3×5 bitmap font. Each glyph is five rows of three pixels, top to
-// bottom. Ä, Ö and Å get their mark one pixel above the cap height.
+// bottom. Ä, Ö, Å and Ô get their mark one pixel above the cap height.
 
 const GLYPHS: Record<string, string> = {
     A: '.#. #.# ### #.# #.#',
@@ -67,6 +67,8 @@ const ACCENTS: Record<string, { base: string; mark: string }> = {
     Ä: { base: 'A', mark: '#.#' },
     Ö: { base: 'O', mark: '#.#' },
     Å: { base: 'A', mark: '.#.' },
+    // Gothenburg spelling: gôtt, gôrbra.
+    Ô: { base: 'O', mark: '.#.' },
 }
 
 export function textWidth(text: string, scale = 1) {
