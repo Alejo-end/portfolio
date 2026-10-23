@@ -1037,6 +1037,13 @@ const CHATTER: readonly (readonly string[])[] = [
     ['KYLMÄ.', 'NIIN ON.'],
     ['ONKS SULLA LIPPU?', 'EI.'],
     ['MOI.', 'MOI MOI.'],
+    ['NO MEN HEJ!'],
+    ['JA JA.'],
+    ['FÖRLÅT.'],
+    ['FRYSER DU?', 'JA.'],
+    ['HAR DU BILJETT?', 'NEJ.'],
+    ['VAD SA DU?', 'SACAPUNTAS.'],
+    ['HEJ.', 'HEJ HEJ.'],
 ]
 
 function chatter(g: Game) {
