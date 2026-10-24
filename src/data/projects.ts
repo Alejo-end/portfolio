@@ -79,14 +79,16 @@ export const projects: Project[] = [
     title: "2Host",
     description:
       "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. Every message passes, SysEx included. A panic button stops every note. First batch soon on Tori.",
-    technologies: ["KiCad", "XIAO RP2040", "TinyUSB", "Arduino", "MIDI", "PCB Design", "JLCPCB", "FreeCAD"],
+    technologies: ["FreeCAD", "KiCad", "FR-4 PCB", "XIAO RP2040", "TinyUSB", "Arduino", "MIDI", "JLCPCB", "Hardwood"],
     alias: "2host",
     kind: "hardware",
+    galleryLayout: "grid",
     specs: [
       { label: "ports", value: "2 × USB-C MIDI · TRS in · TRS out" },
       { label: "mcu", value: "2 × XIAO RP2040" },
-      { label: "case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
-      { label: "alt case", value: "65.7 × 44.9 × 9.9 mm, PCB sandwich" },
+      { label: "link", value: "UART, 1 Mbaud" },
+      { label: "case", value: "two PCB plates, M2 spacers · 65.7 × 44.9 × 9.9 mm" },
+      { label: "alt case", value: "hardwood tray, PCB lid · 62.4 × 47.3 × 10.4 mm" },
       { label: "board", value: "2 layers, assembled by JLCPCB" },
     ],
     prototype: {
