@@ -9,7 +9,7 @@ import { hasSound } from "@/data/sound"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
-import type { CodeSnippet, Project } from "@/app/types"
+import type { CodeSnippet, Project, Spec } from "@/app/types"
 
 export interface BlobFile {
   url: string
@@ -26,6 +26,13 @@ interface ProjectDetailsProps {
   /** Media of the project's prototype, shown in its own section under the main gallery. */
   prototypeBlobs?: BlobFile[]
 }
+
+// Spec lines, then "materials" and "software" when the project lists them.
+const sheetSpecs = ({ specs = [], materials = [], software = [] }: { specs?: Spec[]; materials?: string[]; software?: string[] }) => [
+  ...specs,
+  ...(materials.length > 0 ? [{ label: "materials", value: materials.join(" · ") }] : []),
+  ...(software.length > 0 ? [{ label: "software", value: software.join(" · ") }] : []),
+]
 
 const isVideoFile = (file: BlobFile) =>
   file.contentType
@@ -326,9 +333,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
         meta={[no, String(project.year)]}
         title={project.title}
         description={project.description}
-        specs={project.specs}
-        stack={project.technologies}
-        stackLabel="materials"
+        specs={sheetSpecs(project)}
       >
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={handleShare} className="btn">
@@ -365,9 +370,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
             meta={["prototype", String(prototype.year)]}
             title={prototype.title}
             description={prototype.description}
-            specs={prototype.specs}
-            stack={prototype.technologies}
-            stackLabel="materials"
+            specs={sheetSpecs(prototype)}
           >
             {(prototype.githubUrl || prototype.liveUrl) && (
               <div className="flex flex-wrap gap-3">

@@ -49,9 +49,15 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        // The MIDI bridge is 2Host's rev 1 now, shown on its page as the prototype.
+        // The MIDI bridge was H2H's rev 1.
         source: "/projects/midihost",
-        destination: "/projects/2host",
+        destination: "/projects/h2h",
+        permanent: true,
+      },
+      {
+        // H2H was called 2Host until rev 3.
+        source: "/projects/2host",
+        destination: "/projects/h2h",
         permanent: true,
       },
       {

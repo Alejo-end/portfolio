@@ -11,7 +11,7 @@ interface SpecSheetProps {
     subtitle?: string
     description: string
     specs?: Spec[]
-    stack: string[]
+    stack?: string[]
     stackLabel?: string
     /** h1 when the sheet is the page's main subject. */
     heading?: 'h1' | 'h2'
@@ -49,7 +49,7 @@ export function SpecSheet({
                     <p className="max-w-xl text-lg leading-relaxed">{description}</p>
                     {children}
                 </div>
-                <SpecList specs={[...specs, { label: stackLabel, value: stack.join(' · ') }]} />
+                <SpecList specs={stack ? [...specs, { label: stackLabel, value: stack.join(' · ') }] : specs} />
             </div>
         </div>
     )

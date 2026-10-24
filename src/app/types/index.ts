@@ -41,7 +41,8 @@ export interface Prototype {
   year: number;
   description: string;
   specs?: Spec[];
-  technologies: string[];
+  materials?: string[];
+  software?: string[];
   githubUrl?: string;
   liveUrl?: string;
 }
@@ -58,7 +59,10 @@ export interface Project {
   /** An earlier build folded into this page, under the main gallery. */
   prototype?: Prototype;
   description: string;
-  technologies: string[];
+  /** What the thing is made of: stock, parts, instruments. */
+  materials?: string[];
+  /** Programs, languages and libraries used to make it. */
+  software?: string[];
   videoSrc?: string;
   /** Autoplaying loops shown between the title card and the gallery. */
   videos?: ProjectVideo[];

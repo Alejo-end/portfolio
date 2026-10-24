@@ -5,7 +5,7 @@ export const projects: Project[] = [
     title: "Stray",
     description:
       "A spectral processor for a field recording, played from a MIDI keyboard. Play soft and the sound stays calm, play harder and it gets restless, then chaotic, moving around the room as it goes. Midterm for Programming in Max 1 at Sibelius Academy. The patch will be published soon.",
-    technologies: ["Max 9", "MSP", "JavaScript", "MIDI", "nanoKONTROL2", "Dante", "Zoom H6", "Bitwig"],
+    software: ["Max 9", "MSP", "JavaScript", "Dante", "Bitwig"],
     alias: "stray",
     kind: "sound",
     galleryLayout: "grid",
@@ -23,7 +23,7 @@ export const projects: Project[] = [
     title: "Reins",
     description:
       "The MIDI Guitar as open hardware. A board on the guitar reads your hand. A pedal turns it into MIDI.",
-    technologies: ["KiCad", "XIAO", "ToF", "MIDI", "PCB Design", "Open Hardware"],
+    software: ["KiCad", "FreeCAD", "Arduino", "PlatformIO", "Python"],
     alias: "reins",
     kind: "hardware",
     specs: [
@@ -47,7 +47,8 @@ export const projects: Project[] = [
         { label: "link", value: "ESP-NOW" },
         { label: "output", value: "CC · pitch bend" },
       ],
-      technologies: ["XIAO ESP32-S3", "C++", "KiCad", "VL53L1X ToF", "ESP-NOW", "MIDI", "Max/MSP"],
+      materials: ["Squier Mustang", "copper-clad board"],
+      software: ["KiCad", "Arduino", "Max"],
       githubUrl: "https://github.com/Alejo-end/midiguitar",
       liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
     },
@@ -57,7 +58,8 @@ export const projects: Project[] = [
     title: "Mangler",
     description:
       "Live stereo sampler for norns. Granular, time-stretch, slices, filter, delay, reverb, and two layer decks that loop like a pedal. Scenes store whole sounds, orbit wanders between them, erosion wears the take down on each pass.",
-    technologies: ["Lua", "SuperCollider", "norns", "softcut", "MIDI"],
+    materials: ["norns"],
+    software: ["Lua", "SuperCollider", "softcut"],
     alias: "mangler",
     kind: "sound",
     githubUrl: "https://github.com/Alejo-end/mangler",
@@ -68,7 +70,8 @@ export const projects: Project[] = [
     title: "snu",
     description:
       "8-step sequencer for norns and grid. Four tracks, notes or CC, per-step velocity, length, mute and skip, pattern chaining. Screenshots come from a headless simulator I wrote.",
-    technologies: ["Lua", "norns", "monome grid", "MIDI", "PolyPerc"],
+    materials: ["norns", "monome grid"],
+    software: ["Lua", "PolyPerc"],
     alias: "snu",
     kind: "sound",
     githubUrl: "https://github.com/absurd-turtle/snu",
@@ -76,41 +79,27 @@ export const projects: Project[] = [
     galleryLayout: "grid",
   },
   {
-    title: "2Host",
+    title: "H2H",
     description:
-      "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. Every message passes, SysEx included. A panic button stops every note. First batch soon on Tori.",
-    technologies: ["KiCad", "XIAO RP2040", "TinyUSB", "Arduino", "MIDI", "PCB Design", "JLCPCB", "FreeCAD"],
-    alias: "2host",
+      "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. SysEx passes in one piece. One cable powers both sides. With only a charger, MIDI IN plays MIDI OUT. A panic button stops every note. Bare copper art under a thin OSP coat: each unit ages its own way. First batch soon on Tori.",
+    materials: ["black FR-4", "OSP copper", "hardwood", "M2 spacers"],
+    software: ["KiCad", "FreeCAD", "Python", "Arduino", "TinyUSB"],
+    alias: "h2h",
     kind: "hardware",
     specs: [
       { label: "ports", value: "2 × USB-C MIDI · TRS in · TRS out" },
       { label: "mcu", value: "2 × XIAO RP2040" },
-      { label: "case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
-      { label: "alt case", value: "65.7 × 44.9 × 9.9 mm, PCB sandwich" },
+      { label: "case", value: "65.7 × 44.9 × 9.9 mm, PCB sandwich" },
+      { label: "alt case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
       { label: "board", value: "2 layers, assembled by JLCPCB" },
     ],
-    prototype: {
-      title: "MIDI Host-to-Host Bridge",
-      alias: "midihost",
-      year: 2026,
-      description:
-        "Rev 1. Two XIAOs linked by UART, milled on the Fab Lab's SRM-20, printed case. In daily use between my norns and Ableton.",
-      specs: [
-        { label: "mcu", value: "2 × XIAO RP2040" },
-        { label: "link", value: "UART" },
-        { label: "board", value: "milled on a Roland SRM-20" },
-      ],
-      technologies: ["KiCad", "XIAO RP2040", "UART", "MIDI", "Roland SRM-20", "TinyUSB"],
-      githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
-      liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
-    },
     year: 2026,
   },
   {
     title: "Analog Photography",
     description:
       "35mm on a Chinon CE-4 with a Pentax 50mm f/2.",
-    technologies: ["35mm film", "Chinon CE-4"],
+    materials: ["35mm film", "Chinon CE-4", "Pentax 50mm f/2"],
     alias: "film",
     kind: "image",
     year: 2025,
@@ -119,7 +108,7 @@ export const projects: Project[] = [
     title: "Sounds of the Weather Turning",
     description:
       "Max for Live effect. Live air quality data controls delay, reverb, echo and distortion. Free on maxforlive.com.",
-    technologies: ["MaxMSP", "Ableton Live", "WAQI API", "Max4Live"],
+    software: ["Max for Live", "Ableton Live", "WAQI API"],
     alias: "weather",
     kind: "sound",
     githubUrl:
@@ -131,7 +120,7 @@ export const projects: Project[] = [
     title: "3D Printed Pinhole Photography",
     description:
       "3D printed pinhole camera. Several pinhole sizes and films, developed at home.",
-    technologies: ["3D Printing", "Photography", "Pinhole"],
+    materials: ["3D-printed body", "film"],
     alias: "photo",
     kind: "image",
     year: 2024,
@@ -140,7 +129,8 @@ export const projects: Project[] = [
     title: "Norns Studies",
     description:
       "Soldered a norns shield. Scripts in Lua and SuperCollider since.",
-    technologies: ["Lua", "SuperCollider", "Norns"],
+    materials: ["norns shield"],
+    software: ["Lua", "SuperCollider"],
     alias: "norns",
     kind: "sound",
     year: 2024,
@@ -149,14 +139,7 @@ export const projects: Project[] = [
     title: "MaxMSP Studies",
     description:
       "MaxMSP patches. A few exported with RNBO to run in the browser.",
-    technologies: [
-      "MaxMSP",
-      "RNBO",
-      "Jitter",
-      "React",
-      "TypeScript",
-      "Next.js",
-    ],
+    software: ["Max", "RNBO", "Jitter", "React", "TypeScript", "Next.js"],
     alias: "max",
     kind: "sound",
     year: 2024,
@@ -165,14 +148,7 @@ export const projects: Project[] = [
     title: "3D & Photogrammetry",
     description:
       "Scans in RealityScan, cleanup in Blender, a few shown on the web with Three.js.",
-    technologies: [
-      "RealityScan",
-      "Three.js",
-      "React",
-      "RealityCapture",
-      "Blender",
-      "Thinkercad",
-    ],
+    software: ["RealityScan", "RealityCapture", "Blender", "Tinkercad", "Three.js", "React"],
     alias: "3dscanning",
     kind: "image",
     year: 2024,
@@ -181,13 +157,8 @@ export const projects: Project[] = [
     title: "Music Experiments",
     description:
       "Generative sketches in MaxMSP, norns and SuperCollider. Finished in Ableton.",
-    technologies: [
-      "MaxMSP",
-      "SuperCollider",
-      "Strudel.js",
-      "Ableton Live",
-      "Norns",
-    ],
+    materials: ["norns"],
+    software: ["Max", "SuperCollider", "Strudel", "Ableton Live"],
     alias: "music",
     kind: "sound",
     year: 2024,
@@ -198,14 +169,14 @@ export const projects: Project[] = [
       "Sets at algoraves. Music and visuals written live.",
     alias: "livecoding",
     kind: "sound",
-    technologies: ["Hydra", "P5.js", "Strudel", "MaxMSP", "SuperCollider"],
+    software: ["Hydra", "p5.js", "Strudel", "Max", "SuperCollider"],
     year: 2023,
   },
   {
     title: "EcoBridge",
     description:
       "Open data on public finances. Global finalist, IBM Call for Code 2021.",
-    technologies: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
+    software: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
     alias: "ecobridge",
     kind: "web",
     githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
