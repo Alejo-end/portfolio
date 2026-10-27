@@ -1,7 +1,7 @@
 'use client'
 
 import { addXp } from '@/lib/xp'
-import { PRICE, euro, type Game, type Mode } from './game'
+import { PRICE, earlyBy, euro, type Game, type Mode } from './game'
 
 // Runs, best arrival, fines paid and achievements, kept in this browser
 // only. Each new ending, each way of travelling and each achievement also
@@ -13,7 +13,7 @@ export type Stats = {
     fines: number
     // Most minutes to spare on an on-time run, and how you got there.
     early: number | null
-    bestMode: Mode | null
+    bestMode: Mode | 'scooter' | null
     madeFree: Mode[]
     achievements: string[]
 }
@@ -39,7 +39,10 @@ export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
     { id: 'sleeper', name: 'Do not disturb', text: 'slept through a ticket check' },
     { id: 'story', name: 'Long story', text: 'talked until they gave up' },
     { id: 'kurvi', name: 'Pregame', text: 'kebab, bar, and still on time' },
-    { id: 'mitten', name: 'Lost and found', text: 'brought the mitten back to its owner' },
+    { id: 'mitten', name: 'Lost and found', text: 'gave Kaveri back what they lost' },
+    { id: 'guide', name: 'Local', text: 'sent a tourist to the right stop' },
+    { id: 'scooter', name: 'Last mile', text: 'on time on a scooter the pizza paid for' },
+    { id: 'chatty', name: 'Not very Finnish', text: 'talked to three strangers in one run' },
     { id: 'gull', name: 'Seagull tax', text: 'a gull took your kebab' },
 ]
 
@@ -80,10 +83,10 @@ export function recordRun(g: Game): string[] {
     const onTime = g.ending === 'made'
     if (onTime) {
         s.made += 1
-        const early = g.meet - Math.floor(g.clock)
+        const early = earlyBy(g)
         if (s.early === null || early > s.early) {
             s.early = early
-            s.bestMode = g.mode
+            s.bestMode = g.scooter ? 'scooter' : g.mode
         }
         if (free && !s.madeFree.includes(g.mode)) s.madeFree.push(g.mode)
     }
@@ -102,14 +105,17 @@ export function recordRun(g: Game): string[] {
         rush: onTime && g.rush && free,
         long: onTime && g.long && free,
         daily: g.daily !== null,
-        bike: onTime && g.mode === 'bike',
+        bike: onTime && g.mode === 'bike' && !g.scooter,
+        scooter: onTime && g.scooter,
         reds: onTime && g.flags.includes('reds'),
         cycled: g.flags.includes('cycled'),
         bribe: g.flags.includes('bribe'),
         sleeper: g.flags.includes('sleeper'),
         story: g.flags.includes('story'),
-        kurvi: onTime && g.went.length === 2,
-        mitten: onTime && g.mitten,
+        kurvi: onTime && g.went.includes('kebab') && g.went.includes('bar'),
+        mitten: onTime && g.found,
+        guide: g.flags.includes('guide'),
+        chatty: g.talked.length >= 3,
         gull: g.flags.includes('gull'),
         collector: s.fines >= 300,
     }

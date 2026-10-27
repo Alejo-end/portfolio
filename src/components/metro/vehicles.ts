@@ -118,6 +118,12 @@ function cabin(ctx: Ctx, mode: Transit, left: number, inside: Inside) {
         }
         inside()
     })
+    // Glare on the glass: two short diagonals in the top corner of each window.
+    for (const [x, w] of wins) {
+        if (w < 10) continue
+        for (let k = 0; k < 5; k++) R(ctx, x + w - 4 - k, top + 1 + k, 1, 1, '#d8e2ea')
+        for (let k = 0; k < 3; k++) R(ctx, x + w - 2 - k, top + 1 + k, 1, 1, '#d8e2ea')
+    }
 }
 
 // Two leaves per door, each 8 wide with a window, slid apart by `open`. The
@@ -144,7 +150,13 @@ export function metroCar(ctx: Ctx, left: number, open: number, inside: Inside, w
     R(ctx, left + 2, 49, 216, 3, '#9a948d')
     R(ctx, left, 52, 220, 49, C.orange)
     R(ctx, left, 52, 220, 1, C.orangeL)
+    R(ctx, left, 53, 220, 1, '#f07a38')
+    R(ctx, left, 93, 220, 1, '#c9541a')
     R(ctx, left, 94, 220, 7, C.orangeD)
+    R(ctx, left, 100, 220, 1, '#7a3012')
+    // Panel seams and the car number.
+    for (const sx of [left + 30, left + 110, left + 190]) R(ctx, sx, 54, 1, 6, '#c9541a')
+    drawText(ctx, '307', left + 6, 96, '#f4a070')
     R(ctx, left + 220, 58, 4, 40, '#2a2725')
     R(ctx, left + 6, 101, 208, 3, '#2a2725')
     cabin(ctx, 'metro', left, inside)

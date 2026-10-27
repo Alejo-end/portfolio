@@ -25,6 +25,8 @@ export type Cue =
     | 'honk'
     | 'click'
     | 'announce'
+    | 'coin'
+    | 'talk'
 
 // The pocket synth you busk with: C, E and G, a plucked square with a sine under it.
 const LANES = [523.25, 659.25, 783.99]
@@ -101,6 +103,13 @@ export function play(cue: Cue) {
             case 'buzz':
                 tone(120, 0, 0.12, 'sawtooth', 0.03)
                 tone(120, 0.18, 0.12, 'sawtooth', 0.03)
+                break
+            case 'coin':
+                tone(1320, 0, 0.05)
+                tone(1980, 0.06, 0.12)
+                break
+            case 'talk':
+                for (let i = 0; i < 4; i++) tone(300 + ((i * 97) % 160), i * 0.07, 0.05, 'square', 0.025)
                 break
             case 'ok':
                 tone(660, 0, 0.1)

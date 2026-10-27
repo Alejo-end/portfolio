@@ -516,23 +516,81 @@ export function windowColor(lit: boolean, day: boolean) {
     return lit ? '#e8c36a' : '#262833'
 }
 
+/** Every other pixel of a rectangle, on one checkerboard for the whole canvas: light and shade without blending. */
+export function dither(ctx: Ctx, x: number, y: number, w: number, h: number, color: string) {
+    x = Math.round(x)
+    y = Math.round(y)
+    ctx.fillStyle = color
+    for (let j = 0; j < h; j++) for (let i = (x + y + j) & 1; i < w; i += 2) ctx.fillRect(x + i, y + j, 1, 1)
+}
+
+// Lamps, ceiling lights and the odd TV, as seen from the street.
+const LIT = ['#e8c36a', '#e8c36a', '#f0ad5c', '#f4d98a', '#9fc4f0']
+
+// One window, 4 × 6, with its lintel and sill in the wall color `c`.
+function pane(ctx: Ctx, x: number, y: number, c: string, n: number, day: boolean) {
+    R(ctx, x - 1, y - 1, 6, 1, shade(c, -0.18))
+    R(ctx, x - 1, y + 6, 6, 1, shade(c, 0.22))
+    const lit = hash(n) > 0.55
+    if (day) {
+        R(ctx, x, y, 4, 6, windowColor(lit, true))
+        R(ctx, x, y, 1, 2, '#e6eef6')
+        R(ctx, x, y + 2, 4, 1, '#3a4250')
+        return
+    }
+    if (!lit) {
+        R(ctx, x, y, 4, 6, '#262833')
+        R(ctx, x, y, 1, 1, '#3e4256')
+        R(ctx, x + 1, y + 1, 1, 1, '#33374a')
+        R(ctx, x, y + 2, 4, 1, '#1b1d26')
+        return
+    }
+    const glow = LIT[Math.floor(hash(n + 5) * LIT.length)]
+    R(ctx, x, y, 4, 6, glow)
+    R(ctx, x, y + 2, 4, 1, shade(glow, -0.3))
+    // A curtain drawn to one side, and now and then a plant on the sill.
+    R(ctx, hash(n + 9) > 0.5 ? x : x + 3, y, 1, 6, shade(glow, -0.22))
+    if (hash(n + 11) > 0.8) {
+        R(ctx, x + 1, y + 4, 2, 2, '#2f5a34')
+        R(ctx, x + 1, y + 5, 2, 1, '#8a4a2a')
+    }
+}
+
+/** A Kallio apartment block from `top` down to `base`: cornice, roof clutter, windows by floor, a dark street level. */
+export function facade(ctx: Ctx, x: number, top: number, w: number, base: number, c: string, seed: number, day = false) {
+    const roof = day ? '#5a5650' : '#1e1d22'
+    if (hash(seed + 1) > 0.3) {
+        const cx = x + 6 + Math.floor(hash(seed + 2) * (w - 14))
+        R(ctx, cx, top - 5, 4, 5, roof)
+        R(ctx, cx - 1, top - 6, 6, 1, roof)
+    }
+    if (hash(seed + 3) > 0.5) {
+        const ax = x + 4 + Math.floor(hash(seed + 4) * (w - 8))
+        R(ctx, ax, top - 9, 1, 9, roof)
+        R(ctx, ax - 3, top - 7, 7, 1, roof)
+        R(ctx, ax - 2, top - 5, 5, 1, roof)
+    }
+    R(ctx, x, top, w, base - top, c)
+    R(ctx, x, top, w, 2, shade(c, -0.25))
+    R(ctx, x, top + 2, w, 1, shade(c, 0.18))
+    for (let i = x; i < x + w; i += 2) R(ctx, i, top + 3, 1, 1, shade(c, -0.12))
+    R(ctx, x, top + 3, 1, base - top - 3, shade(c, 0.08))
+    R(ctx, x + w - 1, top + 3, 1, base - top - 3, shade(c, -0.2))
+    for (let row = 0; top + 7 + row * 11 < base - 16; row++) {
+        const y = top + 7 + row * 11
+        R(ctx, x + 1, y + 8, w - 2, 1, shade(c, -0.1))
+        for (let col = 0; 4 + col * 9 + 4 < w; col++) pane(ctx, x + 4 + col * 9, y, c, seed * 7 + x * 13 + row * 7 + col, day)
+    }
+    R(ctx, x, base - 14, w, 14, shade(c, -0.35))
+    R(ctx, x, base - 14, w, 1, shade(c, -0.2))
+}
+
 export function facades(ctx: Ctx, seed: number, base: number, day = false) {
     let x = 0
     for (let n = 0; x < W; n++) {
         const w = 44 + Math.floor(hash(seed * 31 + n) * 40)
         const h = 52 + Math.floor(hash(seed * 17 + n * 3) * 26)
-        const c = FACADES[(seed + n) % FACADES.length]
-        const top = base - h
-        R(ctx, x, top, w, h, c)
-        R(ctx, x, top, w, 2, shade(c, -0.25))
-        R(ctx, x, top + 2, w, 1, shade(c, 0.15))
-        for (let row = 0; top + 7 + row * 11 < base - 16; row++) {
-            for (let col = 0; 4 + col * 9 + 4 < w; col++) {
-                const lit = hash(seed * 7 + x * 13 + row * 7 + col) > 0.55
-                R(ctx, x + 4 + col * 9, top + 7 + row * 11, 4, 6, windowColor(lit, day))
-            }
-        }
-        R(ctx, x, base - 14, w, 14, shade(c, -0.35))
+        facade(ctx, x, base - h, w, base, FACADES[(seed + n) % FACADES.length], seed * 31 + n, day)
         x += w
     }
 }
