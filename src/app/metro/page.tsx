@@ -25,10 +25,10 @@ const notes: Spec[] = [
 
 export default function Metro() {
     return (
-        <main className="mx-auto max-w-4xl px-4 pb-28 pt-4">
+        <main className="pb-28">
             <h1 className="sr-only">No ticket</h1>
             <NoTicket />
-            <section aria-labelledby="notes" className="mt-10 space-y-3">
+            <section aria-labelledby="notes" className="mx-auto mt-10 max-w-4xl space-y-3 px-4">
                 <h2 id="notes" className="label">
                     field notes
                 </h2>
