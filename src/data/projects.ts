@@ -93,6 +93,22 @@ export const projects: Project[] = [
       { label: "alt case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
       { label: "board", value: "2 layers, assembled by JLCPCB" },
     ],
+    prototype: {
+      title: "MIDI Host-to-Host Bridge",
+      alias: "midihost",
+      year: 2026,
+      description:
+        "Rev 1. Two XIAOs linked by UART, milled on the Fab Lab's SRM-20, printed case. In daily use between my norns and Ableton.",
+      specs: [
+        { label: "mcu", value: "2 × XIAO RP2040" },
+        { label: "link", value: "UART" },
+        { label: "board", value: "milled on a Roland SRM-20" },
+      ],
+      materials: ["copper-clad board", "3D-printed case"],
+      software: ["KiCad", "FreeCAD", "Arduino", "TinyUSB"],
+      githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
+      liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
+    },
     year: 2026,
   },
   {
