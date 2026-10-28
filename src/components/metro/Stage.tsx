@@ -5,8 +5,8 @@ import { H, W } from './draw'
 
 // A black stage for the game, taller than the window on both ends. The page
 // opens scrolled to the game and snaps back to it when you scroll near, so
-// the site nav stays out of view until you scroll well up or leave the game.
-export function Stage({ label, children }: { label: string; children: ReactNode }) {
+// the site links above it stay out of view until you scroll well up.
+export function Stage({ label, top, children }: { label: string; top?: ReactNode; children: ReactNode }) {
     const game = useRef<HTMLDivElement>(null)
 
     // Before paint, so the nav does not flash on a client-side visit.
@@ -21,8 +21,9 @@ export function Stage({ label, children }: { label: string; children: ReactNode 
     }, [])
 
     return (
-        <section aria-label={label} className="dark bg-black text-foreground">
-            <div aria-hidden className="h-[40svh]" />
+        <section aria-label={label} className="dark overflow-x-clip bg-black text-foreground">
+            {/* Above the game, in the same black: the site's links, out of view until you scroll up. */}
+            <div className="h-[40svh]">{top}</div>
             {/* Top aligned, so the picture stays put when the buttons below wrap to a new row. */}
             <div ref={game} className="min-h-[100svh] snap-start py-2 sm:px-4 sm:py-8">
                 {children}

@@ -78,7 +78,7 @@ export function SiteSpines({ className = '' }: { className?: string }) {
  */
 export function PageTop({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
     return (
-        <div className="grid gap-6 pt-3 lg:grid-cols-12 lg:gap-5">
+        <div className="grid gap-6 pt-6 sm:pt-8 lg:grid-cols-12 lg:gap-5">
             <SiteSpines className="lg:col-span-1" />
             <div className={aside ? 'lg:col-span-8' : 'lg:col-span-11'}>{children}</div>
             {aside && <div className="lg:col-span-3">{aside}</div>}

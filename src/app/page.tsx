@@ -62,7 +62,7 @@ export default async function Home() {
     }));
 
     return (
-        <main className="page pt-6 md:pt-10">
+        <main className="page pt-6 sm:pt-8">
             <HomeIndex rows={rows} work={work} featured={<Featured key="featured" items={featured} />} />
         </main>
     );

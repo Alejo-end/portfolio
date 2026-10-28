@@ -33,10 +33,13 @@ export default function Metro() {
     return (
         <main className="pb-28">
             <h1 className="sr-only">No ticket</h1>
-            <div className="page pt-3">
-                <SiteSpines />
-            </div>
-            <NoTicket />
+            <NoTicket
+                top={
+                    <div className="page pt-6 sm:pt-8">
+                        <SiteSpines />
+                    </div>
+                }
+            />
             <section aria-labelledby="notes" className="mx-auto mt-10 max-w-4xl space-y-3 px-4">
                 <h2 id="notes" className="label">
                     field notes
