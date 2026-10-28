@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, actions, createGame, euro, sameUi, step, uiOf, type ActionId, type Game, type Ui } from './game'
+import { act, actions, createGame, euro, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
 import { highlight, spotAt } from './hotspots'
 import { play, unlock } from './sound'
 import { Stage, usePixelWidth } from './Stage'
@@ -34,6 +34,9 @@ function Typed({ text }: { text: string }) {
     )
 }
 
+// The disclaimer shows once per browser, the first time the game opens.
+const SEEN = 'no-ticket-splash'
+
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
     const open = actions(g).filter((a) => !a.disabled)
@@ -63,6 +66,12 @@ export function NoTicket() {
         const ctx = canvas.current?.getContext('2d')
         if (!ctx) return
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        try {
+            if (!localStorage.getItem(SEEN)) {
+                splash(game.current)
+                localStorage.setItem(SEEN, '1')
+            }
+        } catch {}
         let last = performance.now()
         let frame = 0
         let shown = uiOf(game.current)
@@ -82,7 +91,8 @@ export function NoTicket() {
             render(ctx, g, still)
             const at = pointer.current
             const spot = at && spotAt(g, at.x, at.y)
-            if (spot) highlight(ctx, spot, g.time)
+            // The title menu marks its picked row itself.
+            if (spot && g.phase !== 'title') highlight(ctx, spot, g.time)
             if (canvas.current) canvas.current.style.cursor = spot || single(g) ? 'pointer' : 'default'
             const next = uiOf(g)
             if (!sameUi(next, shown)) {
@@ -112,7 +122,9 @@ export function NoTicket() {
         const { x, y } = gameXY(e)
         const spot = spotAt(g, x, y)
         if (spot?.aim !== undefined) g.aim = spot.aim
-        const id = spot?.id ?? single(g)
+        // On the street, a tap on nothing in particular pockets the phone.
+        const pocket = !spot && g.phase === 'intro' && g.phoneUp && actions(g).some((a) => a.id === 'phone')
+        const id = spot?.id ?? (pocket ? 'phone' : single(g))
         if (id) press(id)
     }
 
@@ -124,11 +136,23 @@ export function NoTicket() {
             if (target?.closest('[role="application"], input, textarea, select')) return
             const g = game.current
             const list = uiOf(g).actions
+            if (g.phase === 'title' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault()
+                g.menu = (g.menu + (e.key === 'ArrowUp' ? -1 : 1) + list.length) % list.length
+                return
+            }
+            // Left and right walk the camera along Kurvi.
+            if (g.phase === 'intro' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                e.preventDefault()
+                act(g, e.key === 'ArrowLeft' ? 'panL' : 'panR')
+                return
+            }
             if (e.key === ' ' || e.key === 'Enter') {
                 if (target?.closest('a, button')) return
                 e.preventDefault()
                 unlock()
-                if (list[0]) act(g, list[0].id)
+                const pick = g.phase === 'title' ? list[g.menu] : list[0]
+                if (pick) act(g, pick.id)
             }
             const n = Number(e.key)
             if (n >= 1 && n <= list.length) {
@@ -163,7 +187,13 @@ export function NoTicket() {
                             width={W}
                             height={H}
                             onPointerDown={click}
-                            onPointerMove={(e) => (pointer.current = gameXY(e))}
+                            onPointerMove={(e) => {
+                                pointer.current = gameXY(e)
+                                // On the title, pointing at a row picks it.
+                                const g = game.current
+                                const spot = g.phase === 'title' && spotAt(g, pointer.current.x, pointer.current.y)
+                                if (spot) g.menu = actions(g).findIndex((a) => a.id === spot.id)
+                            }}
                             onPointerLeave={() => (pointer.current = null)}
                             className="mx-auto block aspect-video max-w-full select-none bg-black [image-rendering:pixelated] sm:outline sm:outline-1 sm:outline-white/10"
                             style={{ width: width ?? '100%', touchAction: 'manipulation' }}
@@ -204,6 +234,9 @@ export function NoTicket() {
                                     disabled={a.disabled}
                                     onClick={() => press(a.id)}
                                     className={`flex h-12 items-center justify-between gap-3 border-2 px-4 text-[13px] uppercase transition-colors disabled:opacity-40 sm:min-w-[7rem] sm:gap-4 sm:text-[14px] ${
+                                        // The title menu and the disclaimer are drawn in the picture; the buttons stay for screen readers.
+                                        ui.phase === 'title' || ui.phase === 'splash' ? 'sr-only' : ''
+                                    } ${
                                         i === 0
                                             ? 'col-span-2 border-foreground bg-foreground text-background enabled:hover:opacity-85'
                                             : 'border-white/30 enabled:hover:border-foreground enabled:hover:bg-white/10'

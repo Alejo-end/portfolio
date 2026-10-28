@@ -1,4 +1,23 @@
-import { ANSWER_BOXES, BUY, GLASS_X, PHONE_DX, PIZZA_NO, PIZZA_YES, TOURIST_X, vehicleLeft } from './art'
+import {
+    ANSWER_BOXES,
+    BUY,
+    DRUMS,
+    GLASS_X,
+    KIOSK_MENU,
+    KURVI_SPOTS,
+    MENU,
+    PAN,
+    PHONE_DX,
+    PIZZA_NO,
+    PIZZA_YES,
+    POCKET,
+    SAUNA_DOOR,
+    SAUNA_STOVE,
+    SCRATCH_CELLS,
+    TOURIST_X,
+    turned,
+    vehicleLeft,
+} from './art'
 import { H, R, W, slotX, type Ctx } from './draw'
 import { drawText, textWidth } from './font'
 import { LANE_X, SLOTS, actions, type ActionId, type Game } from './game'
@@ -19,17 +38,31 @@ export function spots(g: Game): Spot[] {
     const metro = g.mode === 'metro'
     switch (g.phase) {
         case 'title':
-            add('start', 40, 4, 176, 56)
+            // Each row of the departure board.
+            for (const [i, a] of open.entries()) add(a.id, MENU.x, MENU.y - 1 + i * MENU.step, MENU.w, MENU.step)
             break
-        case 'intro':
-            // The rows of the ticket app, and the places on the street.
-            for (const [i, id] of (['metro', 'tram', 'bus', 'bike', 'scooter'] as const).entries()) add(id, 88 + PHONE_DX, 81 + i * 12, 80, 12)
-            add('buy', BUY.x - 2 + PHONE_DX, BUY.y - 2, BUY.w + 4, BUY.h + 4)
-            add('buy', 85 + PHONE_DX, 45, 86, 26)
-            add('bar', 6, 74, 34, 21)
-            add('kebab', 116, 74, 34, 21)
-            add('pizza', 68, 74, 30, 21)
+        case 'intro': {
+            // The pan arrows over everything, then the phone, then the street.
+            add('panL', 0, PAN.y, PAN.w, PAN.h, { label: 'Corner' })
+            add('panR', W - PAN.w, PAN.y, PAN.w, PAN.h, { label: 'Back' })
+            const up = g.phoneUp && g.time - g.phoneAt > 0.3
+            // Where the phone starts covering the street, from the right, while it is up.
+            const covered = up ? 80 + PHONE_DX : W
+            if (up) {
+                for (const [i, id] of (['metro', 'tram', 'bus', 'bike', 'scooter'] as const).entries()) add(id, 88 + PHONE_DX, 81 + i * 12, 80, 12)
+                add('buy', BUY.x - 2 + PHONE_DX, BUY.y - 2, BUY.w + 4, BUY.h + 4)
+                add('buy', 85 + PHONE_DX, 45, 86, 26)
+                add('phone', 82 + PHONE_DX, 12, 92, 16, { label: 'Pocket it' })
+            } else add('phone', POCKET.x, POCKET.y, POCKET.w, POCKET.h)
+            if (g.home) break
+            // Nothing to tap while you are walking round the corner.
+            if (g.cornerAt >= 0) break
+            for (const p of KURVI_SPOTS[turned(g) ? 'side' : 'main']) {
+                const w = Math.min(p.x + p.w, covered) - p.x
+                if (w > 4) add(p.id, p.x, p.y, w, p.h)
+            }
             break
+        }
         case 'ride': {
             // People to talk to, and the floor to walk along.
             for (const r of g.riders) {
@@ -67,6 +100,15 @@ export function spots(g: Game): Spot[] {
             }
             if (g.kurvi?.place === 'kebab') LANE_X.forEach((x, i) => add(`pita${i}` as ActionId, x - 18, 30, 36, 82, { label: '' }))
             if (g.kurvi?.place === 'bar') GLASS_X.forEach((x, i) => add(`pour${i}` as ActionId, x - 6, 76, 20, 34))
+            if (g.kurvi?.place === 'sauna') {
+                add('loyly', SAUNA_STOVE.x, SAUNA_STOVE.y, SAUNA_STOVE.w, SAUNA_STOVE.h)
+                add('sweat', SAUNA_DOOR.x, SAUNA_DOOR.y, SAUNA_DOOR.w, SAUNA_DOOR.h)
+            }
+            if (g.kurvi?.place === 'pesula') DRUMS.forEach((b, i) => add(`wash${i}` as ActionId, b.x, b.y, b.w, b.h, { label: '' }))
+            if (g.kurvi?.place === 'kiosk') {
+                for (const [i, id] of (['kticket', 'scratch', 'leave'] as const).entries()) add(id, KIOSK_MENU[i].x, KIOSK_MENU[i].y, KIOSK_MENU[i].w, KIOSK_MENU[i].h, { label: '' })
+                SCRATCH_CELLS.forEach((b, i) => add(`scr${i}` as ActionId, b.x, b.y, b.w, b.h, { label: '' }))
+            }
             break
         case 'tourist':
             ANSWER_BOXES.forEach((b, i) => add(`ans${i}` as ActionId, b.x, b.y, b.w, b.h))
