@@ -19,7 +19,8 @@ const notes: Spec[] = [
     { label: 'jammed machine', value: 'hit it on green, three times' },
     { label: 'bike', value: 'hop, bell, brake. Two red lights and the police want a word' },
     { label: 'kurvi', value: 'kebab on the tab, free shots at the bar. Both cost minutes, both open options' },
-    { label: 'runs', value: 'night, easy, rush hour, the long way to Kamppi, daily' },
+    { label: 'scooter', value: 'swerve, throttle, watch the battery. The park is a slow zone' },
+    { label: 'runs', value: 'night, easy from 21:00, rush hour, the long way to Kamppi, the way home at three, daily' },
     { label: 'keys', value: 'space, 1 to 7' },
 ]
 
@@ -33,6 +34,10 @@ export default function Metro() {
                     field notes
                 </h2>
                 <SpecList specs={notes} />
+                <p className="pt-6 text-xs text-muted-foreground">
+                    Fiction. Fare dodging in Helsinki ends in a 100 € penalty fare, or worse with a fake ticket. The author pays: continuous
+                    season ticket, billed monthly.
+                </p>
             </section>
         </main>
     )

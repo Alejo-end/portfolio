@@ -1,4 +1,4 @@
-import { ANSWER_BOXES, GLASS_X, PHONE_DX, PIZZA_NO, PIZZA_YES, TOURIST_X, vehicleLeft } from './art'
+import { ANSWER_BOXES, BUY, GLASS_X, PHONE_DX, PIZZA_NO, PIZZA_YES, TOURIST_X, vehicleLeft } from './art'
 import { H, R, W, slotX, type Ctx } from './draw'
 import { drawText, textWidth } from './font'
 import { LANE_X, SLOTS, actions, type ActionId, type Game } from './game'
@@ -24,6 +24,7 @@ export function spots(g: Game): Spot[] {
         case 'intro':
             // The rows of the ticket app, and the places on the street.
             for (const [i, id] of (['metro', 'tram', 'bus', 'bike', 'scooter'] as const).entries()) add(id, 88 + PHONE_DX, 81 + i * 12, 80, 12)
+            add('buy', BUY.x - 2 + PHONE_DX, BUY.y - 2, BUY.w + 4, BUY.h + 4)
             add('buy', 85 + PHONE_DX, 45, 86, 26)
             add('bar', 6, 74, 34, 21)
             add('kebab', 116, 74, 34, 21)
