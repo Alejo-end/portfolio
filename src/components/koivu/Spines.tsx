@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 // the left edge of the top of every page. There is no header bar. On phones,
 // where spines do not fit, the same links run in one line.
 const SITE = [
-    { label: 'Alejandro?', href: '/' },
+    { label: 'home', href: '/' },
     { label: 'projects', href: '/projects' },
     { label: 'work', href: '/experience' },
     { label: 'persona', href: '/persona' },
