@@ -3,10 +3,10 @@ import type { WorkExperience } from '@/app/types'
 export const workExperiences: WorkExperience[] = [
     {
         company: "MVision AI",
-        position: "UX Engineer",
+        position: "Software Engineer",
         duration: "March 2022 - Present",
-        description: "UI for radiotherapy planning. AI models contour organs, predict dose and make synthetic images. Clinicians review the output before it goes into a plan. Regulated medical device software. Also a contouring trainer for physicians and a configuration tool for clinics.",
-        skills: ["React", "TypeScript", "Azure", "Figma", "UI Design"],
+        description: "UI for radiotherapy planning. AI models contour organs, predict dose and make synthetic images. Clinicians review the output before it goes into a plan. Regulated medical device software. Also a contouring trainer for physicians and a configuration tool for clinics. Frontend and backend: C# services on Azure.",
+        skills: ["React", "TypeScript", "C#", ".NET", "Azure", "Figma"],
         videoSrc: "/videos/mvision.mp4",
         posterSrc: "/videos/mvision-poster.webp",
         gallery: [
@@ -18,7 +18,7 @@ export const workExperiences: WorkExperience[] = [
         company: "National Innovation Office of Panama",
         position: "Full Stack Developer",
         duration: "February 2021 - September 2021",
-        description: "Rebuilt Panama's online government services. A service that reads IDs and passports with OpenCV.",
+        description: "Rebuilt Panama's online government services. COVID-19 patient management system for the national response. A service that reads IDs and passports with OpenCV.",
         imageSrc: "/videos/aig.png",
         skills: ["Python", "React", "Next.js", "FastAPI", "OpenCV"]
     },
