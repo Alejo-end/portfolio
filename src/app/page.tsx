@@ -5,7 +5,8 @@ import { getGalleryBlobs, isImagePath } from "@/lib/blobs";
 import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
-import { Featured, projectRow, type FeaturedItem } from "@/components/koivu/Featured";
+import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
+import { projectRow } from "@/components/koivu/projectRow";
 
 // The projects shown big on the home page, top first.
 const FEATURED = ["h2h", "stray", "reins", "mangler"];

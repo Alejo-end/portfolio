@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import type { ProjectKind } from '@/app/types'
-import { kinds } from './kinds'
 
 export interface FeaturedItem {
     // Unique per row; also the row's anchor id when `id` is set.
@@ -23,16 +21,6 @@ export interface FeaturedItem {
     media: { src: string; video?: string }[]
 }
 
-/** A project as a featured row. */
-export const projectRow = (p: { no: string; alias: string; title: string; year: number; kind: ProjectKind; description: string }, media: FeaturedItem['media']): FeaturedItem => ({
-    alias: p.alias,
-    title: p.title,
-    href: `/projects/${p.alias}`,
-    tag: kinds[p.kind].label,
-    meta: `${p.no} · ${p.year}`,
-    description: p.description,
-    media,
-})
 
 // One project per row, the way a contact sheet reads: the name and its kind,
 // a short overview set small in capitals, then its pictures in a strip as wide
