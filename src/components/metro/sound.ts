@@ -27,6 +27,7 @@ export type Cue =
     | 'announce'
     | 'coin'
     | 'talk'
+    | 'whir'
 
 // The pocket synth you busk with: C, E and G, a plucked square with a sine under it.
 const LANES = [523.25, 659.25, 783.99]
@@ -167,6 +168,11 @@ export function play(cue: Cue) {
                 tone(2100, 0, 0.25, 'triangle', 0.05)
                 tone(2100, 0.12, 0.3, 'triangle', 0.05)
                 tone(2650, 0, 0.2, 'sine', 0.03)
+                break
+            case 'whir':
+                // The scooter's motor winding up.
+                tone(180, 0, 0.35, 'sawtooth', 0.03)
+                tone(360, 0.1, 0.3, 'sawtooth', 0.02)
                 break
             case 'skid':
                 noise(0, 0.35, 'highpass', 3000, 0.05)
