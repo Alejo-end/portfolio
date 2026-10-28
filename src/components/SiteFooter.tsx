@@ -22,8 +22,9 @@ function Course({ title, children }: { title: string; children: React.ReactNode 
     )
 }
 
-// The footer, set like the back of a menu: three short courses, then one line
-// as wide as the page, then the small print.
+// The footer, set like the back of a menu: three short courses, one big line,
+// then the small print with the maker's mark, the ADL monogram from the
+// bottom plate of H2H.
 export function SiteFooter() {
     return (
         <footer className="page mt-40 overflow-hidden pb-6">
@@ -55,13 +56,17 @@ export function SiteFooter() {
                 </Course>
             </div>
 
-            {/* One line as wide as the page, and whose practice it is, small. */}
-            <p aria-hidden className="display mt-20 select-none whitespace-nowrap text-[13.9vw] leading-[0.8]">
+            <p aria-hidden className="display mt-20 select-none whitespace-nowrap text-[7vw] leading-[0.8]">
                 Still practicing.
             </p>
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">The studio practice of Alejandro?</p>
 
-            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
+                {/* The maker's mark, small, the way it sits on the plate. */}
+                <span
+                    role="img"
+                    aria-label="ADL monogram"
+                    className="block h-7 w-7 bg-foreground [mask:url(/adl-monogram.svg)_center/contain_no-repeat] [-webkit-mask:url(/adl-monogram.svg)_center/contain_no-repeat]"
+                />
                 <span>© {built.getFullYear()} Alejandro De Leon</span>
                 <span>updated {updated}</span>
                 <span className="sm:ml-auto">

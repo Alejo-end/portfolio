@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TicketX } from 'lucide-react'
 import { DarkModeToggle } from './DarkModeToggle'
 
 const items = [
@@ -43,21 +42,6 @@ export function SiteNav() {
                             </Link>
                         )
                     })}
-                    {/* The metro game, as a small pixel button. Phones have no room
-                        for it here, so there it sits by the snake button (SnakeButton). */}
-                    <Link
-                        href="/metro"
-                        title="No ticket, a metro game"
-                        aria-current={pathname.startsWith('/metro') ? 'page' : undefined}
-                        className={`hidden h-7 items-center gap-1.5 border border-foreground px-2 font-pixel text-[11px] uppercase leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex ${
-                            pathname.startsWith('/metro')
-                                ? 'bg-foreground text-background'
-                                : 'hover:bg-foreground hover:text-background'
-                        }`}
-                    >
-                        <TicketX aria-hidden className="h-3.5 w-3.5" />
-                        <span>Play</span>
-                    </Link>
                     <DarkModeToggle />
                 </nav>
             </div>

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { TicketX } from 'lucide-react'
 import { addXp } from '@/lib/xp'
 import { Snake } from './Snake'
 
@@ -21,19 +20,47 @@ const ICON = [
     '............',
 ]
 
-function SnakeIcon() {
+// A ticket with a notch in each side and a perforation, struck through
+// corner to corner: no ticket. Same grid and stroke as the snake.
+const TICKET = (() => {
+    const rows = [
+        '............',
+        '.##########.',
+        '.#..#.....#.',
+        '..#.......#.',
+        '..#.......#.',
+        '.#..#.....#.',
+        '.##########.',
+        '............',
+    ].map((r) => [...r])
+    for (let x = 0; x < 12; x++) rows[Math.round(7 - (x * 7) / 11)][x] = '#'
+    return rows.map((r) => r.join(''))
+})()
+
+function PixelIcon({ grid }: { grid: string[] }) {
     return (
-        <svg viewBox={`0 0 ${ICON[0].length} ${ICON.length}`} className="h-[18px] w-6" shapeRendering="crispEdges" aria-hidden>
-            {ICON.flatMap((row, y) =>
+        <svg viewBox={`0 0 ${grid[0].length} ${grid.length}`} className="h-[18px] w-6 shrink-0" shapeRendering="crispEdges" aria-hidden>
+            {grid.flatMap((row, y) =>
                 [...row].map((c, x) => (c !== '.' ? <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill="currentColor" /> : null))
             )}
         </svg>
     )
 }
 
-// The corner button: a pixel snake that opens the game. Typing "snake"
-// anywhere opens it too; typing "metro" goes to the metro game. On phones,
-// where the header has no room for it, a ticket next to it goes to the game.
+// A square with a pixel icon that grows on hover to say what it plays.
+const corner =
+    'group flex h-9 items-center border border-foreground bg-background px-[9px] font-mono text-[11px] leading-none text-foreground transition-colors hover:bg-foreground hover:text-background focus-visible:bg-foreground focus-visible:text-background focus-visible:outline-none'
+function Grows({ children }: { children: string }) {
+    return (
+        <span className="max-w-0 overflow-hidden whitespace-nowrap transition-[max-width,margin] duration-300 group-hover:ml-2 group-hover:max-w-[10rem] group-focus-visible:ml-2 group-focus-visible:max-w-[10rem]">
+            {children}
+        </span>
+    )
+}
+
+// The corner: the metro game, promoted, and a pixel snake that opens the
+// snake game. Typing "snake" anywhere opens it too; typing "metro" goes to
+// the metro game.
 export function SnakeButton() {
     const pathname = usePathname()
     const router = useRouter()
@@ -62,8 +89,6 @@ export function SnakeButton() {
         }
     }, [router])
 
-    const square = 'flex h-9 w-9 items-center justify-center border border-foreground bg-background transition-colors hover:bg-foreground hover:text-background'
-
     return (
         <div className="fixed bottom-3 right-3 z-50 flex items-end gap-1.5 font-mono text-[10px] leading-none">
             {open && (
@@ -77,19 +102,15 @@ export function SnakeButton() {
                     <Snake />
                 </div>
             )}
-            {pathname !== '/metro' && pathname !== '/' && (
-                <Link href="/metro" aria-label="No ticket, a metro game" className={`plain sm:hidden ${square}`}>
-                    <TicketX className="h-4 w-4" aria-hidden />
+            {pathname !== '/metro' && (
+                <Link href="/metro" aria-label="Play No ticket" className={`plain ${corner}`}>
+                    <PixelIcon grid={TICKET} />
+                    <Grows>play no ticket</Grows>
                 </Link>
             )}
-            <button type="button" onClick={() => setOpen((o) => !o)} aria-label={open ? 'Hide snake' : 'Play snake'} aria-expanded={open} className={`group relative ${square} w-11`}>
-                <SnakeIcon />
-                {/* Says what it is on hover. */}
-                {!open && (
-                    <span className="pointer-events-none absolute right-full mr-1.5 whitespace-nowrap bg-foreground px-1.5 py-1 text-background opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-                        snake game
-                    </span>
-                )}
+            <button type="button" onClick={() => setOpen((o) => !o)} aria-label={open ? 'Hide snake' : 'Play snake'} aria-expanded={open} className={corner}>
+                <PixelIcon grid={ICON} />
+                <Grows>{open ? 'hide snake' : 'play snake'}</Grows>
             </button>
         </div>
     )
