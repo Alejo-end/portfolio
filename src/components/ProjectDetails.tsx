@@ -39,11 +39,13 @@ const isVideoFile = (file: BlobFile) =>
     ? file.contentType.toLowerCase().startsWith("video")
     : /\.(mp4|mov)$/i.test(file.url)
 
-// "mangler/02-take-rec.png" -> "take rec": the filename is the only caption we have.
+// "mangler/02-take-rec-v2.png" -> "take rec": the filename is the only caption
+// we have. A -v2 on the end is only there to get past caches after a re-upload.
 const mediaName = (file: BlobFile) => {
   const base = (file.pathname ?? file.url).split("/").pop() ?? ""
   return decodeURIComponent(base)
     .replace(/\.[^.]+$/, "")
+    .replace(/-v\d+$/, "")
     .replace(/^\d+[-_]/, "")
     .replace(/[-_]+/g, " ")
     .trim()
