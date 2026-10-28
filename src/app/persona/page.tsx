@@ -39,12 +39,12 @@ export default function Persona() {
             <div className="grid gap-x-5 gap-y-14 pt-16 lg:grid-cols-12">
                 <figure className="rise rise-2 space-y-2 lg:col-span-5 lg:col-start-2">
                     <DotPortrait
-                        src="/images/persona-portrait.jpg"
-                        alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
-                        width={1179}
-                        height={888}
+                        src="/images/persona.jpg"
+                        alt="Alejandro under a flowering tree, looking up and laughing, in silhouette against a pale sky"
+                        width={2000}
+                        height={1348}
                     />
-                    <figcaption className="label">Golden Horn, Türkiye · hover to develop</figcaption>
+                    <figcaption className="label">On film · hover to develop</figcaption>
                 </figure>
 
                 <div className="rise rise-3 space-y-14 lg:col-span-5 lg:col-start-8">
