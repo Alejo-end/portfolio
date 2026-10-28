@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { DotPortrait } from '@/components/DotPortrait'
 import { SpecList } from '@/components/SpecList'
 import { Module } from '@/components/koivu/Module'
+import { PageTop } from '@/components/koivu/Spines'
 import type { Spec } from '@/app/types'
 
 export const metadata: Metadata = {
@@ -33,52 +34,52 @@ const links = [
 
 export default function Persona() {
     return (
-        <main className="page space-y-16 [&>*]:max-w-6xl">
-            <header className="grid items-end gap-10 pt-8 md:grid-cols-[minmax(0,1fr)_24rem]">
-                <div>
-                    <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-9xl">Alejandro?</h1>
-                </div>
+        <main className="page space-y-16">
+            <PageTop
+                aside={
+                    <figure className="rise rise-3 space-y-2">
+                        <DotPortrait
+                            src="/images/persona-portrait.jpg"
+                            alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
+                            width={1179}
+                            height={888}
+                        />
+                        <figcaption className="label">Golden Horn, Türkiye · hover to develop</figcaption>
+                    </figure>
+                }
+            >
+                <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-[9vw]">Alejandro?</h1>
+            </PageTop>
 
-                <figure className="rise rise-3 space-y-2">
-                    <DotPortrait
-                        src="/images/persona-portrait.jpg"
-                        alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
-                        width={1179}
-                        height={888}
-                    />
-                    <figcaption className="label">Golden Horn, Türkiye · hover to develop</figcaption>
-                </figure>
-            </header>
-
-            <div className="grid gap-12 md:grid-cols-2">
+            {/* Three cells across the page, the way the home page sets its modules. */}
+            <div className="grid gap-x-5 gap-y-12 lg:grid-cols-3">
                 <Module no="01" title="params">
                     <SpecList specs={params} />
                 </Module>
                 <Module no="02" title="into">
                     <SpecList specs={into} />
                 </Module>
+                <Module no="03" title="elsewhere">
+                    <ul>
+                        {links.map((link) => (
+                            <li key={link.href}>
+                                <a
+                                    href={link.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="plain group flex items-baseline gap-4 border-b border-border px-1 py-2.5 transition-colors hover:bg-foreground hover:text-background"
+                                >
+                                    <span className="flex-1 text-lg font-semibold tracking-tight">{link.label}</span>
+                                    <span className="hidden font-mono text-xs text-muted-foreground group-hover:text-background/70 sm:block">
+                                        {link.meta}
+                                    </span>
+                                    <span aria-hidden>↗</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </Module>
             </div>
-
-            <Module no="03" title="elsewhere">
-                <ul>
-                    {links.map((link) => (
-                        <li key={link.href}>
-                            <a
-                                href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="plain group flex items-baseline gap-4 border-b border-border px-1 py-2.5 transition-colors hover:bg-foreground hover:text-background"
-                            >
-                                <span className="flex-1 text-lg font-semibold tracking-tight">{link.label}</span>
-                                <span className="hidden font-mono text-xs text-muted-foreground group-hover:text-background/70 sm:block">
-                                    {link.meta}
-                                </span>
-                                <span aria-hidden>↗</span>
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </Module>
         </main>
     )
 }

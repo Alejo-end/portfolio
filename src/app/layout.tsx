@@ -4,7 +4,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "./Providers";
-import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Cursor } from "@/components/koivu/Cursor";
 import { SnakeButton } from "@/components/koivu/SnakeButton";
@@ -50,7 +49,6 @@ export default function RootLayout({
       >
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <SiteNav />
             <div className="flex-1">{children}</div>
             <SiteFooter />
           </div>

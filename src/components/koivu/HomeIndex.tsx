@@ -9,6 +9,7 @@ import { kinds } from './kinds'
 import { Module } from './Module'
 import { NumberSky } from './NumberSky'
 import { SoundBadge } from './SoundBadge'
+import { SiteSpines, Spine, SpineLabel } from './Spines'
 
 export interface WorkRow {
     id: string
@@ -16,34 +17,6 @@ export interface WorkRow {
     position: string
     years: string
     description: string
-}
-
-// Where else to go, set on their sides like the projects, so the page has no
-// header bar. On phones, where spines do not fit, the same links in a line.
-const SITE = [
-    { label: 'projects', href: '/projects' },
-    { label: 'work', href: '/experience' },
-    { label: 'persona', href: '/persona' },
-    { label: 'play', href: '/metro', note: 'no ticket' },
-]
-
-// A spine: a link set on its side, a ring before it.
-function Spine({ href, children, className = '', ...rest }: { href: string; children: ReactNode; className?: string } & React.ComponentProps<typeof Link>) {
-    return (
-        <Link
-            href={href}
-            {...rest}
-            className={`plain flex items-center gap-1.5 font-mono text-[11px] transition-opacity duration-300 [writing-mode:vertical-rl] hover:underline focus-visible:underline focus-visible:outline-none ${className}`}
-        >
-            <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full border border-foreground" />
-            {children}
-        </Link>
-    )
-}
-
-// The label of a row of spines, on its side too, in gray.
-function SpineLabel({ children }: { children: ReactNode }) {
-    return <span className="font-mono text-[11px] text-muted-foreground [writing-mode:vertical-rl]">{children}</span>
 }
 
 export interface IndexRow {
@@ -137,24 +110,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
             />
 
             <div className="grid gap-6 lg:grid-cols-12 lg:gap-5">
-                {/* The site, on its side at the left edge; a plain line on phones. */}
-                <nav aria-label="Site" className="flex items-baseline gap-4 font-mono text-[11px] lg:col-span-1 lg:items-start lg:gap-1">
-                    <span className="text-muted-foreground lg:hidden">site</span>
-                    <span className="hidden lg:block">
-                        <SpineLabel>site</SpineLabel>
-                    </span>
-                    {SITE.map((item) => (
-                        <span key={item.href} className="contents">
-                            <Link href={item.href} className="plain underline-offset-2 hover:underline lg:hidden">
-                                {item.label}
-                            </Link>
-                            <Spine href={item.href} className="hidden lg:flex">
-                                {item.label}
-                                {item.note && <span className="text-muted-foreground">{item.note}</span>}
-                            </Spine>
-                        </span>
-                    ))}
-                </nav>
+                <SiteSpines className="lg:col-span-1" />
 
                 <p className="text-[clamp(1.75rem,4.2vw,4rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-muted-foreground lg:col-span-8">
                     <span className="text-foreground">Alejandro?</span> is a{' '}

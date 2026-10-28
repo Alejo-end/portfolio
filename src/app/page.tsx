@@ -5,7 +5,7 @@ import { getGalleryBlobs, isImagePath } from "@/lib/blobs";
 import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
-import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
+import { Featured, projectRow, type FeaturedItem } from "@/components/koivu/Featured";
 
 // The projects shown big on the home page, top first.
 const FEATURED = ["h2h", "stray", "reins", "mangler"];
@@ -49,15 +49,7 @@ export default async function Home() {
             ...blobs.flatMap((b) => (isImagePath(b.pathname) ? [{ src: b.url }] : b.poster ? [{ src: b.poster, video: b.url }] : [])),
         ].slice(0, 10);
         if (media.length === 0) continue;
-        featured.push({
-            no: projectNo(project),
-            alias: project.alias,
-            title: project.title,
-            year: project.year,
-            kind: project.kind,
-            description: project.description,
-            media,
-        });
+        featured.push(projectRow({ ...project, no: projectNo(project) }, media));
     }
 
     const work = workExperiences.map((experience) => ({

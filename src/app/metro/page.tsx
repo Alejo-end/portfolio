@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { Spec } from '@/app/types'
 import { SpecList } from '@/components/SpecList'
 import { NoTicket } from '@/components/metro/NoTicket'
+import { SiteSpines } from '@/components/koivu/Spines'
 import { PRICE, euro } from '@/components/metro/game'
 
 export const metadata: Metadata = {
@@ -32,6 +33,9 @@ export default function Metro() {
     return (
         <main className="pb-28">
             <h1 className="sr-only">No ticket</h1>
+            <div className="page pt-3">
+                <SiteSpines />
+            </div>
             <NoTicket />
             <section aria-labelledby="notes" className="mx-auto mt-10 max-w-4xl space-y-3 px-4">
                 <h2 id="notes" className="label">

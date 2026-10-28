@@ -1,21 +1,38 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
 import { kinds } from './kinds'
 
 export interface FeaturedItem {
-    no: string
+    // Unique per row; also the row's anchor id when `id` is set.
     alias: string
+    id?: string
     title: string
-    year: number
-    kind: ProjectKind
+    href: string
+    // The highlighted chip after the name (a project's kind, a job's role),
+    // and the gray line under it (number and year, or the years).
+    tag: string
+    meta: string
     description: string
+    // Under the overview: skills, materials, anything set as spec lines.
+    aside?: ReactNode
     // A picture, or a clip's first frame with the clip itself in `video`.
     media: { src: string; video?: string }[]
 }
+
+/** A project as a featured row. */
+export const projectRow = (p: { no: string; alias: string; title: string; year: number; kind: ProjectKind; description: string }, media: FeaturedItem['media']): FeaturedItem => ({
+    alias: p.alias,
+    title: p.title,
+    href: `/projects/${p.alias}`,
+    tag: kinds[p.kind].label,
+    meta: `${p.no} · ${p.year}`,
+    description: p.description,
+    media,
+})
 
 // One project per row, the way a contact sheet reads: the name and its kind,
 // a short overview set small in capitals, then its pictures in a strip as wide
@@ -99,9 +116,10 @@ function Row({ item }: { item: FeaturedItem }) {
     return (
         <article
             ref={row}
+            id={item.id}
             onMouseEnter={() => setAwake(true)}
             onMouseLeave={() => setAwake(false)}
-            className="grid gap-x-5 gap-y-3 border-t border-border pt-1.5 lg:grid-cols-12"
+            className="grid scroll-mt-8 gap-x-5 gap-y-3 border-t border-border pt-1.5 lg:grid-cols-12"
         >
             <header className="flex items-baseline gap-2 font-mono text-[11px] lg:col-span-2 lg:flex-col lg:gap-1.5">
                 <span className="flex items-baseline gap-2">
@@ -109,18 +127,19 @@ function Row({ item }: { item: FeaturedItem }) {
                         aria-hidden
                         className={`inline-block h-2 w-2 translate-y-px rounded-full border border-foreground transition-colors ${awake ? 'bg-foreground' : ''}`}
                     />
-                    <Link href={`/projects/${item.alias}`} className="plain font-sans text-sm font-semibold tracking-tight hover:underline">
+                    <Link href={item.href} className="plain font-sans text-sm font-semibold tracking-tight hover:underline">
                         {item.title}
                     </Link>
                 </span>
-                <span className="bg-secondary px-1">{kinds[item.kind].label}</span>
+                <span className="bg-secondary px-1">{item.tag}</span>
                 <span className="ml-auto tabular-nums text-muted-foreground lg:ml-0">
-                    {item.no} · {item.year}
+                    {item.meta}
                 </span>
             </header>
             <div className="lg:col-span-4">
                 <p className="mb-2 font-mono text-[11px] text-muted-foreground">i. overview</p>
                 <p className="max-w-prose font-mono text-[10px] uppercase leading-[1.45] tracking-[0.02em] text-muted-foreground">{item.description}</p>
+                {item.aside && <div className="mt-4">{item.aside}</div>}
             </div>
             <div
                 ref={strip}
@@ -137,7 +156,7 @@ function Row({ item }: { item: FeaturedItem }) {
                 {item.media.map((m, i) => (
                     <Link
                         key={m.src}
-                        href={`/projects/${item.alias}`}
+                        href={item.href}
                         aria-label={i === 0 ? item.title : undefined}
                         tabIndex={i === 0 ? undefined : -1}
                         className="plain relative h-[56vw] shrink-0 bg-secondary sm:h-[34vw] lg:h-[20vw] lg:max-h-[26rem]"
