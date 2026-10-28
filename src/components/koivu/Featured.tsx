@@ -14,8 +14,9 @@ export interface FeaturedItem {
 }
 
 // One project per row, the way a contact sheet reads: the name and its kind,
-// a short overview set small in capitals, then its pictures in a strip that
-// scrolls sideways.
+// a short overview set small in capitals, then its pictures in a strip as wide
+// as the screen that scrolls sideways. Every picture keeps its own shape: the
+// strip sets the height, the picture its width. Nothing is cropped.
 export function Featured({ items }: { items: FeaturedItem[] }) {
     return (
         <div className="space-y-10">
@@ -33,22 +34,22 @@ export function Featured({ items }: { items: FeaturedItem[] }) {
                             {item.no} · {item.year}
                         </span>
                     </header>
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-4">
                         <p className="mb-2 font-mono text-[11px] text-muted-foreground">i. overview</p>
                         <p className="max-w-prose font-mono text-[10px] uppercase leading-[1.45] tracking-[0.02em] text-muted-foreground">
                             {item.description}
                         </p>
                     </div>
-                    <div className="strip -mx-3 flex snap-x gap-1.5 overflow-x-auto px-3 pb-2 sm:-mx-5 sm:px-5 lg:col-span-8 lg:mx-0 lg:px-0">
+                    <div className="strip -mx-3 flex snap-x gap-1.5 overflow-x-auto px-3 pb-2 sm:-mx-5 sm:px-5 lg:col-span-12">
                         {item.media.map((m, i) => (
                             <Link
                                 key={m.src}
                                 href={`/projects/${item.alias}`}
                                 aria-label={i === 0 ? item.title : undefined}
                                 tabIndex={i === 0 ? undefined : -1}
-                                className="plain relative aspect-square w-[62vw] shrink-0 snap-start overflow-hidden bg-secondary sm:w-[36vw] lg:w-[15vw] lg:max-w-[17rem]"
+                                className="plain relative h-[56vw] shrink-0 snap-start bg-secondary sm:h-[34vw] lg:h-[20vw] lg:max-h-[26rem]"
                             >
-                                <Image src={m.src} alt="" fill sizes="(min-width: 1024px) 15vw, 62vw" className="object-cover" />
+                                <Image src={m.src} alt="" width={0} height={0} sizes="(min-width: 1024px) 40vw, 90vw" className="h-full w-auto" />
                                 {m.video && (
                                     <span className="absolute left-1.5 top-1.5 bg-background px-1 font-mono text-[10px]">video</span>
                                 )}

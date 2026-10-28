@@ -185,9 +185,8 @@ export function HomeIndex({ rows, modules, featured }: { rows: IndexRow[]; modul
             {/* A small print of the hovered project, pinned to the corner. */}
             {hovered?.cover && (
                 <div className="pointer-events-none fixed bottom-3 left-3 z-40 hidden w-60 border border-foreground bg-background p-1.5 [@media(pointer:fine)]:block">
-                    <div className="relative aspect-[4/3]">
-                        <Image src={hovered.cover} alt="" fill sizes="240px" className="object-cover grayscale" />
-                    </div>
+                    {/* The whole picture, its own shape, never cropped. */}
+                    <Image src={hovered.cover} alt="" width={0} height={0} sizes="240px" className="h-auto max-h-[45vh] w-full object-contain grayscale" />
                     <p className="mt-1.5 flex justify-between font-mono text-[10px]">
                         <span>{hovered.title}</span>
                         <span className="text-muted-foreground">{hovered.no}</span>
