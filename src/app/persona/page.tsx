@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { DotPortrait } from '@/components/DotPortrait'
 import { SpecList } from '@/components/SpecList'
 import { Module } from '@/components/koivu/Module'
+import { PageTop } from '@/components/koivu/Spines'
 import type { Spec } from '@/app/types'
 
 export const metadata: Metadata = {
@@ -25,60 +26,36 @@ const into: Spec[] = [
     { label: 'image', value: '35mm film · pinhole cameras · photogrammetry · new media art' },
 ]
 
-const links = [
-    { label: 'Art portfolio', meta: 'alejandro-three.vercel.app', href: 'https://alejandro-three.vercel.app/' },
-    { label: 'GitHub', meta: 'github.com/Alejo-end', href: 'https://github.com/Alejo-end' },
-    { label: 'Digital Fabrication', meta: 'Fab Lab course diary', href: 'https://digital-fabrication-1baba0.gitlab.io/' },
-]
-
+// A quiet page: the title like every other page, then the portrait large on
+// the left and the two lists of facts on the right, with room around them.
+// Links live in the footer, not here too.
 export default function Persona() {
     return (
-        <main className="mx-auto max-w-6xl space-y-16 px-4">
-            <header className="grid items-end gap-10 pt-8 md:grid-cols-[minmax(0,1fr)_24rem]">
-                <div>
-                    <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-9xl">Alejandro?</h1>
-                </div>
+        <main className="page">
+            <PageTop>
+                <h1 className="display rise text-6xl md:text-8xl">Persona</h1>
+            </PageTop>
 
-                <figure className="rise rise-3 space-y-2">
+            <div className="grid gap-x-5 gap-y-14 pt-16 lg:grid-cols-12">
+                <figure className="rise rise-2 space-y-2 lg:col-span-5 lg:col-start-2">
                     <DotPortrait
-                        src="/images/persona-portrait.jpg"
-                        alt="Alejandro smiling on a boat at golden hour, city skyline across the water behind him"
-                        width={1179}
-                        height={888}
+                        src="/images/persona.jpg"
+                        alt="Alejandro under a flowering tree, looking up and laughing, in silhouette against a pale sky"
+                        width={2000}
+                        height={1348}
                     />
-                    <figcaption className="label">Golden Horn, Türkiye · hover to develop</figcaption>
+                    <figcaption className="label">On film · hover to develop</figcaption>
                 </figure>
-            </header>
 
-            <div className="grid gap-12 md:grid-cols-2">
-                <Module no="01" title="params">
-                    <SpecList specs={params} />
-                </Module>
-                <Module no="02" title="into">
-                    <SpecList specs={into} />
-                </Module>
+                <div className="rise rise-3 space-y-14 lg:col-span-5 lg:col-start-8">
+                    <Module no="01" title="params">
+                        <SpecList specs={params} />
+                    </Module>
+                    <Module no="02" title="into">
+                        <SpecList specs={into} />
+                    </Module>
+                </div>
             </div>
-
-            <Module no="03" title="elsewhere">
-                <ul>
-                    {links.map((link) => (
-                        <li key={link.href}>
-                            <a
-                                href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="plain group flex items-baseline gap-4 border-b border-border px-1 py-2.5 transition-colors hover:bg-foreground hover:text-background"
-                            >
-                                <span className="flex-1 text-lg font-semibold tracking-tight">{link.label}</span>
-                                <span className="hidden font-mono text-xs text-muted-foreground group-hover:text-background/70 sm:block">
-                                    {link.meta}
-                                </span>
-                                <span aria-hidden>↗</span>
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </Module>
         </main>
     )
 }

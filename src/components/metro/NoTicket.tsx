@@ -37,6 +37,10 @@ function Typed({ text }: { text: string }) {
 // The disclaimer shows once per browser, the first time the game opens.
 const SEEN = 'no-ticket-splash'
 
+// The halo's own size: small on purpose, the blur does the rest.
+const HALO_W = 32
+const HALO_H = 18
+
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
     const open = actions(g).filter((a) => !a.disabled)
@@ -45,7 +49,7 @@ const single = (g: Game): ActionId | null => {
 
 // The game screen: the canvas, a caption line, and the buttons for
 // whatever can be done right now.
-export function NoTicket() {
+export function NoTicket({ top }: { top?: React.ReactNode }) {
     const canvas = useRef<HTMLCanvasElement>(null)
     const [initial] = useState(createGame)
     const game = useRef(initial)
@@ -61,6 +65,9 @@ export function NoTicket() {
     const width = usePixelWidth(box, 270, PHONE)
     // What the pointer is over in the picture, in canvas pixels.
     const pointer = useRef<{ x: number; y: number } | null>(null)
+    // A tiny copy of the picture, blurred big behind it: the screen's light
+    // spilling onto the black around it, in the colours of the scene.
+    const halo = useRef<HTMLCanvasElement>(null)
 
     useEffect(() => {
         const ctx = canvas.current?.getContext('2d')
@@ -74,6 +81,7 @@ export function NoTicket() {
         } catch {}
         let last = performance.now()
         let frame = 0
+        let ticks = 0
         let shown = uiOf(game.current)
         // Runs can end inside step() or inside a key press, so compare frame to frame.
         let seen = game.current.phase
@@ -89,6 +97,9 @@ export function NoTicket() {
             seen = g.phase
             for (const cue of g.cues.splice(0)) if (!mutedRef.current) play(cue)
             render(ctx, g, still)
+            // The halo follows the scene a few times a second; more would only cost.
+            const glow = halo.current?.getContext('2d')
+            if (glow && canvas.current && ticks++ % 8 === 0) glow.drawImage(canvas.current, 0, 0, HALO_W, HALO_H)
             const at = pointer.current
             const spot = at && spotAt(g, at.x, at.y)
             // The title menu marks its picked row itself.
@@ -166,7 +177,7 @@ export function NoTicket() {
 
     return (
         <>
-            <Stage label="No ticket, a metro game">
+            <Stage label="No ticket, a metro game" top={top}>
                 <div ref={box} className="w-full">
                     <div className="mx-auto max-w-full space-y-3 font-pixel max-sm:!w-full sm:space-y-4" style={{ width: width ?? 1024 }}>
                         {/* The status line, big enough to read at a glance. */}
@@ -182,24 +193,33 @@ export function NoTicket() {
                                 ))}
                             </span>
                         </div>
-                        <canvas
-                            ref={canvas}
-                            width={W}
-                            height={H}
-                            onPointerDown={click}
-                            onPointerMove={(e) => {
-                                pointer.current = gameXY(e)
-                                // On the title, pointing at a row picks it.
-                                const g = game.current
-                                const spot = g.phase === 'title' && spotAt(g, pointer.current.x, pointer.current.y)
-                                if (spot) g.menu = actions(g).findIndex((a) => a.id === spot.id)
-                            }}
-                            onPointerLeave={() => (pointer.current = null)}
-                            className="mx-auto block aspect-video max-w-full select-none bg-black [image-rendering:pixelated] sm:outline sm:outline-1 sm:outline-white/10"
-                            style={{ width: width ?? '100%', touchAction: 'manipulation' }}
-                            role="img"
-                            aria-label={ui.caption || 'No ticket'}
-                        />
+                        <div className="relative mx-auto max-w-full" style={{ width: width ?? '100%' }}>
+                            <canvas
+                                ref={halo}
+                                width={HALO_W}
+                                height={HALO_H}
+                                aria-hidden
+                                className="pointer-events-none absolute -inset-[6%] h-[112%] w-[112%] opacity-50 blur-[56px] saturate-150 motion-reduce:opacity-40 sm:-inset-[8%] sm:h-[116%] sm:w-[116%]"
+                            />
+                            <canvas
+                                ref={canvas}
+                                width={W}
+                                height={H}
+                                onPointerDown={click}
+                                onPointerMove={(e) => {
+                                    pointer.current = gameXY(e)
+                                    // On the title, pointing at a row picks it.
+                                    const g = game.current
+                                    const spot = g.phase === 'title' && spotAt(g, pointer.current.x, pointer.current.y)
+                                    if (spot) g.menu = actions(g).findIndex((a) => a.id === spot.id)
+                                }}
+                                onPointerLeave={() => (pointer.current = null)}
+                                className="relative block aspect-video w-full select-none bg-black [image-rendering:pixelated] sm:outline sm:outline-1 sm:outline-white/10"
+                                style={{ touchAction: 'manipulation' }}
+                                role="img"
+                                aria-label={ui.caption || 'No ticket'}
+                            />
+                        </div>
                         {/* The text box: a double white border, the way RPG dialogue boxes are drawn. */}
                         <div
                             className="min-h-[6.5rem] space-y-2 border-2 border-white bg-black px-4 py-3 text-[14px] leading-relaxed shadow-[inset_0_0_0_2px_#000,inset_0_0_0_4px_rgba(255,255,255,0.35)] max-sm:mx-3 sm:min-h-[6rem] sm:text-[16px]"

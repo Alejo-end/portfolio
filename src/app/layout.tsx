@@ -4,10 +4,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "./Providers";
-import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Cursor } from "@/components/koivu/Cursor";
-import { XpHud } from "@/components/koivu/XpHud";
+import { SnakeButton } from "@/components/koivu/SnakeButton";
 import { siteUrl } from "@/lib/site";
 
 const geistSans = localFont({
@@ -50,11 +49,10 @@ export default function RootLayout({
       >
         <Providers>
           <div className="flex min-h-screen flex-col">
-            <SiteNav />
             <div className="flex-1">{children}</div>
             <SiteFooter />
           </div>
-          <XpHud />
+          <SnakeButton />
           <Cursor />
         </Providers>
         {/* Real-user Core Web Vitals, free on the Hobby plan. */}

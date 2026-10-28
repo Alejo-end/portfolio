@@ -3,6 +3,7 @@ import { projects, projectNo } from '@/data/projects'
 import { getGalleryBlobs, isImagePath } from '@/lib/blobs'
 import { hasSound } from '@/data/sound'
 import { ProjectGrid, type ProjectCard } from '@/components/koivu/ProjectGrid'
+import { PageTop } from '@/components/koivu/Spines'
 
 // The blob store is mutable; refresh the static page every 5 minutes.
 export const revalidate = 300
@@ -38,10 +39,10 @@ export default async function ProjectsPage() {
     )
 
     return (
-        <main className="mx-auto max-w-6xl px-4">
-            <header className="rise py-8">
-                <h1 className="display text-6xl md:text-8xl">Projects</h1>
-            </header>
+        <main className="page">
+            <PageTop>
+                <h1 className="display rise text-6xl md:text-8xl">Projects</h1>
+            </PageTop>
             <div className="rise rise-2">
                 <ProjectGrid cards={cards} />
             </div>

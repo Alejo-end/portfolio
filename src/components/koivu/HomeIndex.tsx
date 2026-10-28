@@ -9,6 +9,15 @@ import { kinds } from './kinds'
 import { Module } from './Module'
 import { NumberSky } from './NumberSky'
 import { SoundBadge } from './SoundBadge'
+import { SiteSpines, Spine, SpineLabel } from './Spines'
+
+export interface WorkRow {
+    id: string
+    company: string
+    position: string
+    years: string
+    description: string
+}
 
 export interface IndexRow {
     no: string
@@ -57,8 +66,11 @@ function Term({
     )
 }
 
-export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactNode }) {
+export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured: ReactNode; work: WorkRow[] }) {
     const [focus, setFocus] = useState<Focus>(null)
+    // A kind picked in the list header stays picked until it is clicked again.
+    const [pinned, setPinned] = useState<ProjectKind | null>(null)
+    const kindsShown = (Object.keys(kinds) as ProjectKind[]).map((kind) => ({ kind, count: rows.filter((r) => r.kind === kind).length }))
     const hovered = focus && 'alias' in focus ? rows.find((r) => r.alias === focus.alias) : undefined
     const list = useRef<HTMLUListElement>(null)
 
@@ -81,9 +93,11 @@ export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactN
     }, [])
 
     const picked = (row: IndexRow) => {
-        if (!focus) return null
-        return 'kind' in focus ? focus.kind === row.kind : focus.alias === row.alias
+        const f = focus ?? (pinned ? { kind: pinned } : null)
+        if (!f) return null
+        return 'kind' in f ? f.kind === row.kind : f.alias === row.alias
     }
+    const unfocus = () => setFocus(null)
 
     return (
         <div className="flex flex-col gap-16">
@@ -95,29 +109,80 @@ export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactN
                 }}
             />
 
-            <div className="order-3 md:order-none">{modules}</div>
+            <div className="grid gap-6 lg:grid-cols-12 lg:gap-5">
+                <SiteSpines className="lg:col-span-1" />
 
-            <p className="order-1 md:order-none text-[clamp(1.75rem,4.2vw,3.5rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-muted-foreground">
-                <span className="text-foreground">Alejandro?</span> is a{' '}
-                <Term n={1} href="/experience" onFocus={setFocus}>
-                    software engineer
-                </Term>{' '}
-                and{' '}
-                <Term n={2} href="/experience#mvision-ai" onFocus={setFocus}>
-                    UX designer
-                </Term>{' '}
-                from Panama, based in Helsinki, with an enthusiasm for{' '}
-                <Term n={3} href="/projects?kind=hardware" kind="hardware" onFocus={setFocus}>
-                    electronics
-                </Term>{' '}
-                and{' '}
-                <Term n={4} href="/projects?kind=sound" kind="sound" onFocus={setFocus}>
-                    experimental music
-                </Term>
-                .
-            </p>
+                <p className="text-[clamp(1.75rem,4.2vw,4rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-muted-foreground lg:col-span-8">
+                    <span className="text-foreground">Alejandro?</span> is a{' '}
+                    <Term n={1} href="/experience" onFocus={setFocus}>
+                        software engineer
+                    </Term>{' '}
+                    and{' '}
+                    <Term n={2} href="/experience#mvision-ai" onFocus={setFocus}>
+                        UX designer
+                    </Term>{' '}
+                    from Panama, based in Helsinki, with an enthusiasm for{' '}
+                    <Term n={3} href="/projects?kind=hardware" kind="hardware" onFocus={setFocus}>
+                        electronics
+                    </Term>{' '}
+                    and{' '}
+                    <Term n={4} href="/projects?kind=sound" kind="sound" onFocus={setFocus}>
+                        experimental music
+                    </Term>
+                    .
+                </p>
 
-            <Module no="04" title="projects" aside={rows.length} className="order-2 md:order-none">
+                {/* Every project on its side, the index as a row of spines. */}
+                <nav aria-label="Project list" className="hidden justify-end gap-x-1 lg:col-span-3 lg:flex" onMouseLeave={unfocus}>
+                    <SpineLabel>project list · {rows.length}</SpineLabel>
+                    {rows.map((row) => {
+                        const state = picked(row)
+                        return (
+                            <Spine
+                                key={row.alias}
+                                href={`/projects/${row.alias}`}
+                                onMouseEnter={() => setFocus({ alias: row.alias })}
+                                onFocus={() => setFocus({ alias: row.alias })}
+                                onBlur={unfocus}
+                                className={`${state === false ? 'opacity-30' : ''} ${state ? 'underline underline-offset-2' : ''}`}
+                            >
+                                <span className="text-muted-foreground">{row.no}</span>
+                                <span>{row.title}</span>
+                                <span className="bg-secondary py-1">{kinds[row.kind].label}</span>
+                            </Spine>
+                        )
+                    })}
+                </nav>
+            </div>
+
+            <Module no="01" title="featured">
+                {featured}
+            </Module>
+
+            {/* The index lives in the list's header: each kind and its count,
+                hover to light its projects, click to keep them lit. */}
+            <Module
+                no="02"
+                title="projects"
+                aside={
+                    <span className="flex flex-wrap gap-x-3 gap-y-1">
+                        {kindsShown.map(({ kind, count }) => (
+                            <button
+                                key={kind}
+                                type="button"
+                                aria-pressed={pinned === kind}
+                                onMouseEnter={() => setFocus({ kind })}
+                                onMouseLeave={unfocus}
+                                onClick={() => setPinned(pinned === kind ? null : kind)}
+                                className={`px-1 ${pinned === kind ? 'bg-foreground text-background' : 'bg-secondary text-foreground hover:bg-foreground hover:text-background'}`}
+                            >
+                                {kinds[kind].label} {count}
+                            </button>
+                        ))}
+                        <span>{rows.length}</span>
+                    </span>
+                }
+            >
                 <ul ref={list} onMouseLeave={() => setFocus(null)}>
                     {rows.map((row) => {
                         const state = picked(row)
@@ -152,12 +217,29 @@ export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactN
                 </ul>
             </Module>
 
+            <Module no="03" title="work" aside={work.length}>
+                <ul>
+                    {work.map((job) => (
+                        <li key={job.id}>
+                            <Link
+                                href={`/experience#${job.id}`}
+                                className="plain grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-border py-2 hover:bg-secondary sm:grid-cols-[minmax(0,16rem)_minmax(0,12rem)_minmax(0,1fr)_5rem] focus-visible:outline-none focus-visible:bg-secondary"
+                            >
+                                <span className="truncate text-sm font-semibold tracking-tight">{job.company}</span>
+                                <span className="hidden truncate font-mono text-[11px] sm:block">{job.position}</span>
+                                <span className="hidden truncate text-xs text-muted-foreground sm:block">{job.description}</span>
+                                <span className="text-right font-mono text-[11px] text-muted-foreground">{job.years}</span>
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            </Module>
+
             {/* A small print of the hovered project, pinned to the corner. */}
             {hovered?.cover && (
                 <div className="pointer-events-none fixed bottom-3 left-3 z-40 hidden w-60 border border-foreground bg-background p-1.5 [@media(pointer:fine)]:block">
-                    <div className="relative aspect-[4/3]">
-                        <Image src={hovered.cover} alt="" fill sizes="240px" className="object-cover grayscale" />
-                    </div>
+                    {/* The whole picture, its own shape, never cropped. */}
+                    <Image src={hovered.cover} alt="" width={0} height={0} sizes="240px" className="h-auto max-h-[45vh] w-full object-contain grayscale" />
                     <p className="mt-1.5 flex justify-between font-mono text-[10px]">
                         <span>{hovered.title}</span>
                         <span className="text-muted-foreground">{hovered.no}</span>

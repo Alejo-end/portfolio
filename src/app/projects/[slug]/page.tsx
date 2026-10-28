@@ -4,6 +4,7 @@ import { projects, getProjectByAlias, projectNo } from '@/data/projects'
 import { getGalleryBlobs, isImagePath } from '@/lib/blobs'
 import { ProjectDetails } from '@/components/ProjectDetails'
 import { Pager } from '@/components/koivu/Pager'
+import { PageTop } from '@/components/koivu/Spines'
 
 // The blob store is mutable; refresh the static pages every 5 minutes.
 export const revalidate = 300
@@ -45,13 +46,17 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const prev = projects[(i - 1 + projects.length) % projects.length]
     const next = projects[(i + 1) % projects.length]
     return (
-        <main className="mx-auto max-w-6xl space-y-12 px-4 pt-4">
-            <ProjectDetails project={project} no={projectNo(project)} blobs={blobs} prototypeBlobs={prototypeBlobs} />
-            <Pager
-                prev={{ href: `/projects/${prev.alias}`, title: prev.title }}
-                index={{ href: '/projects', title: 'all projects' }}
-                next={{ href: `/projects/${next.alias}`, title: next.title }}
-            />
+        <main className="page">
+            <PageTop>
+                <div className="space-y-12">
+                    <ProjectDetails project={project} no={projectNo(project)} blobs={blobs} prototypeBlobs={prototypeBlobs} />
+                    <Pager
+                        prev={{ href: `/projects/${prev.alias}`, title: prev.title }}
+                        index={{ href: '/projects', title: 'all projects' }}
+                        next={{ href: `/projects/${next.alias}`, title: next.title }}
+                    />
+                </div>
+            </PageTop>
         </main>
     )
 }
