@@ -50,7 +50,7 @@ export default async function Home() {
             <Module no="01" title="now">
                 <SpecList
                     specs={[
-                        { label: "day job", value: "UX engineer, MVision" },
+                        { label: "day job", value: "software engineer, MVision" },
                         { label: "building", value: "Reins", href: "/projects/reins" },
                         { label: "base", value: "Helsinki" },
                     ]}

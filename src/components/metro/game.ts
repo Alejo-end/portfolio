@@ -296,6 +296,7 @@ export type Inspector = {
 export type Extra = { look: Look; door: number; dx: number; off: boolean; delay: number; vest?: boolean }
 
 export type Phase =
+    | 'splash'
     | 'title'
     | 'intro'
     | 'buy'
@@ -365,6 +366,7 @@ export type Bike = {
 
 // Cutscenes are a few shots, each with its own caption. art.ts draws them.
 export type ShotId =
+    | 'rabbit'
     | 'chat'
     | 'wallet'
     | 'badge'
@@ -444,10 +446,35 @@ export type ActionId =
     | 'ans0'
     | 'ans1'
     | 'ans2'
+    | 'kiosk'
+    | 'pesula'
+    | 'phone'
+    | 'panL'
+    | 'panR'
+    | 'wash0'
+    | 'wash1'
+    | 'wash2'
+    | 'wash3'
+    | 'wash4'
+    | 'wash5'
+    | 'kticket'
+    | 'scratch'
+    | 'sauna'
+    | 'rabbit'
+    | 'loyly'
+    | 'sweat'
+    | 'scr0'
+    | 'scr1'
+    | 'scr2'
+    | 'scr3'
+    | 'scr4'
+    | 'scr5'
 export type Action = { id: ActionId; label: string; disabled?: boolean }
 
 export type Game = {
     phase: Phase
+    // The row picked on the title menu.
+    menu: number
     mode: Mode
     kind: Kind
     rush: boolean
@@ -476,7 +503,18 @@ export type Game = {
     // Kurvi before you go: a kebab to go, free shots at the bar, or both.
     kebab: boolean
     drunk: boolean
-    went: ('kebab' | 'bar' | 'pizza')[]
+    went: Place[]
+    // Kurvi has two faces round a corner: CAM_MAX looks along Hämeentie, 0
+    // round the corner along the side street. Which one, where you are
+    // walking to, and when you set off round the corner (-1 when standing).
+    cam: number
+    camTo: number
+    cornerAt: number
+    // When you went for the rabbit on the pavement, which then left (-1 if not yet).
+    rabbitAt: number
+    // The ticket app in your hand, or in your pocket, and since when.
+    phoneUp: boolean
+    phoneAt: number
     // When you came out of the bar. The world leans for a few seconds after.
     drunkAt: number
     // A free scooter ride code, where it turns up this run, and riding the
@@ -819,6 +857,7 @@ function makeCrowd(g: Game, on: number, off: number) {
 export function createGame(seed = Date.now()): Game {
     return {
         phase: 'title',
+        menu: 0,
         mode: 'metro',
         kind: 'night',
         rush: false,
@@ -843,6 +882,12 @@ export function createGame(seed = Date.now()): Game {
         drunk: false,
         drunkAt: -99,
         went: [],
+        cam: CAM_MAX,
+        camTo: CAM_MAX,
+        cornerAt: -1,
+        rabbitAt: -1,
+        phoneUp: true,
+        phoneAt: -99,
         code: false,
         codeAt: 'pizza',
         drink: DRINKS[0],
@@ -896,7 +941,7 @@ export function createGame(seed = Date.now()): Game {
         verdict: null,
         ending: null,
         note: '',
-        caption: 'Get to Rautatientori by 22:00. You have no ticket.',
+        caption: TITLE_CAPTION,
         tip: '',
         tipAt: -9,
         bubble: null,
@@ -906,6 +951,15 @@ export function createGame(seed = Date.now()): Game {
         rand: mulberry32(seed),
         ids: 0,
     }
+}
+
+const TITLE_CAPTION = 'Get to Rautatientori by 22:00. You have no ticket.'
+
+/** How long the disclaimer stays up, the first time anyone opens the game. */
+export const SPLASH = 4.2
+
+export function splash(g: Game) {
+    enter(g, 'splash', 'This is fiction. The author pays for a ticket: continuous season ticket, billed monthly.')
 }
 
 function enter(g: Game, phase: Phase, caption?: string) {
@@ -947,6 +1001,12 @@ function begin(g: Game, kind: Kind) {
         drunk: false,
         drunkAt: -99,
         went: [],
+        cam: CAM_MAX,
+        camTo: CAM_MAX,
+        cornerAt: -1,
+        rabbitAt: -1,
+        phoneUp: true,
+        phoneAt: -99,
         code: false,
         codeAt: 'pizza',
         drink: DRINKS[0],
@@ -1014,8 +1074,33 @@ function begin(g: Game, kind: Kind) {
 // ——— Kurvi, before you go ————————————————————————————————————————————
 // The kebab place, the pizzeria and the bar each cost minutes and each have a
 // small game at the counter. One of them has a free scooter code this run.
+// The laundromat has coins left in its machines, the kiosk sells tickets
+// and scratch cards, card accepted, and the public sauna is a contest of
+// who can take the most löyly.
 
-export type Place = 'kebab' | 'pizza' | 'bar'
+export type Place = 'kebab' | 'pizza' | 'bar' | 'kiosk' | 'pesula' | 'sauna'
+
+// The sauna: how hot the room is (1 is a proper löyly), how ready the stones
+// are for the next ladle, how much you can still take, and how long the room
+// has held hot.
+export type Steam = { heat: number; stones: number; sisu: number; hold: number }
+/** Seconds the room has to stay at full heat for the regulars to approve. */
+export const HOLD = 2.5
+/** Hotter than this and you are out of the door. */
+export const SCALD = 1.3
+
+/** Which face of the Kurvi corner you look at: CAM_MAX on Hämeentie, 0 round the corner. */
+export const CAM_MAX = 144
+/** Seconds to walk off one street at the corner, and onto the other. */
+export const CORNER_OUT = 0.9
+export const CORNER_IN = 0.7
+
+// What a laundromat drum can hold, and the symbols on a scratch card.
+export type Wash = { kind: 'coin' | 'sock' | 'cat' | 'empty'; euros: number; open: boolean }
+export const SYMBOLS = ['ticket', 'gull', 'kebab', 'sauna'] as const
+export type Sym = (typeof SYMBOLS)[number]
+export const SCRATCH = 2
+const WASH_TRIES = 3
 
 // Shots a Kurvi bar pours, each with the color it is in the glass.
 export const DRINKS = [
@@ -1056,8 +1141,14 @@ export type Drop = { lane: number; at: number; kind: 'meat' | 'chili' | 'onion';
 
 export type Kurvi = {
     place: Place
-    // The bar shows its round first; the pizza goes in the oven last.
-    stage: 'show' | 'play' | 'oven' | 'done'
+    // The bar shows its round first; the pizza goes in the oven last; the
+    // kiosk asks what you want first.
+    stage: 'show' | 'play' | 'oven' | 'menu' | 'done'
+    // Pesula: six drums, and what is in each.
+    washes: Wash[]
+    // Kiosk: a scratch card, six cells, and which are scratched.
+    cells: { sym: Sym; shown: boolean }[]
+    steam: Steam
     // Kebab: the cook shaves the spit, slices fall in three lanes, and you
     // hold the pita under them.
     drops: Drop[]
@@ -1081,7 +1172,7 @@ export type Kurvi = {
     doneAt: number
 }
 
-const KURVI_MIN: Record<Place, number> = { kebab: 4, pizza: 3, bar: 5 }
+const KURVI_MIN: Record<Place, number> = { kebab: 4, pizza: 3, bar: 5, kiosk: 2, pesula: 3, sauna: 6 }
 export const POUR_SHOW = 0.9
 // Seconds a slice takes from the spit to the pita, and the lanes' x on screen.
 export const DROP_FALL = 1.1
@@ -1097,10 +1188,26 @@ function visit(g: Game, place: Place) {
     g.went.push(place)
     g.clock += KURVI_MIN[place]
     const k: Kurvi = {
-        place, stage: 'play', drops: [], lane: 1, order: '', want: [], toppings: [], shownAt: g.time, bake: 0,
+        place, stage: 'play', washes: [], cells: [], steam: { heat: 0.35, stones: 1, sisu: 1, hold: 0 }, drops: [], lane: 1, order: '', want: [], toppings: [], shownAt: g.time, bake: 0,
         drinks: [], round: [], n: 0, score: 0, at: -9, good: false, doneAt: 0,
     }
     g.kurvi = k
+    if (place === 'pesula') {
+        // Half the drums have a coin someone forgot; the rest, whatever.
+        const kinds = shuffle(g, ['coin', 'coin', 'coin', 'sock', 'cat', 'empty'] as Wash['kind'][])
+        k.washes = kinds.map((kind) => ({ kind, euros: kind === 'coin' ? pick(g, [0.5, 1, 1, 2]) : 0, open: false }))
+        return enter(g, 'kurvi', say(['Pesula. Warm, humming, empty. People forget coins in the drums. Three looks.', 'The laundromat. Nobody here but the dryers. Check three drums for coins.']))
+    }
+    if (place === 'sauna') {
+        return enter(g, 'kurvi', say([
+            'The public sauna. Two regulars on the top bench. "Löyly?" Heat it until it bites, and stay.',
+            'Sauna. The regulars look at the ladle, then at you. Make it hot. Do not leave first.',
+        ]))
+    }
+    if (place === 'kiosk') {
+        k.stage = 'menu'
+        return enter(g, 'kurvi', say(['Kioski. Tickets behind the counter, card accepted. Scratch cards by the till.', 'The kiosk. The clerk looks up from a crossword. "Yes?"']))
+    }
     if (place === 'kebab') {
         // Seven slices of meat, one chili, one onion, faster as it goes.
         const kinds = shuffle(g, ['meat', 'meat', 'meat', 'meat', 'meat', 'meat', 'meat', 'chili', 'onion'] as Drop['kind'][])
@@ -1123,12 +1230,123 @@ function visit(g: Game, place: Place) {
     k.stage = 'show'
     k.drinks = shuffle(g, [...DRINKS]).slice(0, 3)
     k.round = [0, 1, 2, 3].map(() => Math.floor(g.rand() * 3))
-    enter(g, 'kurvi', say([`Baari. Someone's birthday. "Your round! Remember the order."`, `Baari. A birthday table waves you over. "You order for us!"`]))
+    enter(g, 'kurvi', say([`Billy K. Someone's birthday. "Your round! Remember the order."`, `Billy K. A birthday table waves you over. "You order for us!"`]))
+}
+
+// A scratch card: now and then three of one symbol, never more than two otherwise.
+function scratchCard(g: Game) {
+    const win = g.rand() < 0.4 ? pick(g, SYMBOLS) : null
+    const rest = shuffle(g, SYMBOLS.filter((s) => s !== win).flatMap((s) => [s, s]))
+    const syms = win ? [win, win, win, ...rest.slice(0, 3)] : rest.slice(0, 6)
+    return shuffle(g, syms).map((sym) => ({ sym, shown: false }))
+}
+
+/** Three of a kind on the scratch card, once they are all showing. */
+export const scratchWin = (k: Kurvi) => SYMBOLS.find((s) => k.cells.filter((c) => c.shown && c.sym === s).length >= 3) ?? null
+
+function kioskInput(g: Game, k: Kurvi, id: ActionId) {
+    k.at = g.time
+    if (id === 'leave') {
+        k.stage = 'done'
+        k.doneAt = g.time - 1
+        return
+    }
+    if (id === 'kticket') {
+        g.ticket = true
+        g.ticketFrom = 'cash'
+        g.paid += PRICE
+        g.cues.push('ok')
+        k.score = -1
+        k.stage = 'done'
+        k.doneAt = g.time
+        g.caption = `A paper ticket, ${euro(PRICE)} on the card. The clerk does not look up.`
+        return
+    }
+    if (id === 'scratch') {
+        g.paid += SCRATCH
+        k.cells = scratchCard(g)
+        k.stage = 'play'
+        g.caption = `A scratch card, ${euro(SCRATCH)}. Three of a kind wins.`
+        return
+    }
+    const cell = k.cells[Number(id[3])]
+    if (!cell || cell.shown) return
+    cell.shown = true
+    g.cues.push('click')
+    if (k.cells.every((c) => c.shown)) {
+        k.stage = 'done'
+        k.doneAt = g.time
+        g.cues.push(scratchWin(k) ? 'ok' : 'fail')
+    }
+}
+
+function washInput(g: Game, k: Kurvi, id: ActionId) {
+    const w = k.washes[Number(id[4])]
+    if (!w || w.open) return
+    w.open = true
+    k.n += 1
+    k.at = g.time
+    k.good = w.kind === 'coin'
+    if (k.good) k.score += w.euros
+    g.cues.push(k.good ? 'coin' : 'thud')
+    g.caption = {
+        coin: `${euro(w.euros)}. Still warm.`,
+        sock: say(['One sock. Never the pair.', 'A sock. Damp.']),
+        cat: say(['A cat. Asleep in the warm drum. You close it gently.', 'A cat looks at you. You close the door.']),
+        empty: say(['Nothing. Lint.', 'Empty.']),
+    }[w.kind]
+    if (k.n < WASH_TRIES) return
+    k.stage = 'done'
+    k.doneAt = g.time
+}
+
+// A ladle on the stones. Hot stones give a proper löyly; cold ones only hiss.
+function loyly(g: Game, k: Kurvi) {
+    const s = k.steam
+    k.at = g.time
+    k.good = s.stones > 0.6
+    s.heat += k.good ? 0.3 * s.stones : 0.05
+    s.stones = Math.max(0, s.stones - (k.good ? 0.7 : 0.25))
+    g.cues.push('hiss')
+    g.caption = k.good
+        ? say(['Tsshhh. The heat hits your back.', 'A wave of steam. Your ears burn.', 'Sssshh. One of the regulars sighs, happy.'])
+        : say(['Tss. The stones are tired. Wait for them.', 'A weak hiss. Too soon.'])
+    if (s.heat > SCALD) endSauna(g, k, false, say(['Too much. You are out of the door first.', 'Way too hot. You flee. The regulars do not move.']))
+}
+
+function endSauna(g: Game, k: Kurvi, won: boolean, caption: string) {
+    k.good = won
+    k.score = won ? 1 : 0
+    k.stage = 'done'
+    k.doneAt = g.time
+    g.cues.push(won ? 'ok' : 'fail')
+    g.caption = caption
+}
+
+// The room cools, the stones heat back up, and the heat wears you down.
+function sweatOut(g: Game, k: Kurvi, dt: number) {
+    const s = k.steam
+    s.heat = Math.max(0, s.heat - 0.04 * dt)
+    s.stones = Math.min(1, s.stones + 0.32 * dt)
+    s.sisu -= (0.015 + s.heat * s.heat * 0.11) * dt
+    s.hold = s.heat >= 1 ? s.hold + dt : 0
+    if (s.hold >= HOLD) return endSauna(g, k, true, say(['"Nyt on löylyt." The regulars nod. You are one of them now.', 'They leave before you do. The older one pats your shoulder.']))
+    if (s.sisu <= 0) return endSauna(g, k, false, say(['You cannot take it. Out, red as a lobster.', 'Your sisu runs out before the heat does.']))
 }
 
 function kurviInput(g: Game, id: ActionId) {
     const k = g.kurvi
     if (!k) return
+    if (k.place === 'sauna') {
+        if (k.stage !== 'play') return
+        if (id === 'loyly') return loyly(g, k)
+        return endSauna(g, k, false, say(['You step out for air. The regulars stay.', 'Out to cool off. The regulars do not even look.']))
+    }
+    if (k.place === 'kiosk') return kioskInput(g, k, id)
+    if (k.place === 'pesula') {
+        if (k.stage === 'play') washInput(g, k, id)
+        return
+    }
     if (k.place === 'kebab') {
         if (k.stage === 'play') k.lane = Number(id[4])
         return
@@ -1206,7 +1424,41 @@ function leaveKurvi(g: Game) {
     if (!k) return
     g.kurvi = null
     let back = ''
-    if (k.place === 'kebab') {
+    g.phoneUp = false
+    if (k.place === 'sauna') {
+        // A good sauna sweats the shots out, and one regular drives a bus.
+        if (k.score) {
+            g.flags.push('sauna')
+            g.drunk = false
+            back = `Out and dressed, clean and calm${g.went.includes('bar') ? ', the shots sweated out' : ''}. The older regular drives a night bus. "Get in at the front."`
+        } else back = say(['Out, steaming, a bit ashamed.', 'You cool off on the bench outside. Next time.'])
+    } else if (k.place === 'pesula') {
+        g.cash += k.score
+        const cat = k.washes.some((w) => w.open && w.kind === 'cat')
+        back =
+            k.score > 0
+                ? `${euro(k.score)} in coins, for a ticket machine.${cat ? ' And you met a cat.' : ''}`
+                : cat
+                  ? 'No coins. A cat, though.'
+                  : say(['No coins. Some lint.', 'Nothing but warm air.'])
+    } else if (k.place === 'kiosk') {
+        const won = scratchWin(k)
+        if (k.score === -1) back = 'A paper ticket in your pocket.'
+        else if (!k.cells.length) back = 'You leave the kiosk. The clerk goes back to the crossword.'
+        else if (won === 'ticket') {
+            g.ticket = true
+            g.ticketFrom = 'cash'
+            back = 'Three tickets. The clerk prints you a real one, free.'
+        } else if (won === 'gull') {
+            g.cash += 5
+            back = 'Three gulls. 5,00 € in cash.'
+        } else if (won === 'kebab') {
+            g.kebab = true
+            g.slices = 2
+            back = 'Three kebabs. A voucher, cashed next door. A kebab to go.'
+        } else if (won === 'sauna') back = 'Three saunas. A sauna voucher. Not tonight.'
+        else back = say(['Nothing. The clerk has seen it all before.', 'No three of anything. Of course.'])
+    } else if (k.place === 'kebab') {
         // Meat caught, of seven, as a kebab from none to the best.
         k.score = k.score >= 6 ? 3 : k.score >= 4 ? 2 : k.score >= 1 ? 1 : 0
         g.slices = k.score
@@ -1242,7 +1494,7 @@ function leaveKurvi(g: Game) {
     }
     if (g.codeAt === k.place) {
         g.code = true
-        const on = { kebab: 'the receipt', pizza: 'the box', bar: 'a beer coaster' }[k.place]
+        const on = { kebab: 'the receipt', pizza: 'the box', bar: 'a beer coaster', kiosk: 'the receipt', pesula: 'a sticker on a dryer', sauna: 'a towel ticket' }[k.place]
         back += ` On ${on}: a free scooter ride code.`
     }
     enter(g, 'intro', `${clockText(g.clock)}. ${back} ${g.code ? 'Metro, tram, bus, bike or scooter?' : 'Metro, tram, bus or the bike?'}`)
@@ -1388,6 +1640,11 @@ function land(g: Game) {
     g.spotted = false
     g.player.slot = g.player.x = g.player.door
     if (g.mode !== 'bus') return
+    if (g.flags.includes('sauna')) {
+        g.flags.push('driver')
+        g.caption = 'The driver is the regular from the sauna. A nod. In you go.'
+        return
+    }
     if (g.player.door === 1) return startDriverCheck(g, 'The driver looks up.')
     if (g.rand() < 0.4 + 0.1 * g.heat) return startDriverCheck(g, 'The driver saw you in the mirror.')
     g.flags.push('driver')
@@ -2177,7 +2434,8 @@ function excuse(g: Game, kind: 'kebab' | 'story') {
 }
 
 function skip(g: Game) {
-    if (g.phase === 'intro') {
+    if (g.phase === 'splash') enter(g, 'title', TITLE_CAPTION)
+    else if (g.phase === 'intro') {
         g.t = CHOOSE
         g.caption = `Balance 0,00 €. ${askWay(g)}`
     } else if (g.phase === 'platform') g.t = PLATFORM_WAIT
@@ -2400,6 +2658,8 @@ export function act(g: Game, id: ActionId) {
         case 'pay':
             return payMachine(g)
         case 'leave':
+            // The kiosk has a way out too.
+            if (g.phase === 'kurvi') return kurviInput(g, id)
             return doneMachine(g, 'left', 'You leave it alone.')
         case 'busk':
             return startBusk(g)
@@ -2427,6 +2687,54 @@ export function act(g: Game, id: ActionId) {
             return sleep(g)
         case 'pizza':
             return visit(g, 'pizza')
+        case 'kiosk':
+        case 'pesula':
+        case 'sauna':
+            return visit(g, id)
+        case 'loyly':
+        case 'sweat':
+            return kurviInput(g, id)
+        case 'phone':
+            g.phoneUp = !g.phoneUp
+            g.phoneAt = g.time
+            return
+        case 'rabbit': {
+            // A close-up: you crouch, it stares, it thumps, and then the real rat.
+            const t = g.t
+            // The rabbit in the close-up is the one from the pavement, so not behind it too.
+            g.rabbitAt = g.time - 10
+            return cut(g, [{ id: 'rabbit', dur: 3.6, caption: 'You crouch. Slowly. "Hei, rotta."' }], (g) => {
+                enter(g, 'intro', say(['Not a rat. A rabbit. Kallio has hundreds. The rat was the other one.', 'The rabbit thumps and leaves. The rat does not even stop.']))
+                g.t = Math.max(t, CHOOSE + 0.5)
+            })
+        }
+        case 'panL':
+        case 'panR': {
+            // You walk round the corner: off one street, onto the other.
+            const to = id === 'panL' ? 0 : CAM_MAX
+            if (g.cornerAt >= 0 || to === g.cam) return
+            g.camTo = to
+            g.cornerAt = g.time
+            if (g.phoneUp) {
+                g.phoneUp = false
+                g.phoneAt = g.time
+            }
+            return
+        }
+        case 'wash0':
+        case 'wash1':
+        case 'wash2':
+        case 'wash3':
+        case 'wash4':
+        case 'wash5':
+        case 'kticket':
+        case 'scratch':
+        case 'scr0':
+        case 'scr1':
+        case 'scr2':
+        case 'scr3':
+        case 'scr4':
+        case 'scr5':
         case 'pita0':
         case 'pita1':
         case 'pita2':
@@ -2476,6 +2784,8 @@ export function act(g: Game, id: ActionId) {
 
 export function actions(g: Game): Action[] {
     switch (g.phase) {
+        case 'splash':
+            return [{ id: 'next', label: 'Skip' }]
         case 'title':
             return [
                 { id: 'start', label: 'Start' },
@@ -2498,10 +2808,23 @@ export function actions(g: Game): Action[] {
             ways.push({ id: 'bike', label: 'Bike' })
             if (g.code) ways.push({ id: 'scooter', label: 'Scooter' })
             if (!g.ticket) ways.push({ id: 'buy', label: 'Buy ticket' })
-            if (g.home) return ways
-            if (!g.went.includes('kebab')) ways.push({ id: 'kebab', label: 'Kebab' })
-            if (!g.went.includes('pizza')) ways.push({ id: 'pizza', label: 'Pizza' })
-            if (!g.went.includes('bar')) ways.push({ id: 'bar', label: 'Bar' })
+            const pocket: Action = { id: 'phone', label: g.phoneUp ? 'Pocket the phone' : 'Phone' }
+            if (g.home) return [...ways, pocket]
+            for (const [id, label] of [
+                ['kebab', 'Kebab'],
+                ['pizza', 'Pizza'],
+                ['bar', 'Bar'],
+                ['kiosk', 'Kiosk'],
+                ['pesula', 'Laundromat'],
+                ['sauna', 'Sauna'],
+            ] as const)
+                if (!g.went.includes(id)) ways.push({ id, label })
+            ways.push(pocket)
+            // The rabbit on Hämeentie, for the picture only, like the arrows.
+            if (g.rabbitAt < 0 && g.cam === CAM_MAX && g.cornerAt < 0) ways.push({ id: 'rabbit', label: 'Rabbit' })
+            // Panning is for the picture and the arrow keys, not a button.
+            if (g.cornerAt < 0 && g.cam > 0) ways.push({ id: 'panL', label: '<' })
+            if (g.cornerAt < 0 && g.cam < CAM_MAX) ways.push({ id: 'panR', label: '>' })
             return ways
         }
         case 'platform': {
@@ -2520,6 +2843,21 @@ export function actions(g: Game): Action[] {
         case 'kurvi': {
             const k = g.kurvi
             if (!k) return []
+            if (k.place === 'kiosk' && k.stage === 'menu')
+                return [
+                    { id: 'kticket', label: `Ticket ${euro(PRICE)}`, disabled: g.ticket },
+                    { id: 'scratch', label: `Scratch card ${euro(SCRATCH)}` },
+                    { id: 'leave', label: 'Leave' },
+                ]
+            if (k.place === 'kiosk' && k.stage === 'play')
+                return k.cells.flatMap((c, i) => (c.shown ? [] : [{ id: `scr${i}` as ActionId, label: `Scratch ${i + 1}` }]))
+            if (k.place === 'sauna' && k.stage === 'play')
+                return [
+                    { id: 'loyly', label: 'Löyly' },
+                    { id: 'sweat', label: 'Step out' },
+                ]
+            if (k.place === 'pesula' && k.stage === 'play')
+                return k.washes.flatMap((w, i) => (w.open ? [] : [{ id: `wash${i}` as ActionId, label: `Drum ${i + 1}` }]))
             if (k.place === 'pizza' && k.stage === 'oven') return [{ id: 'pull', label: 'Pull it out' }]
             if (k.stage !== 'play') return []
             if (k.place === 'kebab')
@@ -2625,9 +2963,19 @@ export function step(g: Game, dt: number) {
     if (g.bubble && g.time > g.bubble.until) g.bubble = null
 
     switch (g.phase) {
-        case 'intro':
-            if (at(CHOOSE)) g.caption = `Balance 0,00 €. ${askWay(g)}`
+        case 'splash':
+            if (g.t > SPLASH) skip(g)
             return
+        case 'intro': {
+            if (at(CHOOSE)) g.caption = `Balance 0,00 €. ${askWay(g)}`
+            // Off the screen at the corner, then onto the other street.
+            if (g.cornerAt >= 0) {
+                const e = g.time - g.cornerAt
+                if (e >= CORNER_OUT) g.cam = g.camTo
+                if (e >= CORNER_OUT + CORNER_IN) g.cornerAt = -1
+            }
+            return
+        }
         case 'cut': {
             const c = g.cut
             if (!c || g.t < c.shots[c.n].dur) return
@@ -2680,6 +3028,7 @@ export function step(g: Game, dt: number) {
                 // Back to the choice, with the phone still up.
                 g.phase = 'intro'
                 g.t = CHOOSE + 0.5
+                g.phoneUp = true
                 g.caption = `Ticket bought, ${euro(PRICE)}. ${askWay(g)}`
             }
             return
@@ -2695,6 +3044,7 @@ export function step(g: Game, dt: number) {
                 g.caption = 'Now pour it. Same order.'
             }
             if (k.stage === 'play' && k.place === 'kebab') catchSlices(g, k)
+            if (k.stage === 'play' && k.place === 'sauna') sweatOut(g, k, dt)
             // Too slow on a topping counts as leaving it off.
             if (k.stage === 'play' && k.place === 'pizza' && g.time - k.shownAt > TOPPING_TIME) {
                 kurviInput(g, 'no')
@@ -2897,6 +3247,6 @@ export function uiOf(g: Game): Ui {
         countdown: g.phase === 'ride' && g.sweep ? `next stop ${Math.max(0, left)} s` : '',
         share,
         cash: g.cash > 0 ? euro(g.cash) : '',
-        actions: actions(g),
+        actions: actions(g).filter((a) => a.id !== 'panL' && a.id !== 'panR' && a.id !== 'rabbit'),
     }
 }

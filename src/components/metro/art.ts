@@ -40,7 +40,10 @@ import {
     BOARD,
     BOARD_WALK,
     BUSK,
+    CAM_MAX,
     CHIME,
+    CORNER_IN,
+    CORNER_OUT,
     DEPART,
     DOORS,
     DOWN,
@@ -57,6 +60,13 @@ import {
     parkLeg,
     LINES,
     OPEN,
+    HOLD,
+    SCALD,
+    SCRATCH,
+    SPLASH,
+    actions,
+    scratchWin,
+    type Sym,
     PRICE,
     RED,
     SEAT_FACE,
@@ -73,15 +83,17 @@ import {
     shotOf,
     stopsOf,
     transitOf,
+    type ActionId,
     type Game,
     type Inspector,
+    type Kurvi,
     type Look,
     type Lost,
     type Mode,
     type Obstacle,
     type Transit,
 } from './game'
-import { C, HAIR, PANTS, SKIN, shade } from './palette'
+import { C, CLOTH, HAIR, PANTS, SKIN, shade } from './palette'
 import { CABINS, vehicle, windowsOf } from './vehicles'
 
 // Every scene of the game. Primitives and people live in draw.ts, the
@@ -119,12 +131,56 @@ function letterbox(ctx: Ctx) {
 
 // ——— Hämeentie at night ————————————————————————————————————————————————
 
-const BUILDINGS = [
-    { x: 0, w: 60, h: 66, c: '#6e5a4a' },
-    { x: 60, w: 48, h: 76, c: '#56635c' },
-    { x: 108, w: 62, h: 60, c: '#7a6a52' },
-    { x: 170, w: 86, h: 72, c: '#5f5a66' },
-]
+// Kurvi as it is, from across the street, in two faces of one corner.
+// Hämeentie: Billy K on the corner with the metro stairs in front, your
+// house, the kebab place, the laundromat and the kiosk. Pan left and the
+// view turns the corner onto the side street, where the trams run: Billy K's
+// other side, the stops, the pizzeria and the public sauna. Each face shows
+// the other one going away at its edge. `g.cam` runs from CAM_MAX (Hämeentie)
+// to 0 (the side street); in between the view is turning.
+
+/** Where each place and stop is, on each face, for clicks. */
+export const KURVI_SPOTS: Record<'main' | 'side', { id: ActionId; x: number; w: number; y: number; h: number }[]> = {
+    main: [
+        // The stairs and the M first: they stand in front of the bar.
+        { id: 'metro', x: 14, w: 38, y: 92, h: 18 },
+        { id: 'metro', x: 50, w: 12, y: 40, h: 70 },
+        { id: 'bar', x: 13, w: 32, y: 64, h: 28 },
+        { id: 'bike', x: 88, w: 24, y: 92, h: 18 },
+        { id: 'rabbit', x: 144, w: 12, y: 99, h: 11 },
+        { id: 'kebab', x: 114, w: 46, y: 66, h: 30 },
+        { id: 'pesula', x: 162, w: 46, y: 66, h: 30 },
+        { id: 'kiosk', x: 210, w: 46, y: 66, h: 42 },
+    ],
+    side: [
+        { id: 'sauna', x: 2, w: 60, y: 64, h: 46 },
+        { id: 'pizza', x: 66, w: 52, y: 66, h: 30 },
+        { id: 'bus', x: 120, w: 12, y: 54, h: 56 },
+        { id: 'tram', x: 132, w: 40, y: 58, h: 52 },
+        { id: 'scooter', x: 176, w: 18, y: 88, h: 22 },
+        { id: 'bar', x: 198, w: 46, y: 64, h: 32 },
+    ],
+}
+
+// The office tower at the end of Kurvi: twelve floors of green glass, a
+// sign frame on the roof.
+function kurviTower(ctx: Ctx, x: number, day: boolean) {
+    const [top, w] = [8, 50]
+    const glass = day ? '#5f7d74' : '#20332e'
+    R(ctx, x + 10, top - 4, 30, 1, day ? '#4a4a48' : '#2a2a2a')
+    for (let i = 0; i < 6; i++) R(ctx, x + 12 + i * 5, top - 3, 2, 3, day ? '#4a4a48' : '#2a2a2a')
+    R(ctx, x, top, w, 96 - top, glass)
+    R(ctx, x, top, w, 2, day ? '#7f9a92' : '#2f4740')
+    for (let i = x + 3; i < x + w; i += 4) R(ctx, i, top + 2, 1, 94 - top, day ? '#86a29a' : '#2c443d')
+    for (let y = top + 6; y < 96; y += 6) {
+        R(ctx, x, y, w, 1, day ? '#4a645c' : '#17241f')
+        for (let i = x + 4; i < x + w - 2; i += 4) {
+            const n = i * 7 + y * 13
+            if (!day && hash(n) > 0.78) R(ctx, i, y + 2, 3, 3, hash(n + 1) > 0.5 ? '#d8c070' : '#a8d0c0')
+        }
+    }
+    R(ctx, x + w - 3, top, 3, 96 - top, day ? '#4f6a62' : '#18261f')
+}
 
 // Night sky: bands that dither into each other, stars, a crescent moon with
 // a halo. By day, a few clouds instead.
@@ -170,105 +226,276 @@ function pool(ctx: Ctx, cx: number, y: number, rx: number, ry: number, color: st
     }
 }
 
-// Street level on Hämeentie: a bar, a pizzeria and a kebab place, lit from
-// inside, with neon over them. The bar sign is on its last legs.
-function shops(ctx: Ctx, day: boolean) {
-    // Baari: warm light, two regulars at the window.
-    R(ctx, 8, 85, 30, 9, '#c9a76a')
-    R(ctx, 8, 85, 30, 1, '#e0c48a')
-    for (const [hx, tone] of [[14, '#5a3a2a'], [27, '#4a3226']] as const) {
-        R(ctx, hx, 88, 3, 3, tone)
-        R(ctx, hx - 1, 91, 5, 3, tone)
-    }
-    R(ctx, 21, 89, 1, 3, '#f0e2b0')
-    R(ctx, 8, 92, 30, 2, '#6a4a2a')
-    // Pizza: a striped awning, the oven glowing at the back.
-    R(ctx, 70, 85, 26, 9, '#3a4a5a')
-    for (let i = 0; i < 26; i += 4) R(ctx, 70 + i, 83, 2, 2, '#b8402f')
-    for (let i = 2; i < 26; i += 4) R(ctx, 70 + i, 83, 2, 2, '#e8e0d0')
-    R(ctx, 85, 87, 7, 4, '#2a2420')
-    R(ctx, 86, 88, 5, 2, day ? '#7a4a2a' : C.orangeL)
-    R(ctx, 70, 91, 26, 1, '#e8d8a0')
-    // Kebab: the spit turning in the window, a menu board.
-    R(ctx, 118, 85, 40, 9, '#d7c08a')
-    R(ctx, 118, 85, 40, 1, '#ead7a4')
-    R(ctx, 124, 86, 5, 7, '#8a5a32')
-    R(ctx, 124, 86, 1, 7, '#b47c4a')
-    R(ctx, 126, 85, 1, 9, '#5a5a5a')
-    R(ctx, 140, 86, 14, 5, '#2a2420')
-    for (let i = 0; i < 2; i++) R(ctx, 142, 87 + i * 2, i ? 7 : 10, 1, '#e8e0c8')
-    R(ctx, 118, 92, 40, 2, '#8a7450')
+// A shop window in its frame, from x, w wide, lit `glass` inside.
+function shopfront(ctx: Ctx, x: number, w: number, frame: string, glass: string) {
+    R(ctx, x, 82, w, 14, frame)
+    R(ctx, x + 2, 84, w - 4, 11, glass)
+    R(ctx, x + 2, 84, w - 4, 1, shade(glass, 0.25))
 }
 
-function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, look: Look, tram: number, day = false) {
-    sky(ctx, time, still, day)
-    kallioChurch(ctx, 136, day)
-    for (const b of BUILDINGS) facade(ctx, b.x, 96 - b.h, b.w, 96, b.c, b.x, day)
-    shops(ctx, day)
-    const flicker = !day && Math.floor(time * 7) % 23 === 0
-    neon(ctx, 'Baari', 23, 77, day ? '#7a5a66' : flicker ? '#4a2a3a' : '#ff6fb0')
-    neon(ctx, 'Pizza', 83, 77, day ? '#5a6a5a' : '#7dff9a')
-    neon(ctx, 'Kebab', 138, 77, day ? '#6a5a4a' : '#ffb347')
+// Billy K, the pub on the corner by the metro stairs: dark green wood, gold
+// lettering, frosted glass to the waist, regulars over it.
+function cornerBar(ctx: Ctx, x: number, time: number, day: boolean, w = 44) {
+    const green = '#1e3a2a'
+    shopfront(ctx, x, w, green, day ? '#8a7a58' : '#d8b070')
+    for (const [hx, tone] of [[7, '#5a3a2a'], [15, '#4a3226'], [26, '#5a3a2a']] as const) {
+        if (hx > w - 16) continue
+        R(ctx, x + hx, 86, 3, 3, tone)
+        R(ctx, x + hx - 1, 89, 5, 2, tone)
+    }
+    R(ctx, x + 11, 87, 1, 3, '#f0e2b0')
+    // Frosted to the waist, and the bar's own door at the end.
+    R(ctx, x + 2, 90, w - 13, 5, day ? '#9a9a88' : '#b8b4a0')
+    for (let i = x + 3; i < x + w - 11; i += 3) R(ctx, i, 91, 1, 3, '#a8a490')
+    R(ctx, x + w - 10, 84, 8, 12, '#2a1a10')
+    R(ctx, x + w - 8, 86, 4, 4, day ? '#8a7a58' : '#d8b070')
+    R(ctx, x + w - 9, 90, 1, 2, '#c9a24a')
+    // The sign board: green, a gold rule round it, cream letters, a lamp over it.
+    R(ctx, x + 1, 72, w - 2, 9, green)
+    R(ctx, x + 1, 72, w - 2, 1, '#c9a24a')
+    R(ctx, x + 1, 80, w - 2, 1, '#c9a24a')
+    R(ctx, x + 1, 72, 1, 9, '#c9a24a')
+    R(ctx, x + w - 2, 72, 1, 9, '#c9a24a')
+    const flicker = !day && Math.floor(time * 7) % 31 === 0
+    drawText(ctx, 'Billy K', x + w / 2, 74, flicker ? '#8a7a5a' : '#f2e2b8', 1, 'center')
+    R(ctx, x + w / 2 - 2, 69, 4, 2, '#2a2a2a')
+    if (!day) dither(ctx, x + w / 2 - 10, 71, 20, 2, '#8a7a4a')
+}
 
-    // The station entrance, glowing yellow from inside.
-    R(ctx, 176, 63, 42, 11, '#161618')
-    drawText(ctx, 'Sörnäinen', 197, 67, C.white, 1, 'center')
-    R(ctx, 182, 74, 30, 22, '#1d1c1b')
-    R(ctx, 184, 76, 26, 20, '#f2d36b')
-    R(ctx, 184, 76, 26, 3, C.yellowL)
-    R(ctx, 196, 76, 2, 20, '#1d1c1b')
-    R(ctx, 228, 56, 2, 40, '#2a2a2a')
-    sign(ctx, 'metro', 222, 42, 14, C.orange)
-    gull(ctx, 229, 42, time, false, -1)
+// The door to the flats over a shop: dark wood, the staircase letter on
+// its lit glass, a brass handle.
+function stairDoor(ctx: Ctx, x: number, letter: string, day: boolean) {
+    R(ctx, x, 82, 11, 14, '#2a2018')
+    R(ctx, x + 1, 83, 9, 13, '#4a3426')
+    R(ctx, x + 2, 84, 7, 7, day ? '#9aa8b0' : '#f2e6c4')
+    drawText(ctx, letter, x + 5, 85, C.ink, 1, 'center')
+    R(ctx, x + 8, 92, 1, 2, '#c9a24a')
+}
 
-    // Overhead tram wire, and lamps with a halo when it is dark.
+// Ö-kioski: bright inside, sweets in rows, the clerk at the till, and the
+// headline stand out on the pavement.
+function kiosk(ctx: Ctx, x: number, day: boolean) {
+    shopfront(ctx, x, 50, '#1d2a44', day ? '#c8d0d4' : '#eef4f6')
+    for (const sy of [86, 89]) for (let i = x + 4; i < x + 34; i += 3) R(ctx, i, sy, 2, 2, ['#c8402f', '#e2b22d', '#3a7ac0', '#3a9a4a', '#e88ac0'][(i + sy) % 5])
+    R(ctx, x + 2, 92, 34, 3, '#8a9094')
+    R(ctx, x + 26, 86, 3, 3, SKIN[2])
+    R(ctx, x + 25, 89, 5, 3, '#2a5a8a')
+    R(ctx, x + 38, 84, 10, 12, '#cfe0e8')
+    R(ctx, x + 40, 87, 6, 3, '#e2b22d')
+    drawText(ctx, '€', x + 42, 87, '#c8402f')
+    // The headline stand: yellow paper, black shouting.
+    const sx = x + 6
+    R(ctx, sx, 97, 12, 10, '#2a2a2a')
+    R(ctx, sx + 1, 98, 10, 8, '#f2d21e')
+    R(ctx, sx + 2, 99, 8, 2, C.ink)
+    R(ctx, sx + 2, 102, 6, 1, C.ink)
+    R(ctx, sx + 2, 104, 7, 1, C.ink)
+    R(ctx, sx, 107, 1, 2, '#2a2a2a')
+    R(ctx, sx + 11, 107, 1, 2, '#2a2a2a')
+    // Ö-kioski: a blue board, the letter in a white disc, lit from inside.
+    R(ctx, x + 4, 71, 42, 10, '#1d4fa0')
+    R(ctx, x + 4, 71, 42, 1, '#4a7ad0')
+    for (let dy = -3; dy <= 3; dy++) R(ctx, x + 11 - Math.round(Math.sqrt(12 - dy * dy)), 76 + dy, Math.round(Math.sqrt(12 - dy * dy)) * 2 + 1, 1, C.white)
+    drawText(ctx, 'Ö', x + 10, 74, '#1d4fa0')
+    drawText(ctx, 'kioski', x + 17, 74, day ? '#c8d8f0' : C.white)
+}
+
+// Pesula: four front loaders behind the glass, one of them turning.
+function pesula(ctx: Ctx, x: number, time: number, day: boolean) {
+    shopfront(ctx, x, 48, '#3a4450', day ? '#b8c8cc' : '#d8ecf0')
+    for (let i = 0; i < 4; i++) {
+        const mx = x + 4 + i * 10
+        R(ctx, mx, 85, 9, 10, '#f4f4f0')
+        R(ctx, mx, 85, 9, 1, '#c8c8c4')
+        R(ctx, mx + 2, 87, 5, 5, '#3a4a52')
+        R(ctx, mx + 3, 86, 3, 1, '#3a4a52')
+        R(ctx, mx + 3, 92, 3, 1, '#3a4a52')
+        if (i === 1) {
+            const turn = Math.floor(time * 6) % 3
+            R(ctx, mx + 3 + (turn === 1 ? 1 : 0), 88, 2, 2, ['#c8402f', '#3a7ac0', '#e2b22d'][turn])
+            R(ctx, mx + 4 - (turn === 2 ? 1 : 0), 89, 2, 2, ['#e8e4dc', '#c8402f', '#3a9a4a'][turn])
+        }
+    }
+    neon(ctx, 'Pesula', x + 24, 75, day ? '#5a5a6a' : '#c4b0ff')
+}
+
+// Kebab: the spit turning in the window, the menu board with its photos.
+function kebabFront(ctx: Ctx, x: number, time: number, day: boolean) {
+    shopfront(ctx, x, 48, '#5a2a1a', day ? '#c8a870' : '#e8c88a')
+    for (let j = 0; j < 9; j++) R(ctx, x + 6 + Math.floor(j / 3), 85 + j, 7 - Math.floor(j / 3) * 2, 1, j % 3 === Math.floor(time * 4) % 3 ? '#b47c4a' : '#8a5a32')
+    R(ctx, x + 9, 84, 1, 11, '#5a5a5a')
+    R(ctx, x + 20, 85, 24, 6, '#2a2420')
+    for (let i = 0; i < 4; i++) R(ctx, x + 22 + i * 5, 86, 4, 3, ['#9a5a32', '#e8c070', '#c9402a', '#5a8a3a'][i])
+    R(ctx, x + 2, 92, 44, 3, '#8a7450')
+    neon(ctx, 'Kebab', x + 24, 75, day ? '#6a5a4a' : '#ffb347')
+}
+
+// Pizza: a striped awning, the oven glowing at the back, a paddle.
+function pizzaFront(ctx: Ctx, x: number, day: boolean) {
+    shopfront(ctx, x, 52, '#2a3440', day ? '#a89070' : '#e8c070')
+    for (let i = 0; i < 56; i += 4) {
+        R(ctx, x - 2 + i, 79, 2, 3, '#b8402f')
+        R(ctx, x + i, 79, 2, 3, '#e8e0d0')
+    }
+    R(ctx, x + 32, 85, 14, 8, '#6a4a3a')
+    R(ctx, x + 34, 87, 10, 4, '#2a1a10')
+    R(ctx, x + 35, 89, 8, 2, day ? '#7a4a2a' : C.orangeL)
+    R(ctx, x + 6, 86, 2, 8, '#a87a4a')
+    R(ctx, x + 4, 85, 6, 2, '#a87a4a')
+    R(ctx, x + 12, 90, 10, 2, '#c9402a')
+    R(ctx, x + 2, 93, 48, 2, '#e8d8a0')
+    neon(ctx, 'Pizza', x + 26, 71, day ? '#5a6a5a' : '#7dff9a')
+}
+
+// The tram stop: a glass shelter with a bench and a lit ad, the green sign.
+function tramStop(ctx: Ctx, x: number, day: boolean) {
+    R(ctx, x, 64, 2, 44, '#3a3a3a')
+    sign(ctx, 'tram', x - 4, 62, 10, C.tram)
+    R(ctx, x + 4, 78, 32, 2, '#2a2a2e')
+    for (let i = x + 5; i < x + 35; i += 10) R(ctx, i, 80, 1, 27, '#5a5a5e')
+    dither(ctx, x + 5, 80, 30, 26, day ? '#a8c0c8' : '#3a4a5a')
+    R(ctx, x + 30, 82, 5, 20, day ? '#d8d0c0' : '#f2e6c4')
+    R(ctx, x + 31, 84, 3, 6, '#c0502a')
+    R(ctx, x + 8, 99, 18, 2, '#4a4a4e')
+}
+
+// The bus stop: a pole, the blue sign, a timetable box.
+function busStop(ctx: Ctx, x: number) {
+    R(ctx, x, 62, 2, 46, '#3a3a3a')
+    sign(ctx, 'bus', x - 4, 58, 10, C.blue)
+    R(ctx, x - 2, 80, 6, 8, '#e8e4dc')
+    for (let i = 0; i < 3; i++) R(ctx, x - 1, 82 + i * 2, 4, 1, '#8a8a8a')
+}
+
+// Your bike, locked to the rack outside the lobby.
+function bikeRack(ctx: Ctx, x: number) {
+    for (const rx of [x, x + 10, x + 20]) {
+        R(ctx, rx, 98, 1, 9, '#7a7a76')
+        R(ctx, rx + 6, 98, 1, 9, '#7a7a76')
+        R(ctx, rx, 97, 7, 1, '#7a7a76')
+    }
+    bicycle(ctx, x + 10, 106, 0)
+}
+
+// The scooter at the end of the block: green light if you have a code.
+function parkedScooter(ctx: Ctx, x: number, unlocked: boolean, time: number) {
+    scooter(ctx, x, 106)
+    R(ctx, x + 3, 93, 2, 1, unlocked ? (Math.floor(time * 3) % 2 ? C.green : '#1a3a1a') : C.red)
+}
+
+// Sörnäinen station from Hämeentie: no door in a building, just a stairwell
+// cut into the middle of the pavement. A low concrete parapet with a tag on
+// it, steel railings, light coming up from below, and the red M on its pole.
+function stairs(ctx: Ctx, x: number, time: number, day: boolean) {
+    const w = 38
+    // The open end: the first steps going down, and the dark gap behind the parapet.
+    R(ctx, x, 97, 7, 2, '#1e1c1a')
+    R(ctx, x + 6, 98, w - 6, 1, '#1e1c1a')
+    if (!day) R(ctx, x + 7, 97, w - 8, 1, '#6a5a2a')
+    for (let i = 0; i < 4; i++) R(ctx, x + i * 2, 97 + i, 3, 1, day ? '#8a857d' : '#4a4640')
+    // The parapet, concrete, with a cap and a tag.
+    const wall = day ? '#b0aca2' : '#7a766e'
+    R(ctx, x + 6, 99, w - 6, 9, wall)
+    R(ctx, x + 6, 99, w - 6, 1, day ? '#cfcac0' : '#9a958c')
+    R(ctx, x + 6, 107, w - 6, 1, shade(wall, -0.3))
+    R(ctx, x + 6, 100, 1, 7, shade(wall, 0.12))
+    line(ctx, x + 14, 104, x + 17, 101, '#1a1a1a')
+    line(ctx, x + 17, 101, x + 19, 105, '#1a1a1a')
+    line(ctx, x + 19, 105, x + 23, 102, '#1a1a1a')
+    R(ctx, x + 21, 101, 6, 1, '#1a1a1a')
+    // Railings on top.
+    R(ctx, x + 6, 93, w - 6, 1, '#9a9a96')
+    for (let i = x + 6; i <= x + w - 1; i += 8) R(ctx, i, 93, 1, 6, '#7a7a76')
+    // The pole and the M, the light bleeding out of it at night.
+    const px = x + w + 4
+    R(ctx, px, 60, 2, 48, '#3a3a3a')
+    R(ctx, px - 1, 107, 4, 1, '#1e1e1e')
+    if (!day) pool(ctx, px + 1, 40, 11, 10, '#5a2a24')
+    R(ctx, px - 5, 44, 12, 16, '#d8452c')
+    R(ctx, px - 5, 44, 12, 1, '#f06a4a')
+    R(ctx, px + 6, 45, 1, 15, '#a8301e')
+    sign(ctx, 'metro', px - 5, 46, 11, '#d8452c')
+    gull(ctx, px + 1, 44, time, false, -1)
+}
+
+// The metro stairs on Hämeentie, in front of Billy K.
+export const STAIRS_X = 14
+
+// Billy K's two faces: the front on Hämeentie, the side on the side street.
+const BILLY = '#5f5a66'
+const BILLY_SIDE = '#514c58'
+
+// The edge of one face: the other face of the corner going away from you,
+// drawn in perspective. Every line of it (roof, window rows, canopy, shop
+// glass, the foot of the wall) closes in toward the eye line as it recedes,
+// and the window columns get narrower. `dir` -1 recedes to the left.
+const EYE = 74
+
+function receding(ctx: Ctx, x: number, dir: 1 | -1, wall: string, day: boolean) {
+    const n = 14
+    const at = (y: number, f: number) => Math.round(EYE + (y - EYE) * (1 - f * 0.4))
+    // Where along the face each screen column falls, nearer columns wider.
+    const along = (i: number) => (i / n) * (1 + (i / n) * 1.6)
+    for (let i = 0; i < n; i++) {
+        const f = i / n
+        const cx = dir < 0 ? x - 1 - i : x + i
+        const u = along(i)
+        const top = at(52, f)
+        R(ctx, cx, top, 1, at(96, f) - top, shade(wall, -0.28))
+        R(ctx, cx, top, 1, 1, shade(wall, -0.45))
+        // Two rows of flats: a window wherever this column is not on a pier.
+        const pane = Math.floor(u * 5) % 2 === 0
+        if (pane) {
+            for (const [wy, lit] of [[59, hash(Math.floor(u * 5) + x) > 0.5], [70, hash(Math.floor(u * 5) + x + 9) > 0.6]] as const) {
+                const y0 = at(wy, f)
+                R(ctx, cx, y0, 1, Math.max(2, at(wy + 6, f) - y0), !day && lit ? '#e8c36a' : '#262833')
+            }
+        }
+        // The canopy, then the bar's glass under it, warm, a mullion now and then.
+        R(ctx, cx, at(80, f), 1, Math.max(1, at(83, f) - at(80, f)), '#1c1a1a')
+        const g0 = at(84, f)
+        const g1 = at(95, f)
+        const mullion = Math.floor(u * 7) !== Math.floor(along(i + 1) * 7)
+        R(ctx, cx, g0, 1, g1 - g0, mullion ? '#1e3a2a' : day ? '#8a7a58' : '#d8b070')
+        if (!mullion) R(ctx, cx, at(90, f), 1, g1 - at(90, f), day ? '#9a9a88' : '#b8b4a0')
+    }
+    // The corner itself, catching the light.
+    R(ctx, dir < 0 ? x - 1 : x, 52, 1, 44, shade(wall, 0.25))
+}
+
+// Pavement, kerb, the road with its tram tracks, lamplight and neon in the wet.
+function ground(ctx: Ctx, time: number, still: boolean, day: boolean, lamps: number[], glows: [number, number, string][]) {
     R(ctx, 0, 91, W, 1, '#080a12')
-    for (const lx of [40, 150]) {
-        if (!day) dither(ctx, lx - 5, 52, 12, 7, '#8a7a4a')
+    for (const lx of lamps) {
+        if (!day) pool(ctx, lx + 1, 51, 7, 4, '#8a7a4a')
         R(ctx, lx, 56, 2, 40, '#2a2a2a')
         R(ctx, lx + 1, 58, 1, 38, '#3a3a3a')
         R(ctx, lx - 3, 54, 8, 2, '#3a3a3a')
         R(ctx, lx - 2, 56, 6, 1, day ? '#9a9a96' : C.glow)
         R(ctx, lx - 1, 95, 4, 1, '#1e1e1e')
     }
-
-    // Pavement in slabs, kerb, road with two tracks.
     R(ctx, 0, 96, W, 14, '#4a4744')
     for (let x = 0; x < W; x += 16) R(ctx, x, 96, 1, 14, '#423f3c')
     R(ctx, 0, 103, W, 1, '#45423f')
-    if (!day) {
-        // Lamplight on the slabs, and the station's glow spilling out of the door.
-        for (const lx of [40, 150]) pool(ctx, lx + 1, 97, 12, 6, '#5d5850')
-        pool(ctx, 197, 96, 16, 5, '#6a6244')
-    }
-    R(ctx, 30, 96, 22, 1, '#6b655b')
-    R(ctx, 140, 96, 22, 1, '#6b655b')
+    if (!day) for (const lx of lamps) pool(ctx, lx + 1, 97, 12, 6, '#5d5850')
     R(ctx, 0, 110, W, 2, '#6a6560')
     R(ctx, 0, 111, W, 1, '#7e7870')
     R(ctx, 0, 112, W, 32, '#262628')
     dither(ctx, 0, 112, W, 2, '#1c1c1e')
-    if (!day) {
-        // The neon and the station door, broken up in the wet asphalt.
-        for (const [x, w, color] of [[16, 14, '#5a2a44'], [77, 12, '#2a5a3a'], [130, 16, '#5a4424'], [186, 22, '#6a5a2a']] as const) {
+    if (!day)
+        for (const [x, w, color] of glows)
             for (let y = 115; y < 142; y += 2) {
                 const wob = still ? 0 : Math.round(Math.sin(time * 3 + y * 0.7) * 1.2)
                 R(ctx, x + wob + ((y >> 1) & 1), y, w - ((y - 115) >> 3) * 2, 1, color)
             }
-        }
-    }
     for (const y of [118, 124, 133, 139]) {
         R(ctx, 0, y, W, 1, '#55524e')
         for (let x = (y * 7) % 11; x < W; x += 11) R(ctx, x, y, 2, 1, day ? '#8a857d' : '#77726a')
     }
+}
 
-    rabbit(ctx, 92, 108, time, 0.2, -1)
-
-    if (walkT !== null && walkT < 3.3) {
-        const k = clamp01(walkT / 3.2)
-        person(ctx, lerp(-8, 196, k), 106, look, 1, k < 1 ? 'walk' : 'stand', 'player', walkT * 7)
-    }
-
-    // A green tram on the near track, now and then.
+// A green tram on the near track, now and then.
+function tramPassing(ctx: Ctx, tram: number) {
     const tx = ((tram * 46) % 560) - 160
     R(ctx, tx + 4, 109, 112, 3, '#c9c4b8')
     R(ctx, tx, 112, 120, 26, C.tram)
@@ -283,14 +510,315 @@ function street(ctx: Ctx, time: number, still: boolean, walkT: number | null, lo
         R(ctx, tx + 64 - i, 108 - i * 2, 1, 2, '#3a3a3a')
     }
     R(ctx, tx + 50, 92, 20, 1, '#3a3a3a')
+}
 
-    if (!day) {
-        // Neon in the puddles.
-        R(ctx, 18, 104, 10, 1, '#7a3a5a')
-        R(ctx, 132, 106, 12, 1, '#7a5a2a')
-        rain(ctx, time, still, '#4a5a80', [98, 142])
+// Your house, between Billy K and the kebab place: a Kallio block from the
+// twenties. Ochre render, white window frames, a rusticated ground floor, a
+// wooden gate with the staircase letter lit over it. Someone smokes out of
+// a window, someone left the window candles up since Christmas.
+const HOUSE = { x: 58, w: 54, top: 28 }
+export const GATE_X = HOUSE.x + HOUSE.w / 2 - 7
+// Your window: second row, the last on the right.
+const MINE = { row: 1, col: 3 }
+
+function houseWindow(ctx: Ctx, x: number, y: number, lit: string | null) {
+    R(ctx, x - 1, y - 1, 8, 10, '#9a9284')
+    R(ctx, x, y, 6, 8, lit ?? '#262833')
+    if (!lit) R(ctx, x, y, 1, 1, '#3e4256')
+    R(ctx, x + 3, y, 1, 8, '#9a9284')
+    R(ctx, x, y + 3, 6, 1, '#9a9284')
+    R(ctx, x - 1, y + 9, 8, 1, '#6a5a44')
+}
+
+function kallioHouse(ctx: Ctx, g: Game, mineLit: boolean, open: boolean) {
+    const { x, w, top } = HOUSE
+    const render = '#8a6e48'
+    R(ctx, x, top, w, 96 - top, render)
+    R(ctx, x - 1, top - 3, w + 2, 3, '#5a4630')
+    for (let i = x; i < x + w; i += 4) R(ctx, i, top, 2, 1, '#6a5438')
+    R(ctx, x, top + 1, w, 1, shade(render, 0.15))
+    R(ctx, x + w - 1, top, 1, 96 - top, shade(render, -0.2))
+    // Tin roof and a chimney.
+    R(ctx, x + 2, top - 8, w - 4, 5, '#2a2a30')
+    R(ctx, x + 36, top - 14, 5, 6, '#3a3030')
+    for (let row = 0; row < 4; row++)
+        for (let col = 0; col < 4; col++) {
+            const wx = x + 5 + col * 12
+            const wy = top + 6 + row * 11
+            // No window over the gate's lit letter.
+            if (row === 3 && (col === 1 || col === 2)) continue
+            const mine = row === MINE.row && col === MINE.col
+            houseWindow(ctx, wx, wy, mine ? (mineLit ? '#f4d98a' : null) : hash(row * 4 + col + 60) > 0.8 ? '#e8c36a' : null)
+            // Window candles, the pyramid kind, never taken down.
+            if (row === 2 && col === 2) for (let i = 0; i < 5; i++) R(ctx, wx + i + 1, wy + 5 - Math.min(i, 4 - i), 1, 1, '#ffe7a3')
+            // Open, and a cigarette glowing at it.
+            if (row === 1 && col === 0) {
+                R(ctx, wx, wy, 6, 8, '#14141a')
+                R(ctx, wx + 1, wy + 2, 3, 3, '#3a2a24')
+                if (Math.floor(g.time * 1.3) % 3) R(ctx, wx + 4, wy + 4, 1, 1, '#ff8a3c')
+            }
+        }
+    // Ground floor in rusticated stone.
+    R(ctx, x, 81, w, 15, '#6a5a48')
+    for (let y = 84; y < 96; y += 3) R(ctx, x, y, w, 1, '#5a4c3c')
+    // The gate: an arch, two wooden leaves, the staircase letter over it.
+    for (let y = 0; y < 18; y++) {
+        const half = y < 4 ? Math.round(Math.sqrt(16 - (4 - y) ** 2)) + 4 : 8
+        R(ctx, GATE_X + 7 - half, 78 + y, half * 2, 1, '#2a2018')
     }
+    if (open) {
+        // The stairwell light on, the first steps up.
+        R(ctx, GATE_X, 82, 14, 14, '#f2d36b')
+        for (let i = 0; i < 4; i++) R(ctx, GATE_X + 4 + i * 2, 93 - i * 3, 10 - i * 2, 1, '#c9a84a')
+    } else {
+        R(ctx, GATE_X, 82, 14, 14, '#4a3426')
+        R(ctx, GATE_X + 6, 82, 1, 14, '#2a2018')
+        R(ctx, GATE_X + 1, 84, 4, 4, '#5a4230')
+        R(ctx, GATE_X + 8, 84, 4, 4, '#5a4230')
+        R(ctx, GATE_X + 1, 90, 4, 5, '#5a4230')
+        R(ctx, GATE_X + 8, 90, 4, 5, '#5a4230')
+    }
+    R(ctx, GATE_X + 3, 79, 8, 3, '#8a7a50')
+    R(ctx, GATE_X + 4, 71, 6, 6, '#f4f0e4')
+    drawText(ctx, 'A', GATE_X + 6, 72, C.ink, 1, 'center')
+    // House number, blue and lit, and the keypad.
+    R(ctx, GATE_X - 12, 84, 9, 6, '#1d4f9a')
+    drawText(ctx, '12', GATE_X - 7, 85, C.white, 1, 'center')
+    R(ctx, GATE_X + 16, 86, 3, 5, '#222')
+    R(ctx, GATE_X + 17, 87, 1, 1, g.ending === 'made' ? C.green : C.red)
+}
+
+// Life in the windows, nothing to tap: a television flickering, someone
+// dancing, a light someone keeps switching on and off, a cat on a sill.
+// `panes` are [x, y] of 4 × 6 windows from facade().
+function windowLife(ctx: Ctx, time: number, still: boolean, day: boolean, panes: [number, number][]) {
+    if (day || still) return
+    const [tv, dance, lamp] = panes
+    // A television, blue and jumpy.
+    R(ctx, tv[0], tv[1], 4, 6, ['#3a5a9a', '#5a7ac8', '#2a4a8a', '#7a9ae0'][Math.floor(time * 9) % 4])
+    // Someone dancing alone to something loud.
+    R(ctx, dance[0], dance[1], 4, 6, '#e8a0c0')
+    const step = Math.floor(time * 4) % 4
+    R(ctx, dance[0] + (step < 2 ? 1 : 2), dance[1] + 1, 1, 1, '#5a2a3a')
+    R(ctx, dance[0] + (step < 2 ? 0 : 1), dance[1] + 2, 2, 3, '#5a2a3a')
+    if (step % 2) R(ctx, dance[0] + 3, dance[1] + 1, 1, 1, '#5a2a3a')
+    // A light someone cannot decide about.
+    const on = Math.floor(time / 2.3) % 3 !== 0
+    R(ctx, lamp[0], lamp[1], 4, 6, on ? '#f4d98a' : '#262833')
+    if (on && Math.floor(time / 2.3) % 3 === 1) R(ctx, lamp[0] + 1, lamp[1] + 2, 2, 4, '#3a2a20')
+}
+
+// People walking home from the bars, now and then, never the same person
+// twice in a row. They walk at a normal pace but not evenly: a hurried
+// stretch, a slow one, a stumble, and they carry whatever the night left them
+// with. Two slots on different clocks, so sometimes nobody, sometimes two.
+const SHOUTS = ['MOI!', 'TAKSI!', 'SÖRKKA!', 'MISSÄ MÄ OON?', 'KARAOKE?', 'HEI KAVERI!', 'LAULETAAN!', 'MIKÄ PÄIVÄ ON?']
+const PROPS = ['can', 'cone', 'kebab', 'none', 'guitar', 'none', 'can', 'flag'] as const
+
+function drunks(ctx: Ctx, time: number, still: boolean, day: boolean) {
+    if (day || still) return
+    for (const [slot, period] of [[0, 23], [1, 37]] as const) {
+        const clock = time + slot * 11
+        const pass = Math.floor(clock / period)
+        // Most passes have nobody in them.
+        if (hash(pass * 7 + slot) < 0.45) continue
+        const t = clock - pass * period
+        const n = pass * 13 + slot * 101
+        const pick = <T,>(list: readonly T[], k: number) => list[Math.floor(hash(n + k) * list.length)]
+        const prop = pick(PROPS, 9)
+        const look: Look = {
+            skin: pick(SKIN, 1),
+            hair: pick(HAIR, 2),
+            coat: pick(CLOTH, 3).color,
+            pants: pick(PANTS, 4),
+            hat: hash(n + 5) < 0.3 ? pick(CLOTH, 6).color : null,
+            bag: null,
+            phone: false,
+            tag: '',
+            style: pick(['short', 'long', 'bun', 'bald', 'curly'] as const, 7),
+            beard: hash(n + 8) < 0.35,
+            scarf: hash(n + 10) < 0.3 ? pick(CLOTH, 11).color : null,
+            guitar: prop === 'guitar',
+            kebab: prop === 'kebab',
+            flushed: true,
+            seed: hash(n + 12),
+        }
+        // A normal pace with surges and lulls in it, never backwards.
+        const speed = 16 + hash(n + 13) * 8
+        const along = speed * t + 6 * Math.sin(t * 1.6 + n) + 3 * Math.sin(t * 3.7 + n)
+        const right = hash(n + 14) < 0.5
+        const x = Math.round(right ? along - 30 : W + 30 - along)
+        if (x < -30 || x > W + 30) continue
+        // Now and then a stumble: a stop, a dip, then on.
+        const trip = Math.sin(t * 0.9 + n) > 0.9
+        const feet = 106 + slot + (trip ? 1 : 0)
+        const top = person(ctx, x, feet, look, right ? 1 : -1, trip ? 'stand' : 'walk', 'rider', along * 0.35)
+        if (prop === 'can') R(ctx, x + (right ? 4 : -5), feet - 12, 2, 3, '#c8c8cc')
+        if (prop === 'cone') {
+            // A traffic cone, worn as a hat. Of course.
+            for (let i = 0; i < 4; i++) R(ctx, x - i, top - 6 + i * 2, 1 + i * 2, 2, i === 2 ? C.white : C.orange)
+        }
+        if (prop === 'flag') {
+            R(ctx, x + (right ? 5 : -6), feet - 22, 1, 12, '#8a8a8a')
+            R(ctx, x + (right ? 6 : -11), feet - 22, 6, 4, C.white)
+            R(ctx, x + (right ? 6 : -11), feet - 21, 6, 1, C.blue)
+            R(ctx, x + (right ? 7 : -10), feet - 22, 1, 4, C.blue)
+        }
+        // A shout, once in a while.
+        if (t % 7 < 1.6 && x > 24 && x < W - 24) bubble(ctx, x, top - 12, pick(SHOUTS, 15 + Math.floor(t / 7)))
+    }
+}
+
+/** Hämeentie, flat on. `tram` null at night when no trams run; `home` for the way home. */
+function kurviMain(ctx: Ctx, g: Game, still: boolean, tram: number | null, home?: { mineLit: boolean; open: boolean }) {
+    const time = g.time
+    const day = g.rush
+    sky(ctx, time, still, day)
+    kallioChurch(ctx, 150, day)
+    kurviTower(ctx, -14, day)
+    facade(ctx, 12, 52, 46, 96, BILLY, 12, day)
+    facade(ctx, 112, 36, 48, 96, '#7a6a52', 112, day)
+    facade(ctx, 160, 20, 48, 96, '#56635c', 160, day)
+    facade(ctx, 208, 30, 48, 96, '#6e5a4a', 208, day)
+    // Round the corner on the left, Billy K's side going away.
+    receding(ctx, 12, -1, BILLY_SIDE, day)
+    R(ctx, 12, 80, 46, 3, '#1c1a1a')
+    R(ctx, 12, 83, 46, 1, day ? '#4a4646' : '#8a7a5a')
+    cornerBar(ctx, 13, time, day, 32)
+    stairDoor(ctx, 46, 'B', day)
+    kallioHouse(ctx, g, home?.mineLit ?? false, home?.open ?? false)
+    kebabFront(ctx, 112, time, day)
+    pesula(ctx, 160, time, day)
+    kiosk(ctx, 208, day)
+    ground(ctx, time, still, day, [110, 206], [[20, 22, '#4a3a24'], [54, 9, '#6a2a24'], [128, 16, '#5a4424'], [176, 14, '#3a3a5a'], [224, 16, '#2a3a6a']])
+    if (!day) pool(ctx, STAIRS_X + 18, 96, 20, 5, '#5d5640')
+    stairs(ctx, STAIRS_X, time, day)
+    bikeRack(ctx, 88)
+    // The rabbit, until you go for it: then it bolts off to the right.
+    const fled = g.rabbitAt < 0 ? 0 : time - g.rabbitAt
+    if (fled * 110 < W) rabbit(ctx, 150 + Math.round(fled * 110), 108, fled ? time * 3 : time, 0.2, fled ? 1 : -1)
+    // Kebab building, laundromat building, kiosk building: one window each.
+    windowLife(ctx, time, still, day, [[125, 54], [173, 38], [230, 48]])
+    // Close-ups keep the passers-by out of the shot.
+    if (!home && g.phase !== 'cut') drunks(ctx, time, still, day)
+    if (home) {
+        // Out for a smoke in front of the bar, still open until four.
+        person(ctx, 6, 106, EXTRAS[2], 1, 'stand')
+        if (Math.floor(time * 1.1) % 3) R(ctx, 10, 92, 1, 1, '#ff8a3c')
+    }
+    if (tram !== null) tramPassing(ctx, tram)
+    if (!day) R(ctx, 64, 104, 10, 1, '#7a3a5a')
     gull(ctx, ((time * 28) % 330) - 40, 18 + Math.round(Math.sin(time * 2) * 3), time, true)
+    if (!day) rain(ctx, time, still, '#4a5a80', [98, 142])
+}
+
+// The public sauna on the side street: brick, a lit sign, and two regulars
+// in towels on the bench outside, steaming.
+const TOWEL: Look = { ...EXTRAS[5], coat: SKIN[1], pants: '#f2f0e8', hat: null, bag: null, phone: false }
+
+function sauna(ctx: Ctx, x: number, time: number, still: boolean, day: boolean) {
+    shopfront(ctx, x, 58, '#4a2a22', day ? '#a88870' : '#e8a870')
+    R(ctx, x + 22, 84, 12, 12, '#3a2018')
+    R(ctx, x + 23, 85, 10, 11, '#5a3020')
+    neon(ctx, 'Sauna', x + 29, 74, day ? '#6a5a5a' : '#ff8a6a')
+    R(ctx, x + 2, 102, 20, 2, '#6a4a2a')
+    R(ctx, x + 36, 102, 20, 2, '#6a4a2a')
+    person(ctx, x + 8, 106, TOWEL, 1, 'sit')
+    person(ctx, x + 46, 106, { ...TOWEL, skin: SKIN[3], seed: 0.7 }, -1, 'sit')
+    if (!still)
+        for (let i = 0; i < 6; i++) {
+            const k = (time * 0.6 + i / 6) % 1
+            R(ctx, x + 8 + (i % 2 ? 38 : 0) + Math.round(Math.sin(time * 2 + i) * 2), Math.round(84 - k * 22), 1, 2, k < 0.6 ? '#d8dce0' : '#8a9098')
+        }
+}
+
+/** The side street, flat on: the sauna, the pizzeria, the stops, Billy K's side. */
+function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
+    const time = g.time
+    const day = g.rush
+    sky(ctx, time, still, day)
+    kurviTower(ctx, 150, day)
+    facade(ctx, 0, 34, 64, 96, '#7a4a3a', 300, day)
+    facade(ctx, 64, 26, 56, 96, '#6a5a5e', 0, day)
+    facade(ctx, 120, 32, 76, 96, '#5a6470', 56, day)
+    facade(ctx, 196, 52, 48, 96, BILLY_SIDE, 110, day)
+    // Round the corner on the right, Billy K's front going away down Hämeentie.
+    receding(ctx, 244, 1, BILLY, day)
+    sauna(ctx, 4, time, still, day)
+    pizzaFront(ctx, 66, day)
+    R(ctx, 122, 84, 72, 12, '#5a5a5e')
+    for (let y = 85; y < 96; y += 2) R(ctx, 122, y, 72, 1, '#4a4a4e')
+    // Billy K's side: the same green windows and regulars, a hanging sign.
+    R(ctx, 196, 80, 48, 3, '#1c1a1a')
+    R(ctx, 196, 83, 48, 1, day ? '#4a4646' : '#8a7a5a')
+    shopfront(ctx, 198, 44, '#1e3a2a', day ? '#8a7a58' : '#d8b070')
+    for (const [hx, tone] of [[8, '#4a3226'], [22, '#5a3a2a'], [33, '#4a3226']] as const) {
+        R(ctx, 198 + hx, 86, 3, 3, tone)
+        R(ctx, 198 + hx - 1, 89, 5, 2, tone)
+    }
+    R(ctx, 200, 90, 40, 5, day ? '#9a9a88' : '#b8b4a0')
+    for (let i = 201; i < 240; i += 3) R(ctx, i, 91, 1, 3, '#a8a490')
+    const swing = still ? 0 : Math.floor(time * 1.5) % 2
+    R(ctx, 226, 64, 16, 1, '#2a2a2a')
+    R(ctx, 229 + swing, 65, 10, 9, '#1e3a2a')
+    R(ctx, 229 + swing, 65, 10, 1, '#c9a24a')
+    R(ctx, 229 + swing, 73, 10, 1, '#c9a24a')
+    drawText(ctx, 'BK', 234 + swing, 67, '#f2e2b8', 1, 'center')
+    ground(ctx, time, still, day, [62, 196], [[18, 18, '#5a3a2a'], [84, 16, '#2a5a3a'], [210, 22, '#4a3a24']])
+    // The zebra crossing over the side street, where the trams come round.
+    for (let y = 113; y < 140; y += 4) R(ctx, 200, y, 40, 2, day ? '#d8d4cc' : '#8a867e')
+    busStop(ctx, 124)
+    tramStop(ctx, 134, day)
+    parkedScooter(ctx, 185, g.code, time)
+    windowLife(ctx, time, still, day, [[13, 63], [86, 55], [178, 61]])
+    if (g.phase !== 'cut') drunks(ctx, time + 17, still, day)
+    if (tram !== null) tramPassing(ctx, tram + 3)
+    gull(ctx, ((time * 22) % 330) - 40, 22 + Math.round(Math.sin(time * 2) * 3), time, true)
+    if (!day) rain(ctx, time, still, '#4a5a80', [98, 142])
+}
+
+/** 1 when you are round the corner on the side street, 0 on Hämeentie. */
+export const turned = (g: Game) => (g.cam < CAM_MAX ? 1 : 0)
+
+// Where you stand on each street, and where you leave it for the corner:
+// off the left of Hämeentie, off the right of the side street.
+const REST = { main: STAIRS_X + 54, side: 212 }
+const EDGE = { main: -10, side: W + 10 }
+
+/** Where you are on screen and which way you face, standing or walking round the corner. */
+function walker(g: Game): { x: number; face: 1 | -1; walking: boolean } {
+    const onSide = turned(g) === 1
+    if (g.cornerAt < 0) return { x: onSide ? REST.side : REST.main, face: -1, walking: false }
+    const e = g.time - g.cornerAt
+    const toSide = g.camTo === 0
+    if (e < CORNER_OUT) {
+        // Leaving the street you were on.
+        const k = e / CORNER_OUT
+        return toSide ? { x: lerp(REST.main, EDGE.main, k), face: -1, walking: true } : { x: lerp(REST.side, EDGE.side, k), face: 1, walking: true }
+    }
+    // Coming round onto the other one.
+    const k = ease(clamp01((e - CORNER_OUT) / CORNER_IN))
+    return toSide ? { x: lerp(EDGE.side, REST.side, k), face: -1, walking: k < 1 } : { x: lerp(EDGE.main, REST.main, k), face: 1, walking: k < 1 }
+}
+
+function street(ctx: Ctx, g: Game, still: boolean, walkT: number | null, look: Look, tram: number) {
+    if (turned(g)) kurviSide(ctx, g, still, tram)
+    else kurviMain(ctx, g, still, tram)
+    if (walkT === null) return
+    if (walkT < 3.3) {
+        // You come from the right, past the kiosk, and stop by the stairs.
+        const t = clamp01(walkT / 3.2)
+        person(ctx, lerp(W + 8, REST.main, t), 106, look, -1, t < 1 ? 'walk' : 'stand', 'player', walkT * 7)
+        return
+    }
+    const w = walker(g)
+    person(ctx, w.x, 106, look, w.face, w.walking ? 'walk' : 'stand', 'player', g.time * 7)
+    // A blink of shade as you turn the corner, the street changing behind you.
+    if (g.cornerAt >= 0) {
+        const e = g.time - g.cornerAt
+        const dark = clamp01(1 - Math.abs(e - CORNER_OUT) / 0.2)
+        if (dark > 0) R(ctx, 0, 0, W, H, `rgba(8, 8, 12, ${dark * 0.7})`)
+    }
 }
 
 // ——— Landmarks, one for each neighborhood ————————————————————————————
@@ -397,16 +925,9 @@ function neon(ctx: Ctx, text: string, cx: number, y: number, color: string) {
     drawText(ctx, text, cx, y, color, 1, 'center')
 }
 
-// Text with a one-pixel dark edge all round, readable over anything.
-function outlined(ctx: Ctx, text: string, x: number, y: number, color: string, scale = 1) {
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]])
-        drawText(ctx, text, x + dx, y + dy, '#0a0d18', scale, 'center')
-    drawText(ctx, text, x, y, color, scale, 'center')
-}
-
 // Where a run starts: Kurvi, or for the way home the station at three.
 function opening(ctx: Ctx, g: Game, still: boolean, walkT: number | null = null) {
-    if (!g.home) return street(ctx, g.time, still, walkT, walkT === null ? g.look : you(g), still ? 0 : walkT === null ? g.time : walkT + 0.8, g.rush)
+    if (!g.home) return street(ctx, g, still, walkT, walkT === null ? g.look : you(g), still ? 0 : walkT === null ? g.time : walkT + 0.8)
     station(ctx, g)
     for (const [px, n] of [
         [150, 1],
@@ -420,39 +941,152 @@ function opening(ctx: Ctx, g: Game, still: boolean, walkT: number | null = null)
     rain(ctx, g.time, still, '#3d4a6a', [112, 142])
 }
 
-// Home for the way home: your door on Kurvi, between the bar and the pizzeria.
-const DOOR_X = 46
-
-function homeDoor(ctx: Ctx, g: Game, open: boolean) {
-    R(ctx, DOOR_X - 1, 77, 14, 19, '#1e1a18')
-    R(ctx, DOOR_X, 78, 12, 18, open ? '#f2d36b' : '#4a3426')
-    if (!open) R(ctx, DOOR_X + 9, 87, 1, 2, '#c9c4b8')
-    R(ctx, DOOR_X + 14, 84, 3, 5, '#222')
-    R(ctx, DOOR_X + 15, 85, 1, 1, g.ending === 'made' ? C.green : C.red)
-}
-
+// Home for the way home: back on Hämeentie at twenty to four, no trams,
+// Billy K still open. Your gate opens on the code, or you sit on its step.
 function home(ctx: Ctx, g: Game, still: boolean, t: number) {
-    street(ctx, g.time, still, null, g.look, 0)
     const made = g.ending === 'made'
-    homeDoor(ctx, g, made && t > 1.9)
-    const k = clamp01(t / 1.4)
-    const x = lerp(-8, DOOR_X + 6, k)
+    const open = made && t > 1.9
+    kurviMain(ctx, g, still, null, { mineLit: made && t > 2.8, open })
+    const door = GATE_X + 7
+    const k = clamp01(t / 1.6)
+    const x = lerp(-8, door, k)
     const mood: Mood = made ? 'happy' : 'worried'
-    if (g.mode !== 'bike') person(ctx, x, 106, you(g), 1, k < 1 ? 'walk' : 'stand', 'player', t * 7, -1, mood)
-    else if (k < 1) cyclist(ctx, x, 106, you(g), 1, t * 9)
-    else {
-        bicycle(ctx, DOOR_X - 14, 106, 0)
-        person(ctx, x, 106, you(g), 1, 'stand', 'player', 0, -1, mood)
-    }
+    if (g.mode === 'bike' && k >= 1) bicycle(ctx, door - 16, 106, 0)
+    // In you go, or down on the step to wait.
+    if (made && t > 2.3) return
+    if (g.mode === 'bike' && k < 1) cyclist(ctx, x, 106, you(g), 1, t * 9)
+    else if (!made && t > 2.4) person(ctx, door, 104, you(g), 1, 'sit', 'player', 0, -1, mood)
+    else person(ctx, x, 106, you(g), 1, k < 1 ? 'walk' : 'stand', 'player', t * 7, -1, mood)
 }
 
-function title(ctx: Ctx, time: number) {
-    for (const [dx, dy] of [[-1, 0], [0, -1], [3, 3], [3, 2], [2, 3]]) drawText(ctx, 'No ticket', W / 2 + dx, 8 + dy, '#0a0d18', 4, 'center')
-    drawText(ctx, 'No ticket', W / 2 + 2, 10, C.orange, 4, 'center')
-    drawText(ctx, 'No ticket', W / 2 + 1, 9, C.orangeD, 4, 'center')
-    drawText(ctx, 'No ticket', W / 2, 8, C.white, 4, 'center')
-    outlined(ctx, 'Sörnäinen > Rautatientori', W / 2, 36, C.light)
-    if (Math.floor(time * 2) % 2 === 0) outlined(ctx, 'Press start', W / 2, 52, C.yellowL)
+// ——— Choosing: the phone in hand or in the pocket, and the arrows ———————————
+
+/** The phone in your pocket, bottom left, ready to come out. */
+export const POCKET = { x: 3, y: 108, w: 18, h: 30 }
+/** The arrows at either edge that pan along Kurvi. */
+export const PAN = { y: 54, w: 14, h: 26 }
+
+function introPhone(ctx: Ctx, g: Game) {
+    if (g.t <= 3.3) return
+    const since = g.time - g.phoneAt
+    if (g.phoneUp) phone(ctx, g, 'empty', g.t - 3.3, Math.min(g.t - 3.3, since), PHONE_DX)
+    else if (since < 0.35) phone(ctx, g, 'empty', g.t - 3.3, 0.35 - since, PHONE_DX)
+    else {
+        // In the pocket: a small phone, its screen lit, to tap.
+        const { x, y, w, h } = POCKET
+        R(ctx, x, y, w, h, '#161616')
+        R(ctx, x + 2, y + 3, w - 4, h - 7, C.white)
+        R(ctx, x + 2, y + 3, w - 4, 5, C.blue)
+        R(ctx, x + 4, y + 4, 4, 3, C.white)
+        for (let i = 0; i < 3; i++) R(ctx, x + 4, y + 11 + i * 4, w - 8, 2, [C.orange, C.tram, C.blue][i])
+        R(ctx, x + w / 2 - 2, y + h - 3, 4, 1, '#4a4a4a')
+    }
+    if (g.home || g.t < 3.4) return
+    // Arrows to pan along Kurvi, pulsing a pixel to say they are there.
+    const nudge = Math.floor(g.time * 2) % 2
+    if (g.cam > 0) panArrow(ctx, 0, '<', -nudge)
+    if (g.cam < CAM_MAX) panArrow(ctx, W - PAN.w, '>', nudge)
+}
+
+function panArrow(ctx: Ctx, x: number, glyph: string, nudge: number) {
+    R(ctx, x, PAN.y, PAN.w, PAN.h, 'rgba(10, 13, 24, 0.75)')
+    R(ctx, x + (glyph === '<' ? PAN.w - 1 : 0), PAN.y, 1, PAN.h, 'rgba(255, 255, 255, 0.25)')
+    drawText(ctx, glyph, x + PAN.w / 2 + nudge, PAN.y + 8, C.yellowL, 2, 'center')
+}
+
+// ——— The title menu ————————————————————————————————————————————————————
+// Sörnäinen platform: the yellow wall, the station name panel reading
+// "No ticket" over its Swedish, and the departure board as the menu. The
+// picked row lights up the way the next train does.
+
+/** Where the title menu rows sit, for clicks. */
+export const MENU = { x: 28, w: 200, y: 62, step: 12, h: 11 }
+
+const NOTES: Partial<Record<ActionId, string>> = {
+    start: 'Rautatientori 22:00',
+    easy: 'from 21:00',
+    daily: 'same for all',
+    rush: '8:40, daylight',
+    long: 'Kamppi 22:00',
+    home: '3:05, last bus',
+}
+
+// Yellow tiles under strip lights, one of them on its way out.
+function yellowWall(ctx: Ctx, time: number, still: boolean) {
+    R(ctx, 0, 0, W, 10, '#2b2926')
+    for (let x = 8; x < W; x += 48) {
+        const dead = !still && x === 104 && Math.floor(time * 5) % 17 === 0
+        R(ctx, x, 5, 28, 3, '#3a3632')
+        R(ctx, x + 1, 6, 26, 1, dead ? '#5a5650' : '#fff4d6')
+    }
+    R(ctx, 0, 10, W, 124, C.yellow)
+    R(ctx, 0, 10, W, 2, C.yellowL)
+    for (let x = 8; x < W; x += 48) dither(ctx, x - 2, 12, 32, 4, C.yellowL)
+    for (let x = 6; x < W; x += 12) {
+        R(ctx, x, 12, 1, 122, C.yellowD)
+        R(ctx, x + 1, 12, 1, 122, C.yellowL)
+    }
+    R(ctx, 0, 134, W, 10, '#3a3632')
+    R(ctx, 0, 134, W, 2, C.yellowL)
+    for (let x = 0; x < W; x += 4) R(ctx, x, 137, 2, 1, '#4a4640')
+}
+
+function title(ctx: Ctx, g: Game, still: boolean) {
+    const time = g.time
+    yellowWall(ctx, time, still)
+
+    // The name panel: the M, the name, the Swedish under it.
+    const name = 'NO TICKET'
+    const pw = textWidth(name, 3) + 36
+    const px = Math.round(W / 2 - pw / 2)
+    R(ctx, px + 8, 10, 1, 6, '#1c1c1e')
+    R(ctx, px + pw - 9, 10, 1, 6, '#1c1c1e')
+    R(ctx, px, 16, pw, 32, '#1c1c1e')
+    R(ctx, px, 16, pw, 1, '#3a3a3e')
+    R(ctx, px, 48, pw, 1, C.yellowD)
+    sign(ctx, 'metro', px + 6, 21, 13, C.orange)
+    drawText(ctx, name, px + 26, 21, C.white, 3)
+    drawText(ctx, 'Ingen biljett', px + 26, 39, C.grey2)
+
+    // The departure board, hung from two rods.
+    const { x, w, y, step, h } = MENU
+    const rows = actions(g)
+    const bottom = y + rows.length * step + 2
+    R(ctx, x + 24, 48, 1, 6, '#111')
+    R(ctx, x + w - 25, 48, 1, 6, '#111')
+    R(ctx, x - 2, 53, w + 4, bottom - 51, '#0d0d0d')
+    R(ctx, x - 2, 53, w + 4, 1, '#2a2a2a')
+    drawText(ctx, 'Lähtevät  Avgående', x + 6, 55, '#6a5a3a')
+    drawText(ctx, clockText(g.clock), x + w - 6, 55, '#6a5a3a', 1, 'right')
+    const blink = still || Math.floor(time * 2.5) % 2 === 0
+    rows.forEach((a, i) => {
+        const ry = y + i * step
+        const picked = i === g.menu
+        const ink = picked ? '#0d0d0d' : C.led
+        if (picked) R(ctx, x, ry - 1, w, h, blink ? C.led : '#c8701c')
+        drawText(ctx, a.label, x + 8, ry, ink, 2)
+        drawText(ctx, NOTES[a.id] ?? '', x + w - 6, ry + 3, picked ? '#3a2208' : '#a8642a', 1, 'right')
+    })
+}
+
+// Once, the first time the game opens: the small print, on the board.
+function splashScreen(ctx: Ctx, g: Game, still: boolean) {
+    const t = g.t
+    yellowWall(ctx, g.time, still)
+    R(ctx, 20, 26, W - 40, 92, '#0d0d0d')
+    R(ctx, 20, 26, W - 40, 1, '#2a2a2a')
+    const lines: [string, number, string, number][] = [
+        ['This is fiction.', 38, C.led, 2],
+        ['The author pays', 62, C.led, 2],
+        ['for a ticket.', 76, C.led, 2],
+        ['Continuous season ticket, billed monthly.', 100, '#a8642a', 1],
+    ]
+    lines.forEach(([text, y, color, s], i) => {
+        if (t < 0.3 + i * 0.6) return
+        drawText(ctx, text, W / 2, y, color, s, 'center')
+    })
+    const fade = Math.max(clamp01(1 - t / 0.4), clamp01((t - (SPLASH - 0.5)) / 0.5))
+    if (fade > 0) R(ctx, 0, 0, W, H, `rgba(13, 13, 13, ${fade})`)
 }
 
 // ——— Where you wait: a metro platform or a street stop ————————————————
@@ -757,6 +1391,9 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
 // ——— Inside ——————————————————————————————————————————————————————————
 
 // What the far windows show while moving: tunnel lights or the street.
+// What goes past the windows. Every vehicle in the game travels left (it
+// pulls in from the right and leaves to the left), so the world outside
+// slides right.
 function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, time: number, still: boolean, day = false) {
     clipped(ctx, [[x, y, w, h]], () => {
         if (mode === 'metro') {
@@ -764,20 +1401,20 @@ function view(ctx: Ctx, mode: Mode, x: number, y: number, w: number, h: number, 
             R(ctx, x, y + 12, w, 1, '#23272b')
             R(ctx, x, y + 24, w, 1, '#23272b')
             if (still) return
-            for (let n = 0; n < 3; n++) R(ctx, W - ((time * 260 + n * 97) % (W + 80)), y + 16, 10, 1, '#ffd890')
+            for (let n = 0; n < 3; n++) R(ctx, ((time * 260 + n * 97) % (W + 80)) - 40, y + 16, 10, 1, '#ffd890')
             return
         }
         const scroll = still ? 0 : time * 70
         R(ctx, x, y, w, h, skyOf(day)[1])
         for (let k = 0; k < 9; k++) {
-            const bx = W + 30 - ((scroll + k * 47) % (W + 90))
+            const bx = ((scroll + k * 47) % (W + 90)) - 60
             const bh = 12 + Math.floor(hash(k) * 16)
             R(ctx, bx, y + h - bh, 40, bh, day ? (k % 2 ? '#8a7d70' : '#76808a') : k % 2 ? '#3d4150' : '#4a4652')
             for (let j = 0; j < 4; j++) {
                 R(ctx, bx + 4 + j * 9, y + h - bh + 4, 3, 3, windowColor(hash(k * 5 + j) > 0.4, day))
             }
         }
-        if (!day) R(ctx, W + 10 - ((scroll * 1.6) % (W + 40)), y + 4, 3, 2, C.glow)
+        if (!day) R(ctx, ((scroll * 1.6) % (W + 40)) - 20, y + 4, 3, 2, C.glow)
     })
 }
 
@@ -938,8 +1575,8 @@ type Screen = 'empty' | 'buying' | 'fake' | 'live'
 // The ticket app. Before the trip it plans the route; while buying it waits
 // for your bank; held up to an inspector it shows a screenshot of an old
 // ticket (frozen, the giveaway) or a real one (its band moves).
-// How far right the phone sits while you choose, so the bar and the kebab
-// place stay in view.
+// How far the phone sits off center while you choose: right, over the
+// kiosk end, so the bar and the metro stairs stay in view.
 export const PHONE_DX = 72
 
 function phone(ctx: Ctx, g: Game, mode: Screen, t: number, risen = t, dx = 0) {
@@ -2125,6 +2762,12 @@ function kurviScene(ctx: Ctx, g: Game) {
             drawText(ctx, 'Pull it out', 128, 104, C.white, 1, 'center')
         }
         if (flash) bubble(ctx, 92, 60, k.good ? say2(g, ['BENE.', 'PERFETTO.', 'HYVÄ.']) : say2(g, ['NO NO NO.', 'WHAT?', 'MAMMA MIA.']))
+    } else if (k.place === 'sauna') {
+        saunaScene(ctx, g, k)
+    } else if (k.place === 'pesula') {
+        pesulaScene(ctx, g, k)
+    } else if (k.place === 'kiosk') {
+        kioskScene(ctx, g, k)
     } else {
         bar(ctx, g)
         // The round, called out one glass at a time, then poured back.
@@ -2138,6 +2781,232 @@ function kurviScene(ctx: Ctx, g: Game) {
         if (lit >= 0) bubble(ctx, 184, 74, `${k.drinks[lit].name.toUpperCase()}!`)
         else if (k.stage === 'done') bubble(ctx, 184, 74, k.score === k.round.length ? 'ONNEA!' : 'LAULA!')
         for (let i = 0; i < k.round.length; i++) R(ctx, 10 + i * 8, 108, 6, 4, i < k.n ? C.green : '#3a3a3a')
+    }
+    letterbox(ctx)
+}
+
+// ——— The sauna ————————————————————————————————————————————————————————
+// Wooden benches in two tiers, the stove with its pile of stones, a bucket
+// and a ladle, a thermometer. Tap the stove to throw löyly. The stones glow
+// when they are ready; thrown cold they only hiss.
+
+/** The stove (tap for löyly) and the door (step out), for clicks. */
+export const SAUNA_STOVE = { x: 12, y: 40, w: 50, h: 84 }
+export const SAUNA_DOOR = { x: 226, y: 22, w: 26, h: 90 }
+
+const REGULAR: Look = { ...EXTRAS[5], coat: SKIN[1], pants: '#f2f0e8', hat: null, bag: null, phone: false, seed: 0.2 }
+
+function saunaScene(ctx: Ctx, g: Game, k: Kurvi) {
+    const s = k.steam
+    const time = g.time
+    // Planks, darker up top where the smoke of decades has been.
+    for (let y = 0; y < H; y += 6) R(ctx, 0, y, W, 6, (y / 6) % 2 ? '#a8743f' : '#9a6a38')
+    for (let y = 5; y < H; y += 6) R(ctx, 0, y, W, 1, '#7a5228')
+    dither(ctx, 0, 12, W, 20, '#6a4424')
+    // A small window, the night outside.
+    R(ctx, 130, 22, 22, 14, '#5a3a20')
+    R(ctx, 132, 24, 18, 10, '#1d2848')
+    R(ctx, 140, 24, 1, 10, '#5a3a20')
+    // The door, out.
+    R(ctx, SAUNA_DOOR.x, SAUNA_DOOR.y, SAUNA_DOOR.w, SAUNA_DOOR.h, '#7a4a24')
+    R(ctx, SAUNA_DOOR.x + 2, SAUNA_DOOR.y + 2, SAUNA_DOOR.w - 4, SAUNA_DOOR.h - 2, '#8a5a2e')
+    R(ctx, SAUNA_DOOR.x + 6, SAUNA_DOOR.y + 10, 14, 22, '#c9b070')
+    R(ctx, SAUNA_DOOR.x + 4, SAUNA_DOOR.y + 50, 3, 8, '#5a3a20')
+    // Two tiers of benches.
+    for (const [y, x0] of [[78, 96], [104, 80]] as const) {
+        R(ctx, x0, y, 226 - x0, 4, '#c9945a')
+        R(ctx, x0, y, 226 - x0, 1, '#e0b07a')
+        for (let x = x0 + 4; x < 222; x += 30) R(ctx, x, y + 4, 3, 26, '#7a5228')
+    }
+    // The stove: a steel box, a door glowing at the bottom, stones on top.
+    R(ctx, 18, 70, 38, 52, '#2a2a2e')
+    R(ctx, 18, 70, 38, 2, '#4a4a4e')
+    R(ctx, 26, 104, 22, 10, '#1a1a1c')
+    R(ctx, 28, 106, 18, 6, Math.floor(time * 6) % 2 ? '#c8401c' : '#e8601c')
+    const glow = s.stones > 0.6
+    for (let i = 0; i < 14; i++) {
+        const sx = 20 + (i % 5) * 7 + (Math.floor(i / 5) % 2) * 3
+        const sy = 64 - Math.floor(i / 5) * 5
+        const hot = glow && hash(i) < s.stones
+        R(ctx, sx, sy, 6, 5, hot ? (Math.floor(time * 4 + i) % 3 ? '#c86a3a' : '#e88a4a') : '#5a5a5e')
+        R(ctx, sx + 1, sy, 4, 1, hot ? '#f2b07a' : '#7a7a7e')
+    }
+    // The bucket and the ladle.
+    R(ctx, 64, 108, 14, 14, '#a8743f')
+    R(ctx, 64, 110, 14, 1, '#5a3a20')
+    R(ctx, 64, 118, 14, 1, '#5a3a20')
+    line(ctx, 74, 106, 84, 94, '#7a5228')
+    // Steam off the stones after a ladle, rising and spreading.
+    const since = time - k.at
+    if (since < 1.6 && k.at > 0) {
+        const r = Math.round(6 + since * (k.good ? 34 : 10))
+        pool(ctx, 38 + Math.round(since * 20), Math.round(56 - since * 26 - r / 2), r, Math.max(2, Math.round(r / 2)), k.good ? '#f2f0ec' : '#c8c4bc')
+    }
+    // You and the regulars on the top bench, in towels, redder as it heats.
+    const red = s.heat > 0.8
+    big(ctx, 2, () => {
+        person(ctx, 66, 39, { ...REGULAR, flushed: red }, 1, 'sit', 'rider', 0, -1, s.heat > 1 ? 'happy' : 'calm')
+        person(ctx, 84, 39, { ...REGULAR, skin: SKIN[3], seed: 0.7, flushed: red }, -1, 'sit', 'rider', 0, -1, s.heat > 1 ? 'happy' : 'calm')
+        person(ctx, 60, 52, { ...you(g), coat: g.look.skin, pants: '#f2f0e8', bag: null, kebab: false, flushed: s.heat > 0.6 }, 1, 'sit', 'player', 0, -1, s.sisu < 0.3 ? 'worried' : 'calm')
+    })
+    // The thermometer on the wall: the line is a proper löyly.
+    R(ctx, 96, 16, 10, 40, '#e8e4dc')
+    R(ctx, 100, 19, 2, 34, '#5a5a5e')
+    const fill = Math.round(clamp01(s.heat / SCALD) * 34)
+    R(ctx, 100, 53 - fill, 2, fill, s.heat >= 1 ? C.red : '#c8602a')
+    R(ctx, 97, 53 - Math.round(34 / SCALD), 8, 1, C.ink)
+    drawText(ctx, `${Math.round(60 + s.heat * 40)}°`, 110, 18, '#2a1a10')
+    // Your sisu, and how long the room has held the heat.
+    R(ctx, 84, 118, 124, 10, '#1a1a1a')
+    drawText(ctx, 'Sisu', 88, 121, C.yellowL)
+    R(ctx, 108, 122, 60, 3, '#3a3a3a')
+    R(ctx, 108, 122, Math.round(60 * clamp01(s.sisu)), 3, s.sisu < 0.3 ? C.red : C.green)
+    for (let i = 0; i < 5; i++) R(ctx, 174 + i * 6, 121, 5, 5, s.hold >= ((i + 1) / 5) * HOLD ? C.yellowL : '#3a3a3a')
+    if (since < 1.2 && k.at > 0) bubble(ctx, 180, 62, k.good ? say2(g, ['AAAH.', 'NO NIIN.', 'HYVÄ.']) : say2(g, ['ODOTA.', 'LIIAN AIKAISIN.', 'TSS.']))
+    else if (s.hold > 0) bubble(ctx, 180, 62, 'NYT ON LÖYLYT.')
+    letterbox(ctx)
+}
+
+// ——— The laundromat and the kiosk ————————————————————————————————————
+
+/** The six drums in the laundromat, for clicks. */
+export const DRUMS = [0, 1, 2, 3, 4, 5].map((i) => ({ x: 9 + i * 40, y: 36, w: 38, h: 70 }))
+
+function pesulaScene(ctx: Ctx, g: Game, k: Kurvi) {
+    // Pale tiles, strip lights, a grey floor.
+    R(ctx, 0, 0, W, H, '#cfdcdc')
+    for (let y = 14; y < 108; y += 8) R(ctx, 0, y, W, 1, '#bccaca')
+    for (let x = 4; x < W; x += 8) R(ctx, x, 12, 1, 96, '#c4d2d2')
+    for (let x = 20; x < W; x += 64) R(ctx, x, 13, 30, 2, '#ffffff')
+    R(ctx, 0, 108, W, 36, '#7a7e80')
+    for (let x = 0; x < W; x += 16) R(ctx, x, 108, 1, 36, '#6a6e70')
+    k.washes.forEach((w, i) => {
+        const { x, y } = DRUMS[i]
+        const [cx, cy] = [x + 19, y + 40]
+        R(ctx, x + 1, y, 36, 70, '#f2f2ee')
+        R(ctx, x + 1, y, 36, 12, '#d8dcdc')
+        R(ctx, x + 4, y + 4, 10, 4, '#2a2a2a')
+        R(ctx, x + 5, y + 5, 3, 2, w.open ? '#3a3a3a' : C.green)
+        R(ctx, x + 28, y + 4, 5, 5, '#9aa4a8')
+        R(ctx, x + 37, y, 1, 70, '#b8bcbc')
+        for (let dy = -13; dy <= 13; dy++) {
+            const half = Math.round(Math.sqrt(169 - dy * dy))
+            R(ctx, cx - half, cy + dy, half * 2, 1, '#9aa4a8')
+            if (Math.abs(dy) <= 10) {
+                const inner = Math.round(Math.sqrt(100 - dy * dy))
+                R(ctx, cx - inner, cy + dy, inner * 2, 1, w.open ? '#1e2428' : '#2a3a44')
+            }
+        }
+        if (!w.open) {
+            R(ctx, cx - 6, cy - 6, 3, 2, '#4a5a64')
+            return
+        }
+        // The door swung open to the left, and what was inside.
+        R(ctx, x - 1, cy - 11, 4, 22, '#9aa4a8')
+        if (w.kind === 'coin') {
+            for (let dy = -3; dy <= 3; dy++) R(ctx, cx - Math.round(Math.sqrt(9 - dy * dy)) - 1, cy + dy, Math.round(Math.sqrt(9 - dy * dy)) * 2 + 2, 1, C.yellow)
+            R(ctx, cx - 1, cy - 2, 2, 1, C.yellowL)
+            drawText(ctx, euro(w.euros), cx, y + 60, C.ink, 1, 'center')
+        } else if (w.kind === 'sock') {
+            R(ctx, cx - 2, cy - 6, 4, 9, '#c8402f')
+            R(ctx, cx - 2, cy + 3, 8, 4, '#c8402f')
+            R(ctx, cx - 2, cy - 6, 4, 2, C.white)
+        } else if (w.kind === 'cat') {
+            R(ctx, cx - 6, cy - 1, 12, 7, '#3a3230')
+            R(ctx, cx - 5, cy - 4, 2, 3, '#3a3230')
+            R(ctx, cx + 3, cy - 4, 2, 3, '#3a3230')
+            R(ctx, cx - 3, cy + 1, 2, 1, C.yellowL)
+            R(ctx, cx + 1, cy + 1, 2, 1, C.yellowL)
+        } else {
+            R(ctx, cx - 3, cy + 4, 6, 2, '#8a8a88')
+        }
+    })
+    R(ctx, 8, 114, 120, 11, '#1a1a1a')
+    drawText(ctx, `Looks ${Math.max(0, 3 - k.n)}   found ${euro(k.score)}`, 12, 117, C.yellowL)
+    letterbox(ctx)
+}
+
+/** The kiosk's choices on the counter, and the six cells of a scratch card. */
+export const KIOSK_MENU = [0, 1, 2].map((i) => ({ x: 14 + i * 78, y: 102, w: 72, h: 22 }))
+export const SCRATCH_CELLS = [0, 1, 2, 3, 4, 5].map((i) => ({ x: 77 + (i % 3) * 36, y: 46 + Math.floor(i / 3) * 34, w: 30, h: 30 }))
+
+const CLERK: Look = { ...EXTRAS[3], phone: false, seed: 0.6 }
+
+function scratchSymbol(ctx: Ctx, sym: Sym, cx: number, cy: number, time: number) {
+    if (sym === 'ticket') {
+        R(ctx, cx - 9, cy - 5, 18, 10, C.blue)
+        R(ctx, cx - 9, cy - 5, 18, 2, C.blueL)
+        R(ctx, cx - 6, cy, 12, 1, C.white)
+    } else if (sym === 'gull') big(ctx, 2, () => gull(ctx, cx / 2, cy / 2 + 3, time, false))
+    else if (sym === 'kebab') kebabWrap(ctx, cx - 8, cy - 4, 1, 2)
+    else {
+        // A sauna: a little log hut and steam.
+        R(ctx, cx - 8, cy - 2, 16, 9, '#8a5a32')
+        for (let y = cy; y < cy + 7; y += 2) R(ctx, cx - 8, y, 16, 1, '#6a4428')
+        for (let i = 0; i < 6; i++) R(ctx, cx - 9 + i, cy - 3 - i, 20 - i * 2, 1, '#5a3a22')
+        R(ctx, cx + 4, cy - 12, 1, 3, '#e8ecef')
+        R(ctx, cx + 5, cy - 15, 1, 3, '#e8ecef')
+    }
+}
+
+function kioskScene(ctx: Ctx, g: Game, k: Kurvi) {
+    const time = g.time
+    // Shelves of sweets, the shut tobacco cabinet, the lottery stand.
+    R(ctx, 0, 0, W, H, '#e8ecee')
+    for (const shelf of [34, 52, 70]) {
+        R(ctx, 0, shelf, 150, 2, '#9aa0a4')
+        for (let x = 4; x < 146; x += 6) {
+            const h = 6 + Math.floor(hash(x + shelf) * 6)
+            const tone = ['#c8402f', '#e2b22d', '#3a7ac0', '#3a9a4a', '#e88ac0', '#1a1a1a'][Math.floor(hash(x * 3 + shelf) * 6)]
+            R(ctx, x, shelf - h, 5, h, tone)
+            R(ctx, x, shelf - h, 5, 1, shade(tone, 0.3))
+        }
+    }
+    R(ctx, 160, 14, 84, 62, '#3a3a3e')
+    for (let x = 164; x < 240; x += 20) R(ctx, x, 18, 16, 54, '#2a2a2e')
+    R(ctx, 172, 20, 60, 8, '#f2d21e')
+    drawText(ctx, 'Arpa', 202, 22, C.ink, 1, 'center')
+    big(ctx, 2, () => person(ctx, 64, 48, CLERK, 1, 'stand', 'rider', 0, -1, k.stage === 'done' && scratchWin(k) ? 'happy' : 'calm'))
+    // Today's headlines, taped up by the door.
+    R(ctx, 8, 76, 30, 14, '#f2d21e')
+    R(ctx, 10, 78, 26, 3, C.ink)
+    R(ctx, 10, 83, 20, 2, C.ink)
+    R(ctx, 10, 87, 23, 1, C.ink)
+    // The counter.
+    R(ctx, 0, 92, W, 40, '#7a5a3a')
+    R(ctx, 0, 92, W, 2, '#9a7a5a')
+    R(ctx, 196, 82, 20, 10, '#2a2a2a')
+    R(ctx, 198, 84, 16, 4, C.screen)
+    if (k.stage === 'menu') {
+        const lines = [['Ticket', euro(PRICE)], ['Scratch card', euro(SCRATCH)], ['Leave', '']]
+        KIOSK_MENU.forEach((b, i) => {
+            const off = i === 0 && g.ticket
+            R(ctx, b.x, b.y, b.w, b.h, off ? '#3a3a3a' : '#1a1a1a')
+            R(ctx, b.x, b.y, b.w, 1, '#4a4a4a')
+            drawText(ctx, off ? 'Have one' : lines[i][0], b.x + b.w / 2, b.y + 5, off ? C.grey2 : C.white, 1, 'center')
+            if (lines[i][1] && !off) drawText(ctx, lines[i][1], b.x + b.w / 2, b.y + 13, C.yellowL, 1, 'center')
+        })
+    }
+    if (k.cells.length) {
+        // The scratch card, held up close: yellow, six silver cells.
+        R(ctx, 66, 18, 124, 116, '#f2d21e')
+        R(ctx, 66, 18, 124, 2, '#f8e46a')
+        drawText(ctx, 'Arpa', 128, 24, C.redD, 2, 'center')
+        drawText(ctx, 'Three of a kind wins', 128, 37, C.ink, 1, 'center')
+        const won = k.stage === 'done' ? scratchWin(k) : null
+        k.cells.forEach((c, i) => {
+            const b = SCRATCH_CELLS[i]
+            if (!c.shown) {
+                R(ctx, b.x, b.y, b.w, b.h, '#b8bcc0')
+                dither(ctx, b.x, b.y, b.w, b.h, '#d0d4d8')
+                drawText(ctx, '?', b.x + b.w / 2, b.y + 12, '#8a8e92', 1, 'center')
+                return
+            }
+            R(ctx, b.x, b.y, b.w, b.h, won === c.sym ? C.yellowL : C.white)
+            scratchSymbol(ctx, c.sym, b.x + b.w / 2, b.y + b.h / 2, time)
+        })
+        if (won) drawText(ctx, `Three ${won}s!`, 128, 118, C.redD, 1, 'center')
+        else if (k.stage === 'done') drawText(ctx, 'No win', 128, 118, C.ink, 1, 'center')
     }
     letterbox(ctx)
 }
@@ -2173,7 +3042,7 @@ function pizzaShop(ctx: Ctx, g: Game) {
 
 const BIRTHDAY: Look = { ...EXTRAS[6], phone: false, seed: 0.8 }
 
-// Baari: bottles lit from behind, hockey on the TV, and someone's birthday.
+// Billy K: bottles lit from behind, hockey on the TV, and someone's birthday.
 function bar(ctx: Ctx, g: Game) {
     const time = g.time
     R(ctx, 0, 0, W, H, '#1c1416')
@@ -2186,7 +3055,7 @@ function bar(ctx: Ctx, g: Game) {
             R(ctx, x + 1, shelf - h - 3, 2, 3, '#3a3a3a')
         }
     }
-    neon(ctx, 'Baari', 40, 6, Math.floor(time * 7) % 23 === 0 ? '#4a2a3a' : '#ff6fb0')
+    neon(ctx, 'Billy K', 40, 6, Math.floor(time * 7) % 23 === 0 ? '#4a2a3a' : '#ff6fb0')
     // Hockey on the TV: two teams, one puck.
     R(ctx, 172, 8, 64, 40, '#111')
     R(ctx, 174, 10, 60, 36, '#e8f0f4')
@@ -2256,6 +3125,35 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
     const t = g.t
     const time = g.time
     switch (shotOf(g)) {
+        case 'rabbit': {
+            // Close up on the pavement: you crouch, the rabbit stares, its
+            // nose going. A thump of a back foot, it is gone, and the actual
+            // rat runs past behind it.
+            opening(ctx, g, still)
+            dim(ctx)
+            const gone = t > 2.2
+            const thump = t > 1.7 && t < 2.2
+            big(ctx, 3, () => {
+                person(ctx, 30, 44, you(g), 1, 'crouch', 'player', 0, -1, gone ? 'worried' : 'happy')
+                if (t > 0.9 && !gone) R(ctx, 37, 36, 4, 1, g.look.skin)
+                if (!gone) {
+                    const rx = 52 + (thump ? (Math.floor(t * 30) % 2) : 0)
+                    rabbit(ctx, rx, 44, still ? 0 : g.time, 0.9, -1)
+                    if (Math.floor(t * 8) % 2) R(ctx, rx - 4, 40, 1, 1, '#c88a8a')
+                } else rabbit(ctx, 52 + Math.round((t - 2.2) * 60), 44 - Math.round(Math.abs(Math.sin((t - 2.2) * 9)) * 3), g.time, 0.9, 1)
+                if (t > 2.6) {
+                    // The rat: low, grey, long tail, in no hurry at all.
+                    const x = Math.round(90 - (t - 2.6) * 34)
+                    R(ctx, x, 42, 6, 2, '#5a5652')
+                    R(ctx, x - 1, 43, 1, 1, '#5a5652')
+                    R(ctx, x, 41, 1, 1, '#c88a8a')
+                    R(ctx, x + 6, 43, 5, 1, '#8a6a6a')
+                }
+            })
+            if (thump) bubble(ctx, 170, 62, 'THUMP.')
+            else if (t > 2.6) bubble(ctx, 120, 80, '...')
+            return letterbox(ctx)
+        }
         case 'chat': {
             opening(ctx, g, still)
             dim(ctx)
@@ -2422,18 +3320,52 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
         case 'arrive':
             return ending(ctx, g, still)
         case 'door': {
-            // Close up on the keypad: green and in, or a dead phone and the step.
-            R(ctx, 0, 0, W, H, '#3a3430')
-            for (let y = 6; y < H; y += 12) R(ctx, 0, y, W, 1, '#332d2a')
+            // Close up on the gate: the keypad, then the stairwell, or a dead phone.
             const made = g.ending === 'made'
             const open = made && t > 1.2
-            R(ctx, 40, 10, 96, 134, '#1e1a18')
-            R(ctx, 44, 14, 88, 130, open ? '#f2d36b' : '#4a3426')
-            if (!open) {
-                R(ctx, 52, 24, 72, 44, '#55402f')
-                R(ctx, 52, 78, 72, 56, '#55402f')
-                R(ctx, 118, 74, 4, 10, '#c9c4b8')
+            R(ctx, 0, 0, W, H, '#6a5a48')
+            for (let y = 8; y < H; y += 9) R(ctx, 0, y, W, 1, '#5a4c3c')
+            for (let y = 8; y < H; y += 18) for (let x = (y / 9) % 2 ? 0 : 24; x < W; x += 48) R(ctx, x, y, 1, 9, '#5a4c3c')
+            // The stone frame and its arched transom.
+            R(ctx, 32, 12, 112, 132, '#4a3e30')
+            for (let y = 0; y < 34; y++) {
+                const half = Math.round(Math.sqrt(Math.max(0, 52 * 52 - (34 - y) ** 2 * 2.3)))
+                R(ctx, 88 - half, 16 + y, half * 2, 1, '#c9b070')
             }
+            for (const dx of [-30, -10, 10, 30]) line(ctx, 88, 50, 88 + dx, 20, '#4a3e30')
+            R(ctx, 36, 50, 104, 3, '#4a3e30')
+            if (open) {
+                // The stairwell: terrazzo, green paint to the dado, cream above, steps up.
+                R(ctx, 36, 53, 104, 91, '#e8dcb8')
+                R(ctx, 36, 96, 104, 48, '#3f5a44')
+                R(ctx, 36, 95, 104, 1, '#2f4434')
+                for (let i = 0; i < 6; i++) R(ctx, 70 + i * 10, 130 - i * 9, 70 - i * 10, 9, i % 2 ? '#b8b0a0' : '#c4bcac')
+                line(ctx, 66, 116, 140, 70, '#6a4a2a')
+                // The orange light button, and the list of who lives here.
+                R(ctx, 46, 92, 4, 4, '#ff9a3c')
+                R(ctx, 104, 60, 26, 24, '#1a1a1a')
+                for (let i = 0; i < 6; i++) R(ctx, 107, 63 + i * 3, 8 + Math.floor(hash(i + 7) * 12), 1, '#e8e4dc')
+                // The leaves, swung back against the jambs.
+                R(ctx, 36, 53, 6, 91, '#5a3e2a')
+                R(ctx, 134, 53, 6, 91, '#5a3e2a')
+            } else {
+                for (const lx of [36, 88]) {
+                    R(ctx, lx, 53, 52, 91, '#5a3e2a')
+                    R(ctx, lx + 6, 60, 40, 30, '#2a2a22')
+                    R(ctx, lx + 7, 61, 38, 28, '#3a3a2c')
+                    R(ctx, lx + 6, 98, 40, 40, '#4e3624')
+                    R(ctx, lx + 8, 100, 36, 36, '#5f4430')
+                }
+                R(ctx, 87, 53, 2, 91, '#2a2018')
+                R(ctx, 80, 100, 4, 10, '#c9b070')
+                R(ctx, 92, 100, 4, 10, '#c9b070')
+            }
+            // The staircase letter, lit, and the number.
+            R(ctx, 154, 18, 18, 20, '#f4f0e4')
+            R(ctx, 154, 18, 18, 1, '#ffffff')
+            drawText(ctx, 'A', 163, 21, C.ink, 3, 'center')
+            R(ctx, 178, 22, 24, 13, '#1d4f9a')
+            drawText(ctx, '12', 190, 25, C.white, 2, 'center')
             R(ctx, 150, 46, 40, 62, '#1c1c1c')
             R(ctx, 152, 48, 36, 58, '#2a2a2a')
             for (let i = 0; i < 12; i++) R(ctx, 157 + (i % 3) * 10, 62 + Math.floor(i / 3) * 10, 7, 6, '#4a4a4a')
@@ -2466,7 +3398,8 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             return letterbox(ctx)
         }
         case 'parked':
-            station(ctx, g)
+            if (g.home) kurviMain(ctx, g, still, null, { mineLit: false, open: false })
+            else station(ctx, g)
             dim(ctx)
             if (g.scooter) {
                 big(ctx, 2, () => {
@@ -2579,16 +3512,14 @@ function notification(ctx: Ctx, g: Game) {
 }
 
 function scene(ctx: Ctx, g: Game, still: boolean) {
-    const time = g.time
     switch (g.phase) {
+        case 'splash':
+            return splashScreen(ctx, g, still)
         case 'title':
-            street(ctx, time, still, null, g.look, still ? 0 : time)
-            title(ctx, time)
-            return
+            return title(ctx, g, still)
         case 'intro':
             opening(ctx, g, still, g.t)
-            if (g.t > 3.3) phone(ctx, g, 'empty', g.t - 3.3, g.t - 3.3, PHONE_DX)
-            return
+            return introPhone(ctx, g)
         case 'buy':
             opening(ctx, g, still)
             phone(ctx, g, 'buying', g.t, 1)

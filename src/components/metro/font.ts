@@ -57,6 +57,7 @@ const GLYPHS: Record<string, string> = {
     '=': '... ### ... ### ...',
     '_': '... ... ... ... ###',
     '*': '... #.# .#. #.# ...',
+    '°': '.#. #.# .#. ... ...',
 }
 
 const BITS: Record<string, boolean[]> = Object.fromEntries(

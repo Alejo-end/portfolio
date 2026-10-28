@@ -19,9 +19,13 @@ const notes: Spec[] = [
     { label: 'jammed machine', value: 'hit it on green, three times' },
     { label: 'bike', value: 'hop, bell, brake. Two red lights and the police want a word' },
     { label: 'kurvi', value: 'kebab on the tab, free shots at the bar. Both cost minutes, both open options' },
+    { label: 'kiosk', value: 'paper tickets by card, scratch cards. Three of a kind wins' },
+    { label: 'laundromat', value: 'coins left in the drums, three looks. Mind the cat' },
+    { label: 'sauna', value: 'löyly on hot stones only. Hold the heat, outlast the regulars. One of them drives a bus' },
+    { label: 'the street', value: 'tap a place or a stop. Pocket the phone, pan with the arrows' },
     { label: 'scooter', value: 'swerve, throttle, watch the battery. The park is a slow zone' },
     { label: 'runs', value: 'night, easy from 21:00, rush hour, the long way to Kamppi, the way home at three, daily' },
-    { label: 'keys', value: 'space, 1 to 7' },
+    { label: 'keys', value: 'space, 1 to 9, arrows' },
 ]
 
 export default function Metro() {
