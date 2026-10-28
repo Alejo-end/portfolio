@@ -44,7 +44,7 @@ export function SiteNav() {
                         )
                     })}
                     {/* The metro game, as a small pixel button. Phones have no room
-                        for it here, so there it sits in the XP box (XpHud). */}
+                        for it here, so there it sits by the snake button (SnakeButton). */}
                     <Link
                         href="/metro"
                         title="No ticket, a metro game"

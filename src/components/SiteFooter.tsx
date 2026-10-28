@@ -1,5 +1,5 @@
 import { DarkModeToggle } from './DarkModeToggle'
-import { VisitCounter } from './koivu/VisitCounter'
+import { SpecList } from './SpecList'
 
 const elsewhere = [
     { label: 'GitHub', href: 'https://github.com/Alejo-end' },
@@ -9,14 +9,27 @@ const elsewhere = [
 ]
 
 // Rendered at build time, so it moves with each deploy.
-const updated = new Date().toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsinki' })
+const built = new Date()
+const updated = built.toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsinki' })
 
+// A small heading in spaced capitals, the way a menu card sets its courses.
+function Course({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <section className="space-y-3">
+            <h2 className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{title}</h2>
+            {children}
+        </section>
+    )
+}
+
+// The footer, set like the back of a menu: three short courses, then one line
+// as wide as the page, then the small print.
 export function SiteFooter() {
     return (
-        <footer className="page mt-32 pb-10">
-            <div className="grid gap-8 border-t border-foreground pt-4 font-mono text-xs ">
-                <div className="flex flex-col justify-between gap-6">
-                    <ul className="flex flex-wrap gap-x-5 gap-y-1">
+        <footer className="page mt-40 overflow-hidden pb-6">
+            <div className="grid gap-x-5 gap-y-10 border-t border-foreground pt-4 font-mono text-[11px] sm:grid-cols-3">
+                <Course title="Elsewhere">
+                    <ul className="space-y-1.5">
                         {elsewhere.map((link) => (
                             <li key={link.href}>
                                 <a href={link.href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-[3px] hover:decoration-2">
@@ -25,12 +38,35 @@ export function SiteFooter() {
                             </li>
                         ))}
                     </ul>
-                    <div className="flex flex-wrap items-center gap-5 text-muted-foreground">
-                        <span>updated {updated}</span>
-                        <VisitCounter />
-                        <DarkModeToggle showLabel />
-                    </div>
-                </div>
+                </Course>
+                <Course title="Hours">
+                    <SpecList
+                        specs={[
+                            { label: 'weekdays', value: 'radiotherapy software' },
+                            { label: 'evenings', value: 'instruments' },
+                            { label: 'weekends', value: 'sound' },
+                        ]}
+                    />
+                </Course>
+                <Course title="Colophon">
+                    <p className="max-w-[18rem] leading-relaxed text-muted-foreground">
+                        Set in Geist and Geist Mono, Silkscreen on small screens. Next.js on Vercel, media on Vercel Blob.
+                    </p>
+                </Course>
+            </div>
+
+            {/* One line as wide as the page, and whose practice it is, small. */}
+            <p aria-hidden className="display mt-20 select-none whitespace-nowrap text-[13.9vw] leading-[0.8]">
+                Still practicing.
+            </p>
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">The studio practice of Alejandro?</p>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
+                <span>© {built.getFullYear()} Alejandro De Leon</span>
+                <span>updated {updated}</span>
+                <span className="sm:ml-auto">
+                    <DarkModeToggle showLabel />
+                </span>
             </div>
         </footer>
     )

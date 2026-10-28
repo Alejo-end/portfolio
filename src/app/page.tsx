@@ -7,6 +7,9 @@ import { experienceId } from "@/components/ExperienceDetails";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
 import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
 
+// The projects shown big on the home page, top first.
+const FEATURED = ["h2h", "stray", "reins", "mangler"];
+
 // Covers come from the blob store; refresh every 5 minutes.
 export const revalidate = 300;
 
@@ -35,18 +38,17 @@ export default async function Home() {
         })
     );
 
-    // The newest projects with enough pictures to fill a strip.
+    // The showcase, in this order, H2H first.
     const featured: FeaturedItem[] = [];
-    for (const project of projects) {
-        if (featured.length === 4) break;
+    for (const alias of FEATURED) {
+        const project = projects.find((p) => p.alias === alias);
+        if (!project) continue;
         const blobs = await getGalleryBlobs(project.alias);
         const media = [
-            ...(project.videos ?? []).flatMap((v) => (v.poster ? [{ src: v.poster, video: true }] : [])),
-            ...blobs.flatMap((b) =>
-                isImagePath(b.pathname) ? [{ src: b.url, video: false }] : b.poster ? [{ src: b.poster, video: true }] : []
-            ),
+            ...(project.videos ?? []).flatMap((v) => (v.poster ? [{ src: v.poster, video: v.src }] : [])),
+            ...blobs.flatMap((b) => (isImagePath(b.pathname) ? [{ src: b.url }] : b.poster ? [{ src: b.poster, video: b.url }] : [])),
         ].slice(0, 10);
-        if (media.length < 3) continue;
+        if (media.length === 0) continue;
         featured.push({
             no: projectNo(project),
             alias: project.alias,

@@ -84,18 +84,13 @@
     }
   }
 
-  /* A row of media that scrolls sideways, with a hairline scrollbar. */
+  /* A row of media that moves sideways with no scrollbar: the pointer or a swipe moves it. */
   .strip {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--foreground)) transparent;
+    scrollbar-width: none;
   }
 
   .strip::-webkit-scrollbar {
-    height: 3px;
-  }
-
-  .strip::-webkit-scrollbar-thumb {
-    background: hsl(var(--foreground));
+    display: none;
   }
 
   .frame {

@@ -13,9 +13,6 @@ export const LEVELS = [
     { at: 34, name: 'bandmate' },
 ]
 
-/** The level from which the snake is playable from the HUD. */
-export const SNAKE_LEVEL = 3
-
 let seen: Set<string> | null = null
 const listeners = new Set<() => void>()
 
