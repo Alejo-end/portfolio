@@ -37,6 +37,9 @@ const TICKET = (() => {
     return rows.map((r) => r.join(''))
 })()
 
+// A door with an arrow walking out of it: the way out of the game.
+const EXIT = ['............', '.....######.', '..#..#....#.', '.##..#....#.', '#######...#.', '.##..#....#.', '..#..######.', '............']
+
 function PixelIcon({ grid }: { grid: string[] }) {
     return (
         <svg viewBox={`0 0 ${grid[0].length} ${grid.length}`} className="h-[18px] w-6 shrink-0" shapeRendering="crispEdges" aria-hidden>
@@ -102,7 +105,13 @@ export function SnakeButton() {
                     <Snake />
                 </div>
             )}
-            {pathname !== '/metro' && (
+            {/* In the game, the same corner holds the way out; everywhere else, the way in. */}
+            {pathname === '/metro' ? (
+                <Link href="/" aria-label="Leave the game" className={`plain ${corner}`}>
+                    <PixelIcon grid={EXIT} />
+                    <Grows>leave game</Grows>
+                </Link>
+            ) : (
                 <Link href="/metro" aria-label="Play No ticket" className={`plain ${corner}`}>
                     <PixelIcon grid={TICKET} />
                     <Grows>play no ticket</Grows>
