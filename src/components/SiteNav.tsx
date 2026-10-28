@@ -16,7 +16,7 @@ export function SiteNav() {
 
     return (
         <header>
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
+            <div className="page flex items-center justify-between gap-4 py-5">
                 <Link
                     href="/"
                     className="display text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

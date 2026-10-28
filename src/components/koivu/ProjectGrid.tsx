@@ -72,7 +72,7 @@ function Grid({ cards, filter }: { cards: ProjectCard[]; filter: Filter }) {
                 })}
             </div>
 
-            <ul className="columns-1 gap-8 pt-6 sm:columns-2">
+            <ul className="columns-1 gap-5 pt-6 sm:columns-2 2xl:columns-3">
                 {shown.map((card, i) => (
                     <Tile key={card.alias} card={card} priority={i < 4} />
                 ))}

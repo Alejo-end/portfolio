@@ -4,7 +4,7 @@ import { workExperiences, shortYears } from '@/data/experience'
 
 export default function WorkExperience() {
     return (
-        <main className="mx-auto max-w-6xl px-4">
+        <main className="page [&>*]:max-w-6xl">
             <header className="rise space-y-10 py-8">
                 <h1 className="display text-6xl md:text-8xl">Work</h1>
                 <Catalog

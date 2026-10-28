@@ -13,7 +13,7 @@ const updated = new Date().toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsi
 
 export function SiteFooter() {
     return (
-        <footer className="mx-auto mt-32 w-full max-w-6xl px-4 pb-10">
+        <footer className="page mt-32 pb-10">
             <div className="grid gap-8 border-t border-foreground pt-4 font-mono text-xs ">
                 <div className="flex flex-col justify-between gap-6">
                     <ul className="flex flex-wrap gap-x-5 gap-y-1">

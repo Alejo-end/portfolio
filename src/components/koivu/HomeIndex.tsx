@@ -57,7 +57,7 @@ function Term({
     )
 }
 
-export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactNode }) {
+export function HomeIndex({ rows, modules, featured }: { rows: IndexRow[]; modules: ReactNode; featured: ReactNode }) {
     const [focus, setFocus] = useState<Focus>(null)
     const hovered = focus && 'alias' in focus ? rows.find((r) => r.alias === focus.alias) : undefined
     const list = useRef<HTMLUListElement>(null)
@@ -95,29 +95,59 @@ export function HomeIndex({ rows, modules }: { rows: IndexRow[]; modules: ReactN
                 }}
             />
 
-            <div className="order-3 md:order-none">{modules}</div>
+            <div className="order-4 md:order-none">{modules}</div>
 
-            <p className="order-1 md:order-none text-[clamp(1.75rem,4.2vw,3.5rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-muted-foreground">
-                <span className="text-foreground">Alejandro?</span> is a{' '}
-                <Term n={1} href="/experience" onFocus={setFocus}>
-                    software engineer
-                </Term>{' '}
-                and{' '}
-                <Term n={2} href="/experience#mvision-ai" onFocus={setFocus}>
-                    UX designer
-                </Term>{' '}
-                from Panama, based in Helsinki, with an enthusiasm for{' '}
-                <Term n={3} href="/projects?kind=hardware" kind="hardware" onFocus={setFocus}>
-                    electronics
-                </Term>{' '}
-                and{' '}
-                <Term n={4} href="/projects?kind=sound" kind="sound" onFocus={setFocus}>
-                    experimental music
-                </Term>
-                .
-            </p>
+            <div className="order-1 grid gap-10 md:order-none lg:grid-cols-12 lg:gap-5">
+                <p className="text-[clamp(1.75rem,4.2vw,4rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-muted-foreground lg:col-span-8">
+                    <span className="text-foreground">Alejandro?</span> is a{' '}
+                    <Term n={1} href="/experience" onFocus={setFocus}>
+                        software engineer
+                    </Term>{' '}
+                    and{' '}
+                    <Term n={2} href="/experience#mvision-ai" onFocus={setFocus}>
+                        UX designer
+                    </Term>{' '}
+                    from Panama, based in Helsinki, with an enthusiasm for{' '}
+                    <Term n={3} href="/projects?kind=hardware" kind="hardware" onFocus={setFocus}>
+                        electronics
+                    </Term>{' '}
+                    and{' '}
+                    <Term n={4} href="/projects?kind=sound" kind="sound" onFocus={setFocus}>
+                        experimental music
+                    </Term>
+                    .
+                </p>
 
-            <Module no="04" title="projects" aside={rows.length} className="order-2 md:order-none">
+                {/* Every project on its side, the index as a row of spines. */}
+                <nav aria-label="Project list" className="hidden justify-end gap-x-1 lg:col-span-4 lg:flex" onMouseLeave={() => setFocus(null)}>
+                    {rows.map((row) => {
+                        const state = picked(row)
+                        return (
+                            <Link
+                                key={row.alias}
+                                href={`/projects/${row.alias}`}
+                                onMouseEnter={() => setFocus({ alias: row.alias })}
+                                onFocus={() => setFocus({ alias: row.alias })}
+                                onBlur={() => setFocus(null)}
+                                className={`plain flex items-center gap-1.5 font-mono text-[11px] transition-opacity duration-300 [writing-mode:vertical-rl] focus-visible:outline-none ${
+                                    state === false ? 'opacity-30' : ''
+                                } ${state ? 'underline underline-offset-2' : ''}`}
+                            >
+                                <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full border border-foreground" />
+                                <span className="text-muted-foreground">{row.no}</span>
+                                <span>{row.title}</span>
+                                <span className="bg-secondary py-1">{kinds[row.kind].label}</span>
+                            </Link>
+                        )
+                    })}
+                </nav>
+            </div>
+
+            <Module no="04" title="featured" className="order-2 md:order-none">
+                {featured}
+            </Module>
+
+            <Module no="05" title="projects" aside={rows.length} className="order-3 md:order-none">
                 <ul ref={list} onMouseLeave={() => setFocus(null)}>
                     {rows.map((row) => {
                         const state = picked(row)

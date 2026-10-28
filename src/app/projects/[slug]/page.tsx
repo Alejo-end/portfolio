@@ -45,7 +45,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const prev = projects[(i - 1 + projects.length) % projects.length]
     const next = projects[(i + 1) % projects.length]
     return (
-        <main className="mx-auto max-w-6xl space-y-12 px-4 pt-4">
+        <main className="page space-y-12 pt-4 [&>*]:max-w-6xl">
             <ProjectDetails project={project} no={projectNo(project)} blobs={blobs} prototypeBlobs={prototypeBlobs} />
             <Pager
                 prev={{ href: `/projects/${prev.alias}`, title: prev.title }}

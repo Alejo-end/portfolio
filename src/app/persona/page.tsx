@@ -33,7 +33,7 @@ const links = [
 
 export default function Persona() {
     return (
-        <main className="mx-auto max-w-6xl space-y-16 px-4">
+        <main className="page space-y-16 [&>*]:max-w-6xl">
             <header className="grid items-end gap-10 pt-8 md:grid-cols-[minmax(0,1fr)_24rem]">
                 <div>
                     <h1 className="display rise rise-1 text-7xl leading-[0.85] md:text-8xl lg:text-9xl">Alejandro?</h1>

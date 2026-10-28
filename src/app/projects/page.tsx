@@ -38,7 +38,7 @@ export default async function ProjectsPage() {
     )
 
     return (
-        <main className="mx-auto max-w-6xl px-4">
+        <main className="page">
             <header className="rise py-8">
                 <h1 className="display text-6xl md:text-8xl">Projects</h1>
             </header>

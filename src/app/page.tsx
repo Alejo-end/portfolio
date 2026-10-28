@@ -8,6 +8,7 @@ import { SpecList } from "@/components/SpecList";
 import { Module } from "@/components/koivu/Module";
 import { kinds } from "@/components/koivu/kinds";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
+import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
 import type { ProjectKind } from "@/app/types";
 
 // Covers come from the blob store; refresh every 5 minutes.
@@ -37,6 +38,29 @@ export default async function Home() {
             };
         })
     );
+
+    // The newest projects with enough pictures to fill a strip.
+    const featured: FeaturedItem[] = [];
+    for (const project of projects) {
+        if (featured.length === 4) break;
+        const blobs = await getGalleryBlobs(project.alias);
+        const media = [
+            ...(project.videos ?? []).flatMap((v) => (v.poster ? [{ src: v.poster, video: true }] : [])),
+            ...blobs.flatMap((b) =>
+                isImagePath(b.pathname) ? [{ src: b.url, video: false }] : b.poster ? [{ src: b.poster, video: true }] : []
+            ),
+        ].slice(0, 10);
+        if (media.length < 3) continue;
+        featured.push({
+            no: projectNo(project),
+            alias: project.alias,
+            title: project.title,
+            year: project.year,
+            kind: project.kind,
+            description: project.description,
+            media,
+        });
+    }
 
     const kindCounts = (Object.keys(kinds) as ProjectKind[]).map((kind) => ({
         label: kind,
@@ -77,8 +101,8 @@ export default async function Home() {
     );
 
     return (
-        <main className="mx-auto max-w-6xl px-4 pt-6 md:pt-10">
-            <HomeIndex rows={rows} modules={modules} />
+        <main className="page pt-6 md:pt-10">
+            <HomeIndex rows={rows} modules={modules} featured={<Featured key="featured" items={featured} />} />
         </main>
     );
 }
