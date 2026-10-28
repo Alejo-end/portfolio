@@ -13,6 +13,8 @@ const items = [
 
 export function SiteNav() {
     const pathname = usePathname()
+    // The home page carries its own way around, on its sides.
+    if (pathname === '/') return null
 
     return (
         <header>

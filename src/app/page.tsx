@@ -4,12 +4,8 @@ import { workExperiences, shortYears } from "@/data/experience";
 import { getGalleryBlobs, isImagePath } from "@/lib/blobs";
 import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
-import { SpecList } from "@/components/SpecList";
-import { Module } from "@/components/koivu/Module";
-import { kinds } from "@/components/koivu/kinds";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
 import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
-import type { ProjectKind } from "@/app/types";
 
 // Covers come from the blob store; refresh every 5 minutes.
 export const revalidate = 300;
@@ -62,47 +58,17 @@ export default async function Home() {
         });
     }
 
-    const kindCounts = (Object.keys(kinds) as ProjectKind[]).map((kind) => ({
-        label: kind,
-        value: String(projects.filter((p) => p.kind === kind).length),
-        href: `/projects?kind=${kind}`,
+    const work = workExperiences.map((experience) => ({
+        id: experienceId(experience),
+        company: experience.company,
+        position: experience.position,
+        years: shortYears(experience.duration),
+        description: experience.description,
     }));
-
-    // Keyed because it crosses into a client component as a prop.
-    const modules = (
-        <div key="modules" className="grid gap-x-5 gap-y-10 md:grid-cols-3">
-            <Module no="01" title="now">
-                <SpecList
-                    specs={[
-                        { label: "day job", value: "software engineer, MVision" },
-                        { label: "building", value: "Reins", href: "/projects/reins" },
-                        { label: "base", value: "Helsinki" },
-                    ]}
-                />
-            </Module>
-            <Module no="02" title="work">
-                <ul className="space-y-2 text-sm">
-                    {workExperiences.map((experience) => (
-                        <li key={experience.company} className="flex items-baseline justify-between gap-3">
-                            <a href={`/experience#${experienceId(experience)}`} className="truncate">
-                                {experience.company}
-                            </a>
-                            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
-                                {shortYears(experience.duration)}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            </Module>
-            <Module no="03" title="index">
-                <SpecList specs={kindCounts} />
-            </Module>
-        </div>
-    );
 
     return (
         <main className="page pt-6 md:pt-10">
-            <HomeIndex rows={rows} modules={modules} featured={<Featured key="featured" items={featured} />} />
+            <HomeIndex rows={rows} work={work} featured={<Featured key="featured" items={featured} />} />
         </main>
     );
 }
