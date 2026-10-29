@@ -135,8 +135,6 @@ export const projects: Project[] = [
     alias: "weather",
     kind: "sound",
     galleryLayout: "grid",
-    githubUrl:
-      "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
     prototype: {
       title: "Sounds of the Weather Turning 1.1",
       alias: "weather1",
@@ -144,6 +142,8 @@ export const projects: Project[] = [
       description:
         "The first version. Live air quality data from WAQI controls delay, reverb, echo and distortion. Needs a free WAQI API key. Started in the Computational Art class at Aalto.",
       software: ["Max for Live", "Ableton Live", "WAQI API"],
+      // The listing holds 1.1 until version 2 goes up.
+      githubUrl: "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
       liveUrl: "https://youtu.be/wVJ3n1L9Egk",
     },
     year: 2025,
