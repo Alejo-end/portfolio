@@ -134,7 +134,6 @@ export const projects: Project[] = [
     ],
     alias: "weather",
     kind: "sound",
-    galleryLayout: "grid",
     prototype: {
       title: "Sounds of the Weather Turning 1.1",
       alias: "weather1",
