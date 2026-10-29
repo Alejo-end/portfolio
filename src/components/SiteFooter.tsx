@@ -1,5 +1,6 @@
 import { DarkModeToggle } from './DarkModeToggle'
 import { SpecList } from './SpecList'
+import { AdlMark } from './AdlMark'
 
 const elsewhere = [
     { label: 'GitHub', href: 'https://github.com/Alejo-end' },
@@ -63,11 +64,7 @@ export function SiteFooter() {
 
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
                 {/* The maker's mark, small, the way it sits on the plate. */}
-                <span
-                    role="img"
-                    aria-label="ADL monogram"
-                    className="block h-7 w-7 bg-foreground [mask:url(/adl-monogram.svg)_center/contain_no-repeat] [-webkit-mask:url(/adl-monogram.svg)_center/contain_no-repeat]"
-                />
+                <AdlMark className="h-8 w-8 shrink-0 text-foreground" />
                 <span>© {built.getFullYear()} Alejandro De Leon</span>
                 <span>updated {updated}</span>
                 <span className="sm:ml-auto">
