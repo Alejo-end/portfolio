@@ -20,22 +20,18 @@ const ICON = [
     '............',
 ]
 
-// A ticket with a notch in each side and a perforation, struck through
-// corner to corner: no ticket. Same grid and stroke as the snake.
-const TICKET = (() => {
-    const rows = [
-        '............',
-        '.##########.',
-        '.#..#.....#.',
-        '..#.......#.',
-        '..#.......#.',
-        '.#..#.....#.',
-        '.##########.',
-        '............',
-    ].map((r) => [...r])
-    for (let x = 0; x < 12; x++) rows[Math.round(7 - (x * 7) / 11)][x] = '#'
-    return rows.map((r) => r.join(''))
-})()
+// A ticket, solid, with the notch in each side that tickets have, cut clean
+// through at 45 degrees: no ticket. Same 12 by 8 grid as the snake.
+const TICKET = [
+    '............',
+    '.#######.##.',
+    '.######.###.',
+    '..####.###..',
+    '..###.####..',
+    '.###.######.',
+    '.##.#######.',
+    '............',
+]
 
 // A door with an arrow walking out of it: the way out of the game.
 const EXIT = ['............', '.....######.', '..#..#....#.', '.##..#....#.', '#######...#.', '.##..#....#.', '..#..######.', '............']
