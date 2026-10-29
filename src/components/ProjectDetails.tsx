@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
@@ -10,6 +10,16 @@ import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
 import type { CodeSnippet, Project, Spec } from "@/app/types"
+
+// How many columns the mood board has at the current window width.
+const subscribeResize = (onChange: () => void) => {
+  window.addEventListener("resize", onChange)
+  return () => window.removeEventListener("resize", onChange)
+}
+const columnCount = () => {
+  const w = window.innerWidth
+  return w >= 1024 ? 4 : w >= 768 ? 3 : w >= 640 ? 2 : 1
+}
 
 export interface BlobFile {
   url: string
@@ -40,12 +50,13 @@ const isVideoFile = (file: BlobFile) =>
     : /\.(mp4|mov)$/i.test(file.url)
 
 // "mangler/02-take-rec-v2.png" -> "take rec": the filename is the only caption
-// we have. A -v2 on the end is only there to get past caches after a re-upload.
+// we have. A -v2 or -hq on the end is only there to get past caches after a
+// re-upload.
 const mediaName = (file: BlobFile) => {
   const base = (file.pathname ?? file.url).split("/").pop() ?? ""
   return decodeURIComponent(base)
     .replace(/\.[^.]+$/, "")
-    .replace(/-v\d+$/, "")
+    .replace(/-(v\d+|hq)$/, "")
     .replace(/^\d+[-_]/, "")
     .replace(/[-_]+/g, " ")
     .trim()
@@ -98,6 +109,16 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
+  // Width over height of each picture, learned as it loads, so the mood
+  // board can put the next one in its shortest column.
+  const [ratios, setRatios] = useState<Record<string, number>>({})
+  const columns = useSyncExternalStore(subscribeResize, columnCount, () => 4)
+  const learn = (url: string) => (e: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement>) => {
+    const el = e.currentTarget
+    const w = "naturalWidth" in el ? el.naturalWidth : el.videoWidth
+    const h = "naturalHeight" in el ? el.naturalHeight : el.videoHeight
+    if (w && h && ratios[url] !== w / h) setRatios((r) => ({ ...r, [url]: w / h }))
+  }
   const dialogRef = useRef<HTMLDialogElement>(null)
   // One lightbox steps through the main gallery and then the prototype's.
   const media = [...blobs, ...prototypeBlobs]
@@ -153,15 +174,14 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
       layout === "grid"
         ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
         : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+    // How wide a tile really is, so the browser fetches a sharp enough copy.
+    // Pages run the full width of the screen, less the spine column.
+    const tileSizes =
+      layout === "grid"
+        ? "(min-width: 1024px) 31vw, (min-width: 640px) 50vw, 100vw"
+        : "(min-width: 1024px) 23vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
 
-    return (
-      <div className={layoutClass}>
-        {snippets.map((snippet) => (
-          <div key={snippet.filename} className="break-inside-avoid mb-4">
-            <CodeBox snippet={snippet} />
-          </div>
-        ))}
-        {files.map((file, i) => {
+    const renderTile = (file: BlobFile, i: number) => {
           const index = offset + i
           const isVideo = isVideoFile(file)
           const name = mediaName(file)
@@ -181,8 +201,9 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   alt={`${project.title}, ${name}`}
                   width={800}
                   height={600}
-                  quality={60}
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  quality={85}
+                  sizes={tileSizes}
+                  onLoad={learn(file.poster)}
                   className="w-full h-auto object-cover"
                 />
               ) : isVideo ? (
@@ -192,6 +213,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   preload="metadata"
                   muted
                   playsInline
+                  onLoadedMetadata={learn(file.url)}
                   className="w-full h-auto object-cover"
                 />
               ) : (
@@ -200,16 +222,50 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   alt={`${project.title}, ${name}`}
                   width={800}
                   height={600}
-                  quality={60}
+                  quality={85}
                   priority={index < 3}
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  sizes={tileSizes}
+                  onLoad={learn(file.url)}
                   className="w-full h-auto object-cover"
                 />
               )}
               {sound && <SoundBadge />}
             </button>
           )
-        })}
+    }
+
+    const codeBoxes = snippets.map((snippet) => (
+      <div key={snippet.filename} className="break-inside-avoid mb-4">
+        <CodeBox snippet={snippet} />
+      </div>
+    ))
+
+    if (layout === "grid") {
+      return (
+        <div className={layoutClass}>
+          {codeBoxes}
+          {files.map(renderTile)}
+        </div>
+      )
+    }
+
+    // A mood board with no holes: each picture goes into whichever column is
+    // shortest so far, measured by the pictures' own shapes. Until a picture
+    // has loaded it counts as square.
+    const stacks: { height: number; items: number[] }[] = Array.from({ length: columns }, () => ({ height: 0, items: [] }))
+    files.forEach((file, i) => {
+      const shortest = stacks.reduce((a, b) => (b.height < a.height ? b : a))
+      shortest.items.push(i)
+      shortest.height += 1 / (ratios[file.poster ?? file.url] ?? 1)
+    })
+    return (
+      <div className="flex items-start gap-4">
+        {stacks.map((stack, c) => (
+          <div key={c} className="flex min-w-0 flex-1 flex-col">
+            {c === 0 && codeBoxes}
+            {stack.items.map((i) => renderTile(files[i], i))}
+          </div>
+        ))}
       </div>
     )
   }
@@ -380,7 +436,12 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   <LinkButton href={prototype.githubUrl} icon={<CodeIcon className="h-4 w-4" />} label="Code" />
                 )}
                 {prototype.liveUrl && (
-                  <LinkButton href={prototype.liveUrl} icon={<BookOpen className="h-4 w-4" />} label="Build log" />
+                  // A video link is a demo; anything else is the build diary.
+                  /youtu\.?be/.test(prototype.liveUrl) ? (
+                    <LinkButton href={prototype.liveUrl} icon={<VideoIcon className="h-4 w-4" />} label="Demo" />
+                  ) : (
+                    <LinkButton href={prototype.liveUrl} icon={<BookOpen className="h-4 w-4" />} label="Build log" />
+                  )
                 )}
               </div>
             )}

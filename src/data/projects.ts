@@ -123,13 +123,28 @@ export const projects: Project[] = [
   {
     title: "Sounds of the Weather Turning",
     description:
-      "Max for Live effect. Live air quality data controls delay, reverb, echo and distortion. Free on maxforlive.com.",
-    software: ["Max for Live", "Ableton Live", "WAQI API"],
+      "Max for Live effect. The live weather of a city moves a shimmer reverb, an echo, a delay and a Roar distortion, and draws the city's skyline under the sky of the hour. Version 2: Open-Meteo, no API key. Free on maxforlive.com soon.",
+    software: ["Max for Live", "Ableton Live", "Max 9", "JavaScript", "p5.js", "Open-Meteo"],
+    specs: [
+      { label: "version", value: "2.0, 10.2026" },
+      { label: "cities", value: "29, each with its own skyline" },
+      { label: "dials", value: "air quality · temperature · humidity · wind · pollution · precipitation · pressure" },
+      { label: "effects", value: "shimmer · echo · delay · Roar, ABL objects" },
+      { label: "data", value: "Open-Meteo, every 10 minutes" },
+    ],
     alias: "weather",
     kind: "sound",
-    githubUrl:
-      "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
-    liveUrl: "https://youtu.be/wVJ3n1L9Egk",
+    prototype: {
+      title: "Sounds of the Weather Turning 1.1",
+      alias: "weather1",
+      year: 2025,
+      description:
+        "The first version. Live air quality data from WAQI controls delay, reverb, echo and distortion. Needs a free WAQI API key. Started in the Computational Art class at Aalto.",
+      software: ["Max for Live", "Ableton Live", "WAQI API"],
+      // The listing holds 1.1 until version 2 goes up.
+      githubUrl: "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
+      liveUrl: "https://youtu.be/wVJ3n1L9Egk",
+    },
     year: 2025,
   },
   {
