@@ -40,12 +40,13 @@ const isVideoFile = (file: BlobFile) =>
     : /\.(mp4|mov)$/i.test(file.url)
 
 // "mangler/02-take-rec-v2.png" -> "take rec": the filename is the only caption
-// we have. A -v2 on the end is only there to get past caches after a re-upload.
+// we have. A -v2 or -hq on the end is only there to get past caches after a
+// re-upload.
 const mediaName = (file: BlobFile) => {
   const base = (file.pathname ?? file.url).split("/").pop() ?? ""
   return decodeURIComponent(base)
     .replace(/\.[^.]+$/, "")
-    .replace(/-v\d+$/, "")
+    .replace(/-(v\d+|hq)$/, "")
     .replace(/^\d+[-_]/, "")
     .replace(/[-_]+/g, " ")
     .trim()
@@ -153,6 +154,12 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
       layout === "grid"
         ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
         : "columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+    // How wide a tile really is, so the browser fetches a sharp enough copy.
+    // Pages run the full width of the screen, less the spine column.
+    const tileSizes =
+      layout === "grid"
+        ? "(min-width: 1024px) 31vw, (min-width: 640px) 50vw, 100vw"
+        : "(min-width: 1024px) 23vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
 
     return (
       <div className={layoutClass}>
@@ -181,8 +188,8 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   alt={`${project.title}, ${name}`}
                   width={800}
                   height={600}
-                  quality={60}
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  quality={85}
+                  sizes={tileSizes}
                   className="w-full h-auto object-cover"
                 />
               ) : isVideo ? (
@@ -200,9 +207,9 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   alt={`${project.title}, ${name}`}
                   width={800}
                   height={600}
-                  quality={60}
+                  quality={85}
                   priority={index < 3}
-                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  sizes={tileSizes}
                   className="w-full h-auto object-cover"
                 />
               )}
@@ -380,7 +387,12 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
                   <LinkButton href={prototype.githubUrl} icon={<CodeIcon className="h-4 w-4" />} label="Code" />
                 )}
                 {prototype.liveUrl && (
-                  <LinkButton href={prototype.liveUrl} icon={<BookOpen className="h-4 w-4" />} label="Build log" />
+                  // A video link is a demo; anything else is the build diary.
+                  /youtu\.?be/.test(prototype.liveUrl) ? (
+                    <LinkButton href={prototype.liveUrl} icon={<VideoIcon className="h-4 w-4" />} label="Demo" />
+                  ) : (
+                    <LinkButton href={prototype.liveUrl} icon={<BookOpen className="h-4 w-4" />} label="Build log" />
+                  )
                 )}
               </div>
             )}
