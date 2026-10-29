@@ -123,7 +123,7 @@ export const projects: Project[] = [
   {
     title: "Sounds of the Weather Turning",
     description:
-      "Max for Live effect. The live weather of a city moves a shimmer reverb, an echo, a delay and a Roar distortion, and draws the city's skyline under the sky of the hour. Version 2: Open-Meteo, no API key. Free on maxforlive.com.",
+      "Max for Live effect. The live weather of a city moves a shimmer reverb, an echo, a delay and a Roar distortion, and draws the city's skyline under the sky of the hour. Version 2: Open-Meteo, no API key. Free on maxforlive.com soon.",
     software: ["Max for Live", "Ableton Live", "Max 9", "JavaScript", "p5.js", "Open-Meteo"],
     specs: [
       { label: "version", value: "2.0, 10.2026" },
