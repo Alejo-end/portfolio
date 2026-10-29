@@ -9,7 +9,7 @@ import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
 import { projectRow } from "@/components/koivu/projectRow";
 
 // The projects shown big on the home page, top first.
-const FEATURED = ["h2h", "stray", "reins", "mangler"];
+const FEATURED = ["h2h", "stray", "reins", "mangler", "weather"];
 
 // Covers come from the blob store; refresh every 5 minutes.
 export const revalidate = 300;
