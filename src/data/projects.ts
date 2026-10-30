@@ -131,9 +131,11 @@ export const projects: Project[] = [
       { label: "dials", value: "air quality · temperature · humidity · wind · pollution · precipitation · pressure" },
       { label: "effects", value: "shimmer · echo · delay · Roar, ABL objects" },
       { label: "data", value: "Open-Meteo, every 10 minutes" },
+      { label: "sha-256", value: "3a7de8d866383e04d7b6bd4c55b8513583f1e130aa369051953d0eab958e8637" },
     ],
     alias: "weather",
     kind: "sound",
+    downloadUrl: "https://kskxrvod79sqlfxd.public.blob.vercel-storage.com/downloads/sounds_of_the_weather_turning_v2.0.zip?download=1",
     prototype: {
       title: "Sounds of the Weather Turning 1.1",
       alias: "weather1",

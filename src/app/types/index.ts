@@ -68,6 +68,8 @@ export interface Project {
   videos?: ProjectVideo[];
   githubUrl?: string;
   liveUrl?: string;
+  /** A file to download, such as a packaged device. */
+  downloadUrl?: string;
   reactComponent?: React.ReactNode;
   codeSnippets?: CodeSnippet[];
   year: number;

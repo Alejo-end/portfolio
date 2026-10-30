@@ -12,7 +12,7 @@ export function SpecList({ specs, className = '' }: { specs: Spec[]; className?:
                         aria-hidden
                         className="hidden min-w-4 flex-1 border-b-2 border-dotted border-muted-foreground/40 sm:block"
                     />
-                    <dd className="text-foreground/90 sm:text-right">
+                    <dd className="min-w-0 text-foreground/90 [overflow-wrap:anywhere] sm:text-right">
                         {spec.href ? (
                             <Link href={spec.href} className="hover:decoration-2">
                                 {spec.value}

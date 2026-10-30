@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen, Download } from "lucide-react"
 import { SoundBadge } from "@/components/koivu/SoundBadge"
 import { hasSound } from "@/data/sound"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
@@ -96,9 +96,11 @@ function HeroVideo({ src, poster }: { src: string; poster?: string }) {
   )
 }
 
-function LinkButton({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function LinkButton({ href, icon, label, download }: { href: string; icon: React.ReactNode; label: string; download?: boolean }) {
+  // A download saves in place; a new tab would only open and close again.
+  const target = download ? {} : { target: "_blank", rel: "noopener noreferrer" }
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="plain btn">
+    <a href={href} {...target} className="plain btn">
       {icon}
       {label}
     </a>
@@ -412,6 +414,9 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
           )}
           {project.liveUrl && (
             <LinkButton href={project.liveUrl} icon={<VideoIcon className="h-4 w-4" />} label="Demo" />
+          )}
+          {project.downloadUrl && (
+            <LinkButton href={project.downloadUrl} icon={<Download className="h-4 w-4" />} label="Download" download />
           )}
         </div>
       </SpecSheet>
