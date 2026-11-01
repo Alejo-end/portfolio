@@ -1591,6 +1591,15 @@ const canJump = (g: Game) =>
     g.player.queued === null &&
     (g.t < OPEN || (doorOpen(g) > 0.3 && !(g.bounced && g.t > g.closeAt)))
 
+/** How much of the time to get through the doors is left, 1 to 0, while the door buttons work. Null otherwise. */
+export function doorsLeft(g: Game): number | null {
+    if (!canJump(g)) return null
+    if (g.t < OPEN) return 1
+    // The buttons stop once the doors are 0.3 open, part way into SHUT.
+    const end = g.closeAt + SHUT * 0.7
+    return Math.max(0, Math.min(1, (end - g.t) / (end - OPEN)))
+}
+
 // Pressed before the doors open, the jump waits for them.
 function press(g: Game, door: number) {
     if (g.t < OPEN) {
