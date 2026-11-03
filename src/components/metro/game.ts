@@ -385,6 +385,9 @@ export type ShotId =
     | 'gull'
     | 'scan'
     | 'door'
+    | 'pass'
+    | 'inked'
+    | 'tip'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -474,6 +477,7 @@ export type ActionId =
     | 'ink1'
     | 'ink2'
     | 'breathe'
+    | 'stay'
 // `key` is a letter that does this action on a keyboard, in place of a
 // number; `note` is a word or two shown beside the label, like its cost.
 export type Action = { id: ActionId; label: string; disabled?: boolean; key?: string; note?: string }
@@ -531,6 +535,8 @@ export type Game = {
     // The bar's shot of the night, and the game at the counter of a Kurvi place.
     drink: Drink
     kurvi: Kurvi | null
+    // The tattoo you left Lin's with, for its close-up.
+    lastInk: Ink | null
     // Clean slices off the spit: a better kebab is a better bribe.
     slices: number
     // What happened to the kebab, if it is gone: for what you say at the end.
@@ -902,6 +908,7 @@ export function createGame(seed = Date.now()): Game {
         codeAt: 'pizza',
         drink: DRINKS[0],
         kurvi: null,
+        lastInk: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1021,6 +1028,7 @@ function begin(g: Game, kind: Kind) {
         codeAt: 'pizza',
         drink: DRINKS[0],
         kurvi: null,
+        lastInk: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1631,7 +1639,23 @@ function leaveKurvi(g: Game) {
         const on = { kebab: 'the receipt', pizza: 'the box', bar: 'a beer coaster', kiosk: 'the receipt', pesula: 'a sticker on a dryer', sauna: 'a towel ticket', tattoo: 'the aftercare leaflet' }[k.place]
         back += ` On ${on}: a free scooter ride code.`
     }
-    enter(g, 'intro', `${clockText(g.clock)}. ${back} ${g.code ? 'Metro, tram, bus, bike or scooter?' : 'Metro, tram, bus or the bike?'}`)
+    const caption = `${clockText(g.clock)}. ${back} ${g.code ? 'Metro, tram, bus, bike or scooter?' : 'Metro, tram, bus or the bike?'}`
+    // A tattoo gets its close-up under the lamp, and a clean one a message from the chat.
+    if (k.place === 'tattoo' && k.ink.marks.some((m) => m !== null)) {
+        g.lastInk = k.ink
+        const design = FLASH[k.ink.design].name
+        const shots: Shot[] = [
+            {
+                id: 'inked',
+                dur: 2.8,
+                caption: k.good ? `Lin holds your arm up to the lamp. A ${design}, clean lines, shining under the film.` : `Lin holds your arm up to the lamp. The ${design} has opinions of its own.`,
+                cue: k.good ? 'ok' : 'thud',
+            },
+        ]
+        if (k.good) shots.push({ id: 'tip', dur: 3.2, caption: 'A message from the kontrollit chat. Lin\'s flatmate runs it.', cue: 'buzz' })
+        return cut(g, shots, (g) => enter(g, 'intro', caption))
+    }
+    enter(g, 'intro', caption)
     g.t = CHOOSE + 0.5
 }
 
@@ -2419,7 +2443,18 @@ function reachPlayer(g: Game, insp: Inspector) {
         if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2) + luck(g)) {
             insp.passed = true
             g.flags.push('ghost')
-            g.caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
+            const caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
+            // At floor level: their shoes and the reader go by your face. Then the ride goes on.
+            // Once per check: the second of a pair only gets the caption.
+            if (g.crew.some((i) => i !== insp && i.passed)) {
+                g.caption = caption
+                return
+            }
+            const t = g.t
+            cut(g, [{ id: 'pass', dur: 2.6, caption }], (g) => {
+                enter(g, 'ride', caption)
+                g.t = t
+            })
             return
         }
         g.player.hidden = false
@@ -2826,6 +2861,13 @@ export function act(g: Game, id: ActionId) {
         case 'sauna':
         case 'tattoo':
             return visit(g, id)
+        case 'stay':
+            if (g.phase !== 'doors' || !g.aboard) return
+            if (g.player.queued !== null) {
+                g.player.queued = null
+                g.caption = say(['You step back from the door.', 'Changed your mind. You stay on.'])
+            } else g.caption = say(['You stay put.', 'You stay on. The doors can do what they like.'])
+            return
         case 'ink0':
         case 'ink1':
         case 'ink2':
@@ -3039,10 +3081,15 @@ export function actions(g: Game): Action[] {
                 { id: 'lane2', label: 'High' },
             ]
         case 'doors': {
-            if (g.player.queued !== null) return [{ id: 'jump', label: 'Ready', disabled: true }]
+            // At a stop along the way, the first choice (space) is to stay on, so a
+            // stray key press does not put you on the platform. It also takes back
+            // a jump you queued.
+            const midway = g.aboard && g.at !== lastStop(g) && !g.player.asleep
+            const stay: Action = { id: 'stay', label: 'Stay on' }
+            if (g.player.queued !== null) return [...(midway ? [stay] : []), { id: 'jump', label: 'Ready', disabled: true }]
             if (g.player.asleep) return [{ id: 'jump', label: 'Asleep', disabled: true }]
             const disabled = !canJump(g)
-            if (g.aboard) return [{ id: 'jump', label: g.at === lastStop(g) ? 'Get off' : 'Jump out', disabled }]
+            if (g.aboard) return midway ? [stay, { id: 'jump', label: 'Jump out', disabled }] : [{ id: 'jump', label: 'Get off', disabled }]
             if (g.mode === 'bus') {
                 return [
                     { id: 'front', label: 'Front door', disabled },
@@ -3388,6 +3435,7 @@ export function uiOf(g: Game): Ui {
         g.phase === 'ride' ||
         g.phase === 'bike' ||
         shotOf(g) === 'badge' ||
+        shotOf(g) === 'pass' ||
         ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'ride')
     const choosing = g.phase === 'title' || g.phase === 'intro' || g.phase === 'buy'
     const left = Math.ceil(g.segment - g.t)

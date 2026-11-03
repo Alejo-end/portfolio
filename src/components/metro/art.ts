@@ -1525,8 +1525,19 @@ const ADS = [
 ]
 
 function interior(ctx: Ctx, g: Game, still: boolean) {
-    const time = g.time
     const look = CABINS[transitOf(g)]
+    // Under way, the car rocks a pixel on the rails now and then.
+    const moving = !still && g.phase === 'ride'
+    const rock = moving && Math.floor(g.time * 2.3) % 5 === 0 ? 1 : 0
+    R(ctx, 0, 0, W, H, look.floor)
+    ctx.save()
+    ctx.translate(0, rock)
+    insideCar(ctx, g, still, look, moving)
+    ctx.restore()
+}
+
+function insideCar(ctx: Ctx, g: Game, still: boolean, look: (typeof CABINS)[Transit], moving: boolean) {
+    const time = g.time
     R(ctx, 0, 0, W, 16, shade(look.wall, 0.1))
     R(ctx, 0, 12, W, 2, '#fffbe8')
     R(ctx, 0, 15, W, 1, look.wallD)
@@ -1548,6 +1559,18 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
             view(ctx, g.mode, x, 34, Math.round(w), 33, time, still, g.rush)
         }
     }
+    // In the tunnel the dark glass gives the car back: faint heads and
+    // shoulders of everyone in front of it.
+    if (g.mode === 'metro') {
+        const ghosts = [...g.riders.map((r) => ({ x: slotX(r.slot) + r.dx, low: r.seated })), { x: slotX(g.player.x) - 2, low: g.player.hidden }]
+        clipped(ctx, spans.map(([a, b]) => [a, 34, b - a, 33] as [number, number, number, number]), () => {
+            for (const p of ghosts) {
+                const y = p.low ? 52 : 44
+                R(ctx, p.x - 2, y, 5, 5, '#252a2f')
+                R(ctx, p.x - 4, y + 6, 9, 14, '#1f2328')
+            }
+        })
+    }
     // Small ads above the windows, between the doors, under the display.
     const ads = [slotX(3), slotX(7)]
     ads.forEach((cx, i) => {
@@ -1568,6 +1591,18 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         R(ctx, cx + 10, 16, 1, 100, look.pole)
     }
     R(ctx, 0, 22, W, 1, shade(look.wallD, -0.1))
+    // Hand straps off the rail, swaying as it goes, and swinging forward
+    // when it brakes into the next stop.
+    const braking = moving && g.t > g.segment - 1.6
+    for (const sx of [2, 3, 4, 6, 7, 8, 10]) {
+        const x = slotX(sx)
+        const sway = braking ? -2 : moving ? Math.round(Math.sin(time * 1.7 + sx)) : 0
+        line(ctx, x, 23, x + sway, 29, '#8a857c')
+        R(ctx, x + sway - 1, 29, 3, 1, look.pole)
+        R(ctx, x + sway - 1, 32, 3, 1, look.pole)
+        R(ctx, x + sway - 2, 30, 1, 2, look.pole)
+        R(ctx, x + sway + 2, 30, 1, 2, look.pole)
+    }
     // The next-stop display takes turns in Finnish and Swedish.
     const coming = stopsOf(g)[Math.min(g.at + 1, lastStop(g))]
     const next = !still && Math.floor(time / 2.5) % 2 ? coming.sv : coming.name
@@ -1638,6 +1673,16 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
         if (g.bubble?.id === i.id) bubble(ctx, x, top - 3, g.bubble.text)
     }
     if (!g.player.hidden) drawPlayer()
+    // A tunnel light going by washes across the whole car, left to right.
+    if (moving && g.mode === 'metro') {
+        const k = (time % 3.4) / 0.9
+        if (k < 1) {
+            ctx.save()
+            ctx.globalAlpha = 0.14
+            R(ctx, Math.round(-40 + k * (W + 40)), 16, 34, 100, '#fff1c8')
+            ctx.restore()
+        }
+    }
 }
 
 // ——— The phone, in the foreground ——————————————————————————————————————
@@ -3359,6 +3404,33 @@ function ending(ctx: Ctx, g: Game, still: boolean, t = g.t) {
     else square(ctx, g, still, t)
 }
 
+// An inspector from the knee down, walking left past the camera: coat hem
+// (with the light band, for vests), trouser legs, shoes, and the reader
+// swinging from one hand, blinking.
+function shoes(ctx: Ctx, x: number, look: Look, vest: boolean, time: number, reader: boolean) {
+    const step = Math.sin(time * 9)
+    const pants = vest ? '#1a2238' : look.pants
+    for (const l of [0, 1]) {
+        const off = Math.round((l ? step : -step) * 4)
+        const lift = (l ? step : -step) > 0.4 ? 2 : 0
+        const lx = x + l * 17 + off
+        R(ctx, lx, 12, 10, 104 - lift, pants)
+        R(ctx, lx + 8, 12, 2, 104 - lift, shade(pants, -0.25))
+        R(ctx, lx - 4, 114 - lift, 15, 6, '#121212')
+        R(ctx, lx - 4, 114 - lift, 15, 1, '#3a3a3a')
+        R(ctx, lx - 4, 119 - lift, 15, 1, '#2a2a2a')
+    }
+    const coat = vest ? C.navy : look.coat
+    R(ctx, x - 6, 12, 40, 18, coat)
+    R(ctx, x - 6, 29, 40, 1, shade(coat, -0.3))
+    if (vest) R(ctx, x - 6, 24, 40, 2, C.band)
+    if (!reader) return
+    const swing = Math.round(Math.sin(time * 9 + 1) * 2)
+    R(ctx, x - 12 + swing, 30, 6, 8, look.skin)
+    R(ctx, x - 14 + swing, 38, 10, 14, C.navyD)
+    R(ctx, x - 13 + swing, 40, 8, 5, Math.floor(time * 4) % 2 ? '#5be07a' : '#2a6a3a')
+}
+
 function cutScene(ctx: Ctx, g: Game, still: boolean) {
     const t = g.t
     const time = g.time
@@ -3437,6 +3509,109 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                 R(ctx, mx + 3, my + (up ? -2 : 1), 3, 2, '#c8bca2')
             }
             return
+        }
+        case 'pass': {
+            // Floor level, crouched behind a coat: their shoes and the reader
+            // go by at eye level, one inspector then the other. Then breathe.
+            const look = CABINS[transitOf(g)]
+            R(ctx, 0, 0, W, H, shade(look.wallD, -0.35))
+            // The seats from below: cushions, their frames, and the legs and
+            // feet of whoever is sitting there.
+            const sitting = g.riders.filter((r) => r.seated)
+            for (const [n, sx] of [30, 96, 162, 228].entries()) {
+                R(ctx, sx - 22, 40, 44, 20, shade(look.seat, -0.2))
+                R(ctx, sx - 22, 58, 44, 8, look.seat)
+                R(ctx, sx - 22, 58, 44, 1, shade(look.seat, 0.2))
+                R(ctx, sx - 2, 66, 4, 34, '#4a4a4a')
+                R(ctx, sx - 12, 98, 24, 2, '#3a3a3a')
+                const r = sitting[n]
+                if (!r || n === 0) continue
+                for (const lx of [sx - 12, sx + 4]) {
+                    R(ctx, lx, 66, 8, 30, r.look.pants)
+                    R(ctx, lx - 2, 95, 11, 5, '#1a1a1a')
+                }
+                if (r.look.dog) R(ctx, sx + 14, 92, 10, 6, r.look.dog)
+            }
+            R(ctx, 0, 100, W, 44, look.floor)
+            for (let y = 104; y < 144; y += 7) R(ctx, 0, y, W, 1, shade(look.floor, -0.12))
+            const crew = g.crew.filter((i) => i.aboard).slice(0, 2)
+            crew.forEach((insp, n) => {
+                const x = Math.round(W + 30 - (t - 0.3 - n * 0.55) * 170)
+                if (x < -50 || x > W + 40) return
+                shoes(ctx, x, insp.look, !insp.plain, still ? 0 : time, n === 0)
+            })
+            const gone = t > 2.0
+            big(ctx, 3, () => person(ctx, 20, 44, you(g), 1, 'crouch', 'player', 0, -1, gone ? 'happy' : 'worried'))
+            // The coat you are behind, someone's, hanging off the seat.
+            R(ctx, 2, 74, 30, 40, '#4a3a5a')
+            R(ctx, 2, 74, 30, 2, '#5a4a6a')
+            R(ctx, 30, 74, 2, 40, '#3a2a4a')
+            if (t < 0.6) bubble(ctx, 76, 64, '...')
+            else if (gone) bubble(ctx, 76, 64, say2(g, ['PHEW.', 'HUH.', 'OK. OK.']))
+            return letterbox(ctx)
+        }
+        case 'inked': {
+            // Under the lamp, your arm held up by Lin's gloved hands: the design
+            // big, the skin a little red round it, the cling film catching the light.
+            const ink = g.lastInk
+            R(ctx, 0, 0, W, H, '#1f2e2a')
+            pool(ctx, 128, 24, 120, 56, '#2e4038')
+            const skin = g.look.skin
+            R(ctx, 0, 46, W, 58, skin)
+            R(ctx, 0, 46, W, 3, shade(skin, 0.15))
+            R(ctx, 0, 100, W, 4, shade(skin, -0.15))
+            // Black nitrile gloves, fingers over the top and thumbs underneath.
+            for (const gx of [14, 214]) {
+                for (let f = 0; f < 4; f++) R(ctx, gx + f * 7, 38 + (f % 3 === 0 ? 2 : 0), 6, 16, '#18181c')
+                R(ctx, gx + 2, 38, 2, 1, '#3a3a44')
+                R(ctx, gx + 6, 96, 18, 10, '#18181c')
+            }
+            if (ink) {
+                const tone = INK_TONE[ink.design]
+                const at = (x: number, y: number) => [128 + (x - 150) * 2.4, 73 + (y - 92) * 2.4] as const
+                const strokes = FLASH[ink.design].strokes.map(([x0, y0, x1, y1]) => [...at(x0, y0), ...at(x1, y1)])
+                // Fresh ink: the skin round every line is a little red.
+                for (const [a, b, c, d] of strokes) for (let o = -3; o <= 3; o++) {
+                    line(ctx, a + o, b, c + o, d, '#e8907e')
+                    line(ctx, a, b + o, c, d + o, '#e8907e')
+                }
+                strokes.forEach(([a, b, c, d], i) => {
+                    for (let o = -1; o <= 1; o++) {
+                        line(ctx, a + o, b, c + o, d, tone)
+                        line(ctx, a, b + o, c, d + o, tone)
+                    }
+                    // A smudged stroke wanders off its line halfway.
+                    if (ink.marks[i] === 'smudge') {
+                        const [mx, my] = [(a + c) / 2, (b + d) / 2]
+                        for (let o = 0; o <= 1; o++) line(ctx, mx + o, my, mx + 7 + o, my + 6, tone)
+                    }
+                })
+            }
+            // The film: a sheen sliding across it, and a glint.
+            ctx.save()
+            ctx.globalAlpha = 0.3
+            for (let i = 0; i < 2; i++) {
+                const x = still ? 90 + i * 60 : ((t * 70 + i * 140) % 320) - 40
+                for (let j = 0; j < 3; j++) line(ctx, x + j, 48, x + 20 + j, 102, '#ffffff')
+            }
+            ctx.restore()
+            R(ctx, 40, 48, 176, 1, 'rgba(255, 255, 255, 0.4)')
+            if (still || Math.floor(t * 3) % 2) {
+                R(ctx, 186, 52, 1, 5, '#ffffff')
+                R(ctx, 184, 54, 5, 1, '#ffffff')
+            }
+            if (t > 0.8) bubble(ctx, 196, 28, ink && ink.marks.filter((m) => m === 'smudge').length <= 1 ? 'GOOD ARM.' : 'IT IS ART.')
+            return letterbox(ctx)
+        }
+        case 'tip': {
+            opening(ctx, g, still)
+            dim(ctx)
+            return chat(ctx, g, 'Kontrollit hki', t, [
+                { text: 'lin vouched 4 u' },
+                { text: 'tips r true 2nite' },
+                { text: 'stay safe' },
+                { text: 'kiitos', me: true },
+            ])
         }
         case 'badge': {
             // The reveal, close up: lanyard out, reader in hand.
