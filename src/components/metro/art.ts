@@ -64,6 +64,9 @@ import {
     SCALD,
     SCRATCH,
     SPLASH,
+    FLASH,
+    LINE_UP,
+    needle,
     actions,
     scratchWin,
     type Sym,
@@ -153,6 +156,8 @@ export const KURVI_SPOTS: Record<'main' | 'side', { id: ActionId; x: number; w: 
         { id: 'kiosk', x: 210, w: 46, y: 66, h: 42 },
     ],
     side: [
+        // Lin's studio, upstairs over the tram stop: first, so it wins over the stop below.
+        { id: 'tattoo', x: 136, w: 58, y: 37, h: 23 },
         { id: 'sauna', x: 2, w: 60, y: 64, h: 46 },
         { id: 'pizza', x: 66, w: 52, y: 66, h: 30 },
         { id: 'bus', x: 120, w: 12, y: 54, h: 56 },
@@ -732,6 +737,29 @@ function sauna(ctx: Ctx, x: number, time: number, still: boolean, day: boolean) 
         }
 }
 
+// Lin's tattoo studio on the second floor over the stops: a long lit window,
+// flash sheets taped to the glass, Lin at her table, a sign under the eaves.
+function tattooStudio(ctx: Ctx, x: number, time: number, day: boolean) {
+    R(ctx, x, 49, 56, 10, '#2a1a22')
+    R(ctx, x + 1, 50, 54, 8, day ? '#9a8a90' : '#c8566a')
+    if (!day) dither(ctx, x + 1, 50, 54, 2, '#e88a98')
+    for (const fx of [3, 8, 13, 39]) R(ctx, x + fx, 51, 4, 5, '#efe6d2')
+    R(ctx, x + 4, 52, 2, 2, C.ink)
+    R(ctx, x + 9, 53, 2, 1, C.orange)
+    R(ctx, x + 14, 52, 2, 2, '#d84a6a')
+    R(ctx, x + 18, 50, 1, 8, '#2a1a22')
+    R(ctx, x + 37, 50, 1, 8, '#2a1a22')
+    // Lin, bent over the table under her lamp, the bun on top.
+    R(ctx, x + 27, 51, 2, 1, '#1a1214')
+    R(ctx, x + 26, 52, 3, 3, '#1a1214')
+    R(ctx, x + 24, 55, 7, 3, '#1a1214')
+    R(ctx, x + 32, 51, 3, 1, '#3a2a2a')
+    if (!day) R(ctx, x + 32, 52, 3, 1, '#ffe7a3')
+    R(ctx, x, 58, 56, 1, '#4a3a3e')
+    const flicker = !day && Math.floor(time * 5) % 23 === 0
+    neon(ctx, 'Tattoo', x + 28, 41, day ? '#6a5a6a' : flicker ? '#7a3a4a' : '#ff6a90')
+}
+
 /** The side street, flat on: the sauna, the pizzeria, the stops, Billy K's side. */
 function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
     const time = g.time
@@ -745,6 +773,7 @@ function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
     // Round the corner on the right, Billy K's front going away down Hämeentie.
     receding(ctx, 244, 1, BILLY, day)
     sauna(ctx, 4, time, still, day)
+    tattooStudio(ctx, 137, time, day)
     pizzaFront(ctx, 66, day)
     R(ctx, 122, 84, 72, 12, '#5a5a5e')
     for (let y = 85; y < 96; y += 2) R(ctx, 122, y, 72, 1, '#4a4a4e')
@@ -2762,6 +2791,8 @@ function kurviScene(ctx: Ctx, g: Game) {
             drawText(ctx, 'Pull it out', 128, 104, C.white, 1, 'center')
         }
         if (flash) bubble(ctx, 92, 60, k.good ? say2(g, ['BENE.', 'PERFETTO.', 'HYVÄ.']) : say2(g, ['NO NO NO.', 'WHAT?', 'MAMMA MIA.']))
+    } else if (k.place === 'tattoo') {
+        tattooScene(ctx, g, k)
     } else if (k.place === 'sauna') {
         saunaScene(ctx, g, k)
     } else if (k.place === 'pesula') {
@@ -2782,6 +2813,146 @@ function kurviScene(ctx: Ctx, g: Game) {
         else if (k.stage === 'done') bubble(ctx, 184, 74, k.score === k.round.length ? 'ONNEA!' : 'LAULA!')
         for (let i = 0; i < k.round.length; i++) R(ctx, 10 + i * 8, 108, 6, 4, i < k.n ? C.green : '#3a3a3a')
     }
+    letterbox(ctx)
+}
+
+// ——— The tattoo studio ————————————————————————————————————————————————
+// Lin's studio: dark green walls, the flash sheets in frames, her lamp, and
+// your forearm on the armrest with the stencil on it. The needle draws one
+// stroke at a time; breathe while it is lifted, never while it is down.
+
+/** The three flash sheets on the wall, for clicks. */
+export const INK_FLASH = [0, 1, 2].map((i) => ({ x: 16 + i * 46, y: 16, w: 40, h: 44 }))
+
+const LIN: Look = {
+    skin: SKIN[0],
+    hair: HAIR[0],
+    coat: '#1e1c1e',
+    pants: '#2a2826',
+    hat: null,
+    bag: null,
+    phone: false,
+    tag: '',
+    style: 'bun',
+    glasses: true,
+    seed: 0.35,
+}
+
+// A design's strokes, moved and scaled from the forearm into a box.
+function flashArt(ctx: Ctx, design: number, cx: number, cy: number, scale: number, color: string) {
+    for (const [x0, y0, x1, y1] of FLASH[design].strokes) {
+        const at = (x: number, y: number) => [cx + (x - 150) * scale, cy + (y - 92) * scale] as const
+        const [a, b] = at(x0, y0)
+        const [c, d] = at(x1, y1)
+        line(ctx, a, b, c, d, color)
+        line(ctx, a + 1, b, c + 1, d, color)
+    }
+}
+
+const INK_TONE = ['#14120f', C.orange, '#c8385a']
+
+function tattooScene(ctx: Ctx, g: Game, k: Kurvi) {
+    const ink = k.ink
+    const time = g.time
+    const skin = g.look.skin
+    // Walls, a skirting board, the floor.
+    R(ctx, 0, 0, W, H, '#1f2e2a')
+    dither(ctx, 0, 60, W, 30, '#243630')
+    R(ctx, 0, 108, W, 36, '#2a2422')
+    R(ctx, 0, 108, W, 1, '#3a3230')
+    // The flash sheets, framed, each with its name.
+    INK_FLASH.forEach((b, i) => {
+        const picked = k.stage !== 'menu' && ink.design === i
+        R(ctx, b.x, b.y, b.w, b.h, '#3a2a1e')
+        R(ctx, b.x + 2, b.y + 2, b.w - 4, b.h - 12, picked ? '#fff6e0' : '#efe6d2')
+        flashArt(ctx, i, b.x + b.w / 2, b.y + 18, 0.68, INK_TONE[i])
+        drawText(ctx, FLASH[i].name, b.x + b.w / 2, b.y + b.h - 8, picked ? C.yellowL : C.paper, 1, 'center')
+        if (picked) R(ctx, b.x + b.w / 2 - 1, b.y - 1, 3, 3, C.red)
+    })
+    // A lucky cat on the shelf, waving, and a little money plant.
+    R(ctx, 160, 46, 60, 2, '#5a4030')
+    R(ctx, 166, 38, 8, 8, '#f2f0e8')
+    R(ctx, 167, 36, 2, 2, '#f2f0e8')
+    R(ctx, 171, 36, 2, 2, '#f2f0e8')
+    R(ctx, 168, 40, 1, 1, C.ink)
+    R(ctx, 171, 40, 1, 1, C.ink)
+    R(ctx, 166, 43, 8, 1, C.red)
+    R(ctx, 174, 36 + (Math.floor(time * 3) % 2), 2, 4, '#f2f0e8')
+    R(ctx, 196, 40, 8, 6, '#a0603a')
+    for (const [px, py] of [[197, 36], [200, 34], [203, 37], [199, 38]]) R(ctx, px, py, 3, 2, '#4a9a5a')
+    // The lamp on its arm, and its light on the armrest.
+    line(ctx, 236, 20, 214, 44, '#5a5a5e')
+    line(ctx, 214, 44, 186, 60, '#5a5a5e')
+    R(ctx, 180, 58, 12, 5, '#3a3a3e')
+    dither(ctx, 110, 72, 90, 36, '#3a4a40')
+    // Lin, on her stool at the end of the armrest.
+    const flinch = g.time - k.at < 0.5 && !k.good
+    big(ctx, 2, () => person(ctx, 108, 56, LIN, -1, 'sit', 'rider', 0, -1, flinch ? 'stern' : k.stage === 'done' && k.good ? 'happy' : 'calm'))
+    // The armrest and your forearm across it, hand open at the end.
+    R(ctx, 0, 103, 204, 7, '#3a3030')
+    R(ctx, 0, 103, 204, 1, '#5a4a48')
+    const jump = flinch ? -2 : 0
+    R(ctx, 0, 80 + jump, 186, 23, skin)
+    R(ctx, 0, 80 + jump, 186, 2, shade(skin, 0.15))
+    R(ctx, 0, 100 + jump, 186, 3, shade(skin, -0.15))
+    R(ctx, 186, 82 + jump, 10, 19, skin)
+    for (let f = 0; f < 4; f++) R(ctx, 196, 83 + f * 5 + jump, 5, 3, shade(skin, f % 2 ? -0.06 : 0))
+    // The stencil, then the ink as far as it has gone.
+    const strokes = FLASH[ink.design].strokes
+    const n = needle(ink.t)
+    const running = k.stage === 'play' && n.down && n.i < strokes.length
+    if (k.stage !== 'menu')
+        strokes.forEach(([x0, y0, x1, y1], i) => {
+            const mark = ink.marks[i]
+            const yo = jump
+            if (mark === null && !(running && n.i === i)) {
+                // Purple stencil, dotted.
+                const len = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1)
+                for (let j = 0; j <= len; j += 2) R(ctx, x0 + ((x1 - x0) * j) / len, y0 + yo + ((y1 - y0) * j) / len, 1, 1, '#7a5ab0')
+                return
+            }
+            const f = mark === null ? n.along : 1
+            const [ex, ey] = [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f]
+            const tone = INK_TONE[ink.design]
+            line(ctx, x0, y0 + yo, ex, ey + yo, tone)
+            line(ctx, x0 + 1, y0 + yo, ex + 1, ey + yo, tone)
+            if (mark === 'smudge') {
+                dither(ctx, Math.min(x0, x1) - 2, Math.min(y0, y1) + yo - 2, Math.abs(x1 - x0) + 5, Math.abs(y1 - y0) + 5, shade(tone === C.ink ? '#4a4040' : tone, -0.2))
+                R(ctx, (x0 + x1) / 2, (y0 + y1) / 2 + yo + 2, 2, 1, '#c8385a')
+            }
+        })
+    // The machine at the tip, its cord back to Lin's hand.
+    if (k.stage === 'play') {
+        const s = strokes[Math.max(0, Math.min(n.i, strokes.length - 1))]
+        const lifted = !running
+        const [tx, ty] = running ? [s[0] + (s[2] - s[0]) * n.along, s[1] + (s[3] - s[1]) * n.along] : [s[2], s[3] - 8]
+        const buzz = running && Math.floor(time * 30) % 2 ? 1 : 0
+        line(ctx, tx + 6, ty - 10, 208, 86, '#2a2a2e')
+        R(ctx, tx - 1, ty - 4 + buzz, 2, 4, '#c4bdb3')
+        R(ctx, tx - 3, ty - 12 + buzz, 9, 8, '#2a2a2e')
+        R(ctx, tx - 2, ty - 11 + buzz, 4, 2, lifted ? '#5a5a5e' : '#c8385a')
+    }
+    // The sting meter, the strokes so far, and what to do now.
+    if (k.stage === 'play' || k.stage === 'done') {
+        R(ctx, 12, 114, 232, 12, '#141414')
+        drawText(ctx, 'Sting', 16, 117, C.yellowL)
+        R(ctx, 44, 118, 80, 3, '#3a3a3a')
+        R(ctx, 44, 118, Math.round(80 * clamp01(ink.sting)), 3, ink.sting > 0.75 ? C.red : '#e8a040')
+        ink.marks.forEach((m, i) => R(ctx, 132 + i * 7, 117, 5, 5, m === 'clean' ? C.green : m === 'smudge' ? C.red : '#3a3a3a'))
+        if (k.stage === 'play') {
+            const now = running ? 'Hold still' : ink.breathed ? 'Hold' : 'Breathe'
+            const blink = !running && !ink.breathed && Math.floor(time * 4) % 2
+            drawText(ctx, now, 240, 117, running ? C.yellowL : blink ? C.white : '#7ad0a0', 1, 'right')
+        }
+    }
+    if (k.stage === 'menu') {
+        R(ctx, 16, 64, 136, 10, '#141414')
+        drawText(ctx, 'Pick a design', 84, 66, C.yellowL, 1, 'center')
+    }
+    const since = time - k.at
+    if (k.stage === 'play' && ink.t < 0 && ink.t > -LINE_UP + 0.1) bubble(ctx, 208, 52, 'VALMIS?')
+    else if (since < 1 && k.at > 0 && k.stage === 'play') bubble(ctx, 208, 52, k.good ? say2(g, ['HYVÄ.', 'HAO.', 'NIIN.']) : say2(g, ['ÄLÄ LIIKU.', 'AI AI.', 'STILL.']))
+    else if (k.stage === 'done') bubble(ctx, 208, 52, k.good ? 'VALMIS.' : 'NO NIIN...')
     letterbox(ctx)
 }
 

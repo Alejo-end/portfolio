@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, actions, createGame, euro, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
-import { highlight, spotAt } from './hotspots'
+import { act, actions, createGame, euro, keysOf, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
+import { highlight, spotAt, spots } from './hotspots'
 import { play, unlock } from './sound'
 import { Stage, usePixelWidth } from './Stage'
 import { ACHIEVEMENTS, getServerStats, getStats, recordRun, subscribeStats } from './stats'
@@ -40,6 +40,10 @@ const SEEN = 'no-ticket-splash'
 // The halo's own size: small on purpose, the blur does the rest.
 const HALO_W = 32
 const HALO_H = 18
+
+// On a touch screen nothing hovers, so when new things to tap turn up in the
+// picture, their corners blink for this long, in seconds.
+const HINT = 1.6
 
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
@@ -85,6 +89,9 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         let shown = uiOf(game.current)
         // Runs can end inside step() or inside a key press, so compare frame to frame.
         let seen = game.current.phase
+        const touch = window.matchMedia('(pointer: coarse)').matches
+        let tappable = ''
+        let hintAt = -HINT
         const loop = (now: number) => {
             const g = game.current
             step(g, Math.min(0.1, (now - last) / 1000))
@@ -104,6 +111,15 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             const spot = at && spotAt(g, at.x, at.y)
             // The title menu marks its picked row itself.
             if (spot && g.phase !== 'title') highlight(ctx, spot, g.time)
+            if (touch && g.phase !== 'title') {
+                const all = spots(g)
+                const ids = all.map((s) => s.id).join()
+                if (ids !== tappable) {
+                    tappable = ids
+                    hintAt = g.time
+                }
+                if (g.time - hintAt < HINT) for (const s of all) highlight(ctx, { ...s, label: '' }, g.time)
+            }
             if (canvas.current) canvas.current.style.cursor = spot || single(g) ? 'pointer' : 'default'
             const next = uiOf(g)
             if (!sameUi(next, shown)) {
@@ -165,10 +181,13 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                 const pick = g.phase === 'title' ? list[g.menu] : list[0]
                 if (pick) act(g, pick.id)
             }
-            const n = Number(e.key)
-            if (n >= 1 && n <= list.length) {
+            // Numbers for the ways, letters for the places that have one.
+            const keys = keysOf(list)
+            const typed = e.key.toLowerCase()
+            const i = typed === '1' ? keys.indexOf('space') : keys.indexOf(typed)
+            if (i >= 0 && typed !== ' ') {
                 unlock()
-                act(g, list[n - 1].id)
+                act(g, list[i].id)
             }
         }
         window.addEventListener('keydown', onKey)
@@ -247,7 +266,16 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                         </div>
                         {/* The choices: the first one wide on a phone, under your thumb. */}
                         <div className="grid grid-cols-2 gap-2 max-sm:px-3 sm:flex sm:flex-wrap sm:items-center">
-                            {ui.actions.map((a, i) => (
+                            {ui.actions.map((a, i, list) => {
+                                const key = keysOf(list)[i]
+                                // The places come after the ways, under a heading of their own.
+                                const heading = a.key && !list[i - 1]?.key
+                                return [
+                                    heading && (
+                                        <p key="kurvi" className="col-span-2 pt-2 text-[11px] uppercase text-muted-foreground sm:w-full sm:pt-1">
+                                            Kurvi first, each costs minutes
+                                        </p>
+                                    ),
                                 <button
                                     key={a.id}
                                     type="button"
@@ -262,16 +290,22 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                                             : 'border-white/30 enabled:hover:border-foreground enabled:hover:bg-white/10'
                                     }`}
                                 >
-                                    <span className="truncate">{a.label}</span>
-                                    <kbd
-                                        className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
-                                            i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
-                                        }`}
-                                    >
-                                        {i === 0 ? 'space' : i + 1}
-                                    </kbd>
-                                </button>
-                            ))}
+                                    <span className="truncate">
+                                        {a.label}
+                                        {a.note && <span className="ml-2 text-[11px] text-muted-foreground">{a.note}</span>}
+                                    </span>
+                                    {key && (
+                                        <kbd
+                                            className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
+                                                i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
+                                            }`}
+                                        >
+                                            {key}
+                                        </kbd>
+                                    )}
+                                </button>,
+                                ]
+                            })}
                             {ui.share && (
                                 <button
                                     type="button"
