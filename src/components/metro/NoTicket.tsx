@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, actions, createGame, euro, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
+import { act, actions, createGame, doorsLeft, euro, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
 import { highlight, spotAt } from './hotspots'
 import { play, unlock } from './sound'
 import { Stage, usePixelWidth } from './Stage'
@@ -41,6 +41,9 @@ const SEEN = 'no-ticket-splash'
 const HALO_W = 32
 const HALO_H = 18
 
+// The stops on the way that cost minutes. Their buttons come after the ways to go.
+const DETOURS = new Set<ActionId>(['kebab', 'pizza', 'bar', 'kiosk', 'pesula', 'sauna'])
+
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
     const open = actions(g).filter((a) => !a.disabled)
@@ -68,6 +71,8 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
     // A tiny copy of the picture, blurred big behind it: the screen's light
     // spilling onto the black around it, in the colours of the scene.
     const halo = useRef<HTMLCanvasElement>(null)
+    // The bar on the door button that runs out as the doors close.
+    const hurry = useRef<HTMLSpanElement>(null)
 
     useEffect(() => {
         const ctx = canvas.current?.getContext('2d')
@@ -105,6 +110,8 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             // The title menu marks its picked row itself.
             if (spot && g.phase !== 'title') highlight(ctx, spot, g.time)
             if (canvas.current) canvas.current.style.cursor = spot || single(g) ? 'pointer' : 'default'
+            // Every frame, without a render: the doors wait for nobody.
+            if (hurry.current) hurry.current.style.transform = `scaleX(${doorsLeft(g) ?? 0})`
             const next = uiOf(g)
             if (!sameUi(next, shown)) {
                 shown = next
@@ -248,29 +255,45 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                         {/* The choices: the first one wide on a phone, under your thumb. */}
                         <div className="grid grid-cols-2 gap-2 max-sm:px-3 sm:flex sm:flex-wrap sm:items-center">
                             {ui.actions.map((a, i) => (
-                                <button
-                                    key={a.id}
-                                    type="button"
-                                    disabled={a.disabled}
-                                    onClick={() => press(a.id)}
-                                    className={`flex h-12 items-center justify-between gap-3 border-2 px-4 text-[13px] uppercase transition-colors disabled:opacity-40 sm:min-w-[7rem] sm:gap-4 sm:text-[14px] ${
-                                        // The title menu and the disclaimer are drawn in the picture; the buttons stay for screen readers.
-                                        ui.phase === 'title' || ui.phase === 'splash' ? 'sr-only' : ''
-                                    } ${
-                                        i === 0
-                                            ? 'col-span-2 border-foreground bg-foreground text-background enabled:hover:opacity-85'
-                                            : 'border-white/30 enabled:hover:border-foreground enabled:hover:bg-white/10'
-                                    }`}
-                                >
-                                    <span className="truncate">{a.label}</span>
-                                    <kbd
-                                        className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
-                                            i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
+                                <Fragment key={a.id}>
+                                    {/* The ways to go come first; the places after them are detours. */}
+                                    {ui.phase === 'intro' && DETOURS.has(a.id) && !(i > 0 && DETOURS.has(ui.actions[i - 1].id)) && (
+                                        <p className="col-span-2 pt-2 text-[12px] uppercase text-muted-foreground sm:basis-full sm:text-[13px]">
+                                            or stop on the way. It costs minutes
+                                        </p>
+                                    )}
+                                    <button
+                                        type="button"
+                                        disabled={a.disabled}
+                                        onClick={() => press(a.id)}
+                                        className={`relative flex h-12 items-center justify-between gap-3 border-2 px-4 text-[13px] uppercase transition-colors disabled:opacity-40 sm:min-w-[7rem] sm:gap-4 sm:text-[14px] ${
+                                            // The disclaimer and, on bigger screens, the title menu are drawn in the
+                                            // picture; the buttons stay for screen readers. On a phone the menu rows
+                                            // are too small to tap, so the buttons show.
+                                            ui.phase === 'splash' ? 'sr-only' : ui.phase === 'title' ? 'sm:sr-only' : ''
+                                        } ${
+                                            i === 0
+                                                ? 'col-span-2 border-foreground bg-foreground text-background enabled:hover:opacity-85'
+                                                : 'border-white/30 enabled:hover:border-foreground enabled:hover:bg-white/10'
                                         }`}
                                     >
-                                        {i === 0 ? 'space' : i + 1}
-                                    </kbd>
-                                </button>
+                                        <span className="truncate">{a.label}</span>
+                                        <kbd
+                                            className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
+                                                i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
+                                            }`}
+                                        >
+                                            {i === 0 ? 'space' : i + 1}
+                                        </kbd>
+                                        {i === 0 && ui.phase === 'doors' && (
+                                            <span
+                                                ref={hurry}
+                                                aria-hidden
+                                                className="absolute inset-x-0 bottom-0 h-1.5 origin-left scale-x-0 bg-[#cf3a2f]"
+                                            />
+                                        )}
+                                    </button>
+                                </Fragment>
                             ))}
                             {ui.share && (
                                 <button
