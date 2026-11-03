@@ -157,8 +157,9 @@ export const KURVI_SPOTS: Record<'main' | 'side', { id: ActionId; x: number; w: 
     ],
     side: [
         // Lin's studio, upstairs over the tram stop: first, so it wins over the stop below.
-        { id: 'tattoo', x: 139, w: 56, y: 40, h: 41 },
-        { id: 'tattoo', x: 107, w: 16, y: 92, h: 18 },
+        // Down to the sill only: the tram shelter's roof below is the tram's.
+        { id: 'tattoo', x: 139, w: 56, y: 40, h: 37 },
+        { id: 'tattoo', x: 107, w: 13, y: 92, h: 18 },
         { id: 'tattoo', x: 183, w: 12, y: 82, h: 8 },
         { id: 'sauna', x: 2, w: 60, y: 64, h: 46 },
         { id: 'pizza', x: 66, w: 52, y: 66, h: 30 },
@@ -1530,6 +1531,8 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
     const moving = !still && g.phase === 'ride'
     const rock = moving && Math.floor(g.time * 2.3) % 5 === 0 ? 1 : 0
     R(ctx, 0, 0, W, H, look.floor)
+    // What the rock uncovers at the top is ceiling, not floor.
+    R(ctx, 0, 0, W, 2, shade(look.wall, 0.1))
     ctx.save()
     ctx.translate(0, rock)
     insideCar(ctx, g, still, look, moving)

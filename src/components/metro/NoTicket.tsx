@@ -90,7 +90,9 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         // Runs can end inside step() or inside a key press, so compare frame to frame.
         let seen = game.current.phase
         const touch = window.matchMedia('(pointer: coarse)').matches
-        let tappable = ''
+        // Which tappable things this phase has already hinted at.
+        let hinted = new Set<string>()
+        let hintPhase = ''
         let hintAt = -HINT
         const loop = (now: number) => {
             const g = game.current
@@ -112,10 +114,16 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             // The title menu marks its picked row itself.
             if (spot && g.phase !== 'title') highlight(ctx, spot, g.time)
             if (touch && g.phase !== 'title') {
+                // Only something new to tap starts the hint: walking down the car
+                // or talking to someone shuffles the spots without adding any.
+                const place = `${g.phase}|${g.kurvi?.place ?? ''}|${g.kurvi?.stage ?? ''}`
+                if (place !== hintPhase) {
+                    hintPhase = place
+                    hinted = new Set()
+                }
                 const all = spots(g)
-                const ids = all.map((s) => s.id).join()
-                if (ids !== tappable) {
-                    tappable = ids
+                if (all.some((s) => !hinted.has(s.id))) {
+                    for (const s of all) hinted.add(s.id)
                     hintAt = g.time
                 }
                 if (g.time - hintAt < HINT) for (const s of all) highlight(ctx, { ...s, label: '' }, g.time)
@@ -151,7 +159,10 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         if (spot?.aim !== undefined) g.aim = spot.aim
         // On the street, a tap on nothing in particular pockets the phone.
         const pocket = !spot && g.phase === 'intro' && g.phoneUp && actions(g).some((a) => a.id === 'phone')
-        const id = spot?.id ?? (pocket ? 'phone' : single(g))
+        // At a stop along the way, a tap on the train still gets you off: the
+        // stay-on default is for stray key presses, not a deliberate tap.
+        const off = g.phase === 'doors' && g.aboard && actions(g).some((a) => a.id === 'jump' && !a.disabled)
+        const id = spot?.id ?? (pocket ? 'phone' : off ? 'jump' : single(g))
         if (id) press(id)
     }
 
@@ -193,6 +204,9 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [])
+
+    // The key shown on each choice.
+    const keys = keysOf(ui.actions)
 
     return (
         <>
@@ -267,7 +281,7 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                         {/* The choices: the first one wide on a phone, under your thumb. */}
                         <div className="grid grid-cols-2 gap-2 max-sm:px-3 sm:flex sm:flex-wrap sm:items-center">
                             {ui.actions.map((a, i, list) => {
-                                const key = keysOf(list)[i]
+                                const key = keys[i]
                                 // The places come after the ways, under a heading of their own.
                                 const heading = a.key && !list[i - 1]?.key
                                 return [

@@ -1653,7 +1653,10 @@ function leaveKurvi(g: Game) {
             },
         ]
         if (k.good) shots.push({ id: 'tip', dur: 3.2, caption: 'A message from the kontrollit chat. Lin\'s flatmate runs it.', cue: 'buzz' })
-        return cut(g, shots, (g) => enter(g, 'intro', caption))
+        return cut(g, shots, (g) => {
+            enter(g, 'intro', caption)
+            g.t = CHOOSE + 0.5
+        })
     }
     enter(g, 'intro', caption)
     g.t = CHOOSE + 0.5
@@ -2445,11 +2448,13 @@ function reachPlayer(g: Game, insp: Inspector) {
             g.flags.push('ghost')
             const caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
             // At floor level: their shoes and the reader go by your face. Then the ride goes on.
-            // Once per check: the second of a pair only gets the caption.
-            if (g.crew.some((i) => i !== insp && i.passed)) {
+            // Once per stretch between stops: the second of a pair only gets the caption.
+            const shown = `pass@${g.at}`
+            if (g.flags.includes(shown)) {
                 g.caption = caption
                 return
             }
+            g.flags.push(shown)
             const t = g.t
             cut(g, [{ id: 'pass', dur: 2.6, caption }], (g) => {
                 enter(g, 'ride', caption)
