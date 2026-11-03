@@ -385,6 +385,9 @@ export type ShotId =
     | 'gull'
     | 'scan'
     | 'door'
+    | 'pass'
+    | 'inked'
+    | 'tip'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -469,7 +472,15 @@ export type ActionId =
     | 'scr3'
     | 'scr4'
     | 'scr5'
-export type Action = { id: ActionId; label: string; disabled?: boolean }
+    | 'tattoo'
+    | 'ink0'
+    | 'ink1'
+    | 'ink2'
+    | 'breathe'
+    | 'stay'
+// `key` is a letter that does this action on a keyboard, in place of a
+// number; `note` is a word or two shown beside the label, like its cost.
+export type Action = { id: ActionId; label: string; disabled?: boolean; key?: string; note?: string }
 
 export type Game = {
     phase: Phase
@@ -524,6 +535,8 @@ export type Game = {
     // The bar's shot of the night, and the game at the counter of a Kurvi place.
     drink: Drink
     kurvi: Kurvi | null
+    // The tattoo you left Lin's with, for its close-up.
+    lastInk: Ink | null
     // Clean slices off the spit: a better kebab is a better bribe.
     slices: number
     // What happened to the kebab, if it is gone: for what you say at the end.
@@ -800,6 +813,9 @@ function addPlatformCrew(g: Game) {
 
 const waiting = (g: Game) => g.crew.filter((i) => !i.aboard)
 
+// On the easy run, or once Lin has tattooed you, the chat is always right.
+const sure = (g: Game) => g.easy || g.flags.includes('inked')
+
 function trainTip(g: Game) {
     const { vehicle, place } = line(g)
     const nick = stopsOf(g)[g.at].nick
@@ -807,7 +823,7 @@ function trainTip(g: Game) {
     const plain = g.crew.find((i) => i.plain)
     const vests = waiting(g).length
     // On the easy run the chat is always right.
-    const r = g.easy ? (plain || vests ? 0 : 0.5) : g.rand()
+    const r = sure(g) ? (plain || vests ? 0 : 0.5) : g.rand()
     if (plain && r < 0.75) return `plainclothes on ${on}, ${plain.look.tag}`
     if (vests && r < 0.75) return `${vests} vests on ${nick} ${place}`
     if (r < 0.15) return `plainclothes on ${on}, ${pick(g, CLOTH).name} beanie`
@@ -819,7 +835,7 @@ function stationTip(g: Game, next: number) {
     const nick = stopsOf(g)[next].nick
     const place = line(g).place
     const ahead = waiting(g).length
-    const r = g.easy ? (ahead ? 0 : 0.5) : g.rand()
+    const r = sure(g) ? (ahead ? 0 : 0.5) : g.rand()
     if (ahead && r < 0.75) return `${ahead} vests on ${nick} ${place}`
     if (!ahead && r < 0.25) return `vests on ${nick} ${place}?`
     return `${nick} clear`
@@ -892,6 +908,7 @@ export function createGame(seed = Date.now()): Game {
         codeAt: 'pizza',
         drink: DRINKS[0],
         kurvi: null,
+        lastInk: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1011,6 +1028,7 @@ function begin(g: Game, kind: Kind) {
         codeAt: 'pizza',
         drink: DRINKS[0],
         kurvi: null,
+        lastInk: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1076,9 +1094,36 @@ function begin(g: Game, kind: Kind) {
 // small game at the counter. One of them has a free scooter code this run.
 // The laundromat has coins left in its machines, the kiosk sells tickets
 // and scratch cards, card accepted, and the public sauna is a contest of
-// who can take the most löyly.
+// who can take the most löyly. Upstairs over the tram stop, Lin tattoos
+// walk-ins from her flash sheets, if they can hold still.
 
-export type Place = 'kebab' | 'pizza' | 'bar' | 'kiosk' | 'pesula' | 'sauna'
+export type Place = 'kebab' | 'pizza' | 'bar' | 'kiosk' | 'pesula' | 'sauna' | 'tattoo'
+
+// The tattoo: Lin's flash sheet on the wall, each design a few strokes of
+// the needle, in canvas pixels on your forearm.
+export const FLASH = [
+    { name: 'Gull', strokes: [[128, 92, 139, 85], [139, 85, 149, 92], [151, 92, 161, 85], [161, 85, 172, 92], [145, 96, 155, 96]] },
+    { name: 'Metro M', strokes: [[136, 99, 136, 84], [136, 84, 150, 94], [150, 94, 164, 84], [164, 84, 164, 99]] },
+    { name: 'Peony', strokes: [[140, 91, 150, 83], [150, 83, 160, 91], [160, 91, 156, 99], [156, 99, 144, 99], [144, 99, 140, 91], [150, 99, 138, 103]] },
+] as const
+// Seconds the needle is down for each stroke, and lifted between two. Lin
+// lines up for a moment first.
+export const STROKE = 1.2
+export const LIFT = 0.8
+export const LINE_UP = 1.4
+// The sting builds while the needle is down. Breathe while it is lifted.
+const STING = 0.46
+const BREATH = 0.6
+// One stroke: is the needle down, which stroke, and how far along it.
+export const needle = (t: number) => {
+    const i = Math.floor(t / (STROKE + LIFT))
+    const within = t - i * (STROKE + LIFT)
+    return { i, down: t >= 0 && within < STROKE, along: Math.min(1, within / STROKE) }
+}
+// The ink: which design, the clock since the needle started (negative while
+// she lines up), the sting so far, a breath taken this lift, and how each
+// stroke came out.
+export type Ink = { design: number; t: number; sting: number; breathed: boolean; marks: ('clean' | 'smudge' | null)[] }
 
 // The sauna: how hot the room is (1 is a proper löyly), how ready the stones
 // are for the next ladle, how much you can still take, and how long the room
@@ -1149,6 +1194,7 @@ export type Kurvi = {
     // Kiosk: a scratch card, six cells, and which are scratched.
     cells: { sym: Sym; shown: boolean }[]
     steam: Steam
+    ink: Ink
     // Kebab: the cook shaves the spit, slices fall in three lanes, and you
     // hold the pita under them.
     drops: Drop[]
@@ -1172,7 +1218,7 @@ export type Kurvi = {
     doneAt: number
 }
 
-const KURVI_MIN: Record<Place, number> = { kebab: 4, pizza: 3, bar: 5, kiosk: 2, pesula: 3, sauna: 6 }
+export const KURVI_MIN: Record<Place, number> = { kebab: 4, pizza: 3, bar: 5, kiosk: 2, pesula: 3, sauna: 6, tattoo: 5 }
 export const POUR_SHOW = 0.9
 // Seconds a slice takes from the spit to the pita, and the lanes' x on screen.
 export const DROP_FALL = 1.1
@@ -1188,7 +1234,7 @@ function visit(g: Game, place: Place) {
     g.went.push(place)
     g.clock += KURVI_MIN[place]
     const k: Kurvi = {
-        place, stage: 'play', washes: [], cells: [], steam: { heat: 0.35, stones: 1, sisu: 1, hold: 0 }, drops: [], lane: 1, order: '', want: [], toppings: [], shownAt: g.time, bake: 0,
+        place, stage: 'play', washes: [], cells: [], steam: { heat: 0.35, stones: 1, sisu: 1, hold: 0 }, ink: { design: 0, t: -LINE_UP, sting: 0.2, breathed: false, marks: [] }, drops: [], lane: 1, order: '', want: [], toppings: [], shownAt: g.time, bake: 0,
         drinks: [], round: [], n: 0, score: 0, at: -9, good: false, doneAt: 0,
     }
     g.kurvi = k
@@ -1202,6 +1248,13 @@ function visit(g: Game, place: Place) {
         return enter(g, 'kurvi', say([
             'The public sauna. Two regulars on the top bench. "Löyly?" Heat it until it bites, and stay.',
             'Sauna. The regulars look at the ladle, then at you. Make it hot. Do not leave first.',
+        ]))
+    }
+    if (place === 'tattoo') {
+        k.stage = 'menu'
+        return enter(g, 'kurvi', say([
+            'Upstairs, the studio. Lin looks up from her drawing table. "Walk-in? Pick from the wall. Hold still and it is free."',
+            'Lin\'s studio, over the tram stop. Twelve years in Kallio, flash sheets to the ceiling. "Choose one. Then breathe when I lift."',
         ]))
     }
     if (place === 'kiosk') {
@@ -1334,9 +1387,90 @@ function sweatOut(g: Game, k: Kurvi, dt: number) {
     if (s.sisu <= 0) return endSauna(g, k, false, say(['You cannot take it. Out, red as a lobster.', 'Your sisu runs out before the heat does.']))
 }
 
+// Picking a design, then breathing between strokes. A breath while the
+// needle is down moves your arm.
+function inkInput(g: Game, k: Kurvi, id: ActionId) {
+    const ink = k.ink
+    if (k.stage === 'menu') {
+        if (id === 'leave') {
+            k.stage = 'done'
+            k.doneAt = g.time - 1
+            return
+        }
+        const design = Number(id[3])
+        if (!FLASH[design]) return
+        ink.design = design
+        ink.marks = FLASH[design].strokes.map(() => null)
+        k.stage = 'play'
+        g.cues.push('click')
+        g.caption = `The ${FLASH[design].name}. Lin presses the stencil on your forearm. "Breathe when I lift. Not when I draw."`
+        return
+    }
+    if (k.stage !== 'play' || id !== 'breathe') return
+    const n = needle(ink.t)
+    k.at = g.time
+    if (n.down) {
+        smudge(g, k, n.i, say(['You breathe in. Your arm moves with it. "Ai."', 'A breath, right on the line. Lin sighs.']))
+        return
+    }
+    if (ink.breathed) {
+        k.good = true
+        g.caption = say(['Already calm. Hold.', 'Easy. One breath is enough.'])
+        return
+    }
+    ink.breathed = true
+    ink.sting = Math.max(0, ink.sting - BREATH)
+    k.good = true
+    g.cues.push('hiss')
+}
+
+function smudge(g: Game, k: Kurvi, i: number, caption: string) {
+    const ink = k.ink
+    if (ink.marks[i] !== null && ink.marks[i] !== undefined) return
+    ink.marks[i] = 'smudge'
+    k.good = false
+    g.cues.push('thud')
+    g.caption = caption
+}
+
+// The needle runs its strokes; the sting builds while it is down, and too
+// much of it is a flinch.
+function inkStep(g: Game, k: Kurvi, dt: number) {
+    const ink = k.ink
+    const before = needle(ink.t)
+    ink.t += dt
+    const now = needle(ink.t)
+    const strokes = ink.marks.length
+    if (now.down && now.i < strokes) {
+        ink.sting += (STING + now.i * 0.03) * dt
+        if (ink.sting >= 1 && ink.marks[now.i] === null) {
+            k.at = g.time
+            smudge(g, k, now.i, say(['It stings. You flinch. A wobble in the line.', 'Too much. Your arm jumps. "Hold STILL."']))
+            ink.sting = 0.45
+        }
+    }
+    // A stroke just finished: clean, unless something went wrong on it.
+    if (before.down && !now.down && before.i < strokes) {
+        if (ink.marks[before.i] === null) ink.marks[before.i] = 'clean'
+        ink.breathed = false
+        if (before.i === strokes - 1) {
+            const clean = ink.marks.filter((m) => m === 'clean').length
+            k.score = clean
+            k.good = clean >= strokes - 1
+            k.stage = 'done'
+            k.doneAt = g.time
+            g.cues.push(k.good ? 'ok' : 'fail')
+            g.caption = k.good
+                ? say(['Lin wipes it down and wraps it in film. "Good arm."', '"Hǎo." Lin holds it up to the lamp. Clean lines.'])
+                : say(['"It is art," Lin says, wrapping it. It is something.', 'Wobbly. Lin shrugs. "Come back sober, I fix it."'])
+        }
+    }
+}
+
 function kurviInput(g: Game, id: ActionId) {
     const k = g.kurvi
     if (!k) return
+    if (k.place === 'tattoo') return inkInput(g, k, id)
     if (k.place === 'sauna') {
         if (k.stage !== 'play') return
         if (id === 'loyly') return loyly(g, k)
@@ -1432,6 +1566,14 @@ function leaveKurvi(g: Game) {
             g.drunk = false
             back = `Out and dressed, clean and calm${g.went.includes('bar') ? ', the shots sweated out' : ''}. The older regular drives a night bus. "Get in at the front."`
         } else back = say(['Out, steaming, a bit ashamed.', 'You cool off on the bench outside. Next time.'])
+    } else if (k.place === 'tattoo') {
+        const design = FLASH[k.ink.design].name
+        if (!k.ink.marks.some((m) => m !== null)) back = 'You leave the studio. Lin goes back to her drawing.'
+        else if (k.good) {
+            // Lin's flatmate runs the kontrollit chat: tonight, its tips are right.
+            g.flags.push('inked')
+            back = `A fresh ${design} under cling film. Lin's flatmate runs the kontrollit chat. "Tonight it does not lie."`
+        } else back = `A wobbly ${design} under cling film. It will heal. Mostly.`
     } else if (k.place === 'pesula') {
         g.cash += k.score
         const cat = k.washes.some((w) => w.open && w.kind === 'cat')
@@ -1494,10 +1636,29 @@ function leaveKurvi(g: Game) {
     }
     if (g.codeAt === k.place) {
         g.code = true
-        const on = { kebab: 'the receipt', pizza: 'the box', bar: 'a beer coaster', kiosk: 'the receipt', pesula: 'a sticker on a dryer', sauna: 'a towel ticket' }[k.place]
+        const on = { kebab: 'the receipt', pizza: 'the box', bar: 'a beer coaster', kiosk: 'the receipt', pesula: 'a sticker on a dryer', sauna: 'a towel ticket', tattoo: 'the aftercare leaflet' }[k.place]
         back += ` On ${on}: a free scooter ride code.`
     }
-    enter(g, 'intro', `${clockText(g.clock)}. ${back} ${g.code ? 'Metro, tram, bus, bike or scooter?' : 'Metro, tram, bus or the bike?'}`)
+    const caption = `${clockText(g.clock)}. ${back} ${g.code ? 'Metro, tram, bus, bike or scooter?' : 'Metro, tram, bus or the bike?'}`
+    // A tattoo gets its close-up under the lamp, and a clean one a message from the chat.
+    if (k.place === 'tattoo' && k.ink.marks.some((m) => m !== null)) {
+        g.lastInk = k.ink
+        const design = FLASH[k.ink.design].name
+        const shots: Shot[] = [
+            {
+                id: 'inked',
+                dur: 2.8,
+                caption: k.good ? `Lin holds your arm up to the lamp. A ${design}, clean lines, shining under the film.` : `Lin holds your arm up to the lamp. The ${design} has opinions of its own.`,
+                cue: k.good ? 'ok' : 'thud',
+            },
+        ]
+        if (k.good) shots.push({ id: 'tip', dur: 3.2, caption: 'A message from the kontrollit chat. Lin\'s flatmate runs it.', cue: 'buzz' })
+        return cut(g, shots, (g) => {
+            enter(g, 'intro', caption)
+            g.t = CHOOSE + 0.5
+        })
+    }
+    enter(g, 'intro', caption)
     g.t = CHOOSE + 0.5
 }
 
@@ -2294,7 +2455,20 @@ function reachPlayer(g: Game, insp: Inspector) {
         if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2) + luck(g)) {
             insp.passed = true
             g.flags.push('ghost')
-            g.caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
+            const caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
+            // At floor level: their shoes and the reader go by your face. Then the ride goes on.
+            // Once per stretch between stops: the second of a pair only gets the caption.
+            const shown = `pass@${g.at}`
+            if (g.flags.includes(shown)) {
+                g.caption = caption
+                return
+            }
+            g.flags.push(shown)
+            const t = g.t
+            cut(g, [{ id: 'pass', dur: 2.6, caption }], (g) => {
+                enter(g, 'ride', caption)
+                g.t = t
+            })
             return
         }
         g.player.hidden = false
@@ -2699,7 +2873,20 @@ export function act(g: Game, id: ActionId) {
         case 'kiosk':
         case 'pesula':
         case 'sauna':
+        case 'tattoo':
             return visit(g, id)
+        case 'stay':
+            if (g.phase !== 'doors' || !g.aboard) return
+            if (g.player.queued !== null) {
+                g.player.queued = null
+                g.caption = say(['You step back from the door.', 'Changed your mind. You stay on.'])
+            } else g.caption = say(['You stay put.', 'You stay on. The doors can do what they like.'])
+            return
+        case 'ink0':
+        case 'ink1':
+        case 'ink2':
+        case 'breathe':
+            return kurviInput(g, id)
         case 'loyly':
         case 'sweat':
             return kurviInput(g, id)
@@ -2819,16 +3006,19 @@ export function actions(g: Game): Action[] {
             if (!g.ticket) ways.push({ id: 'buy', label: 'Buy ticket' })
             const pocket: Action = { id: 'phone', label: g.phoneUp ? 'Pocket the phone' : 'Phone' }
             if (g.home) return [...ways, pocket]
-            for (const [id, label] of [
-                ['kebab', 'Kebab'],
-                ['pizza', 'Pizza'],
-                ['bar', 'Bar'],
-                ['kiosk', 'Kiosk'],
-                ['pesula', 'Laundromat'],
-                ['sauna', 'Sauna'],
-            ] as const)
-                if (!g.went.includes(id)) ways.push({ id, label })
             ways.push(pocket)
+            // The places take letters, so the ways keep the numbers, and
+            // each says what it costs on the clock.
+            for (const [id, label, key] of [
+                ['kebab', 'Kebab', 'k'],
+                ['pizza', 'Pizza', 'p'],
+                ['bar', 'Bar', 'b'],
+                ['kiosk', 'Kiosk', 'o'],
+                ['pesula', 'Laundromat', 'l'],
+                ['sauna', 'Sauna', 's'],
+                ['tattoo', 'Tattoo', 't'],
+            ] as const)
+                if (!g.went.includes(id)) ways.push({ id, label, key, note: `${KURVI_MIN[id]} min` })
             // The rabbit on Hämeentie, for the picture only, like the arrows.
             if (g.rabbitAt < 0 && g.cam === CAM_MAX && g.cornerAt < 0) ways.push({ id: 'rabbit', label: 'Rabbit' })
             // Panning is for the picture and the arrow keys, not a button.
@@ -2860,6 +3050,9 @@ export function actions(g: Game): Action[] {
                 ]
             if (k.place === 'kiosk' && k.stage === 'play')
                 return k.cells.flatMap((c, i) => (c.shown ? [] : [{ id: `scr${i}` as ActionId, label: `Scratch ${i + 1}` }]))
+            if (k.place === 'tattoo' && k.stage === 'menu')
+                return [...FLASH.map((f, i) => ({ id: `ink${i}` as ActionId, label: f.name })), { id: 'leave', label: 'Leave' }]
+            if (k.place === 'tattoo' && k.stage === 'play') return [{ id: 'breathe', label: 'Breathe' }]
             if (k.place === 'sauna' && k.stage === 'play')
                 return [
                     { id: 'loyly', label: 'Löyly' },
@@ -2902,10 +3095,15 @@ export function actions(g: Game): Action[] {
                 { id: 'lane2', label: 'High' },
             ]
         case 'doors': {
-            if (g.player.queued !== null) return [{ id: 'jump', label: 'Ready', disabled: true }]
+            // At a stop along the way, the first choice (space) is to stay on, so a
+            // stray key press does not put you on the platform. It also takes back
+            // a jump you queued.
+            const midway = g.aboard && g.at !== lastStop(g) && !g.player.asleep
+            const stay: Action = { id: 'stay', label: 'Stay on' }
+            if (g.player.queued !== null) return [...(midway ? [stay] : []), { id: 'jump', label: 'Ready', disabled: true }]
             if (g.player.asleep) return [{ id: 'jump', label: 'Asleep', disabled: true }]
             const disabled = !canJump(g)
-            if (g.aboard) return [{ id: 'jump', label: g.at === lastStop(g) ? 'Get off' : 'Jump out', disabled }]
+            if (g.aboard) return midway ? [stay, { id: 'jump', label: 'Jump out', disabled }] : [{ id: 'jump', label: 'Get off', disabled }]
             if (g.mode === 'bus') {
                 return [
                     { id: 'front', label: 'Front door', disabled },
@@ -3054,6 +3252,7 @@ export function step(g: Game, dt: number) {
             }
             if (k.stage === 'play' && k.place === 'kebab') catchSlices(g, k)
             if (k.stage === 'play' && k.place === 'sauna') sweatOut(g, k, dt)
+            if (k.stage === 'play' && k.place === 'tattoo') inkStep(g, k, dt)
             // Too slow on a topping counts as leaving it off.
             if (k.stage === 'play' && k.place === 'pizza' && g.time - k.shownAt > TOPPING_TIME) {
                 kurviInput(g, 'no')
@@ -3231,12 +3430,26 @@ export function sameUi(a: Ui, b: Ui) {
     )
 }
 
+/**
+ * The key for each action, in order: space for the first, then 2 to 9 for
+ * the ones without a letter of their own. Past nine, none: click it.
+ */
+export function keysOf(list: Action[]): (string | null)[] {
+    let n = 0
+    return list.map((a) => {
+        if (a.key) return a.key
+        n += 1
+        return n === 1 ? 'space' : n <= 9 ? String(n) : null
+    })
+}
+
 export function uiOf(g: Game): Ui {
     const stops = stopsOf(g)
     const riding =
         g.phase === 'ride' ||
         g.phase === 'bike' ||
         shotOf(g) === 'badge' ||
+        shotOf(g) === 'pass' ||
         ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'ride')
     const choosing = g.phase === 'title' || g.phase === 'intro' || g.phase === 'buy'
     const left = Math.ceil(g.segment - g.t)

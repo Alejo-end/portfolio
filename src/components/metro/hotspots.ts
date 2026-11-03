@@ -3,6 +3,7 @@ import {
     BUY,
     DRUMS,
     GLASS_X,
+    INK_FLASH,
     KIOSK_MENU,
     KURVI_SPOTS,
     MENU,
@@ -104,6 +105,7 @@ export function spots(g: Game): Spot[] {
                 add('loyly', SAUNA_STOVE.x, SAUNA_STOVE.y, SAUNA_STOVE.w, SAUNA_STOVE.h)
                 add('sweat', SAUNA_DOOR.x, SAUNA_DOOR.y, SAUNA_DOOR.w, SAUNA_DOOR.h)
             }
+            if (g.kurvi?.place === 'tattoo') INK_FLASH.forEach((b, i) => add(`ink${i}` as ActionId, b.x, b.y, b.w, b.h, { label: '' }))
             if (g.kurvi?.place === 'pesula') DRUMS.forEach((b, i) => add(`wash${i}` as ActionId, b.x, b.y, b.w, b.h, { label: '' }))
             if (g.kurvi?.place === 'kiosk') {
                 for (const [i, id] of (['kticket', 'scratch', 'leave'] as const).entries()) add(id, KIOSK_MENU[i].x, KIOSK_MENU[i].y, KIOSK_MENU[i].w, KIOSK_MENU[i].h, { label: '' })

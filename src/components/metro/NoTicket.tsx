@@ -2,8 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { H, W, render } from './art'
-import { act, actions, createGame, doorsLeft, euro, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
-import { highlight, spotAt } from './hotspots'
+import { act, actions, createGame, doorsLeft, euro, keysOf, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
+import { highlight, spotAt, spots } from './hotspots'
 import { play, unlock } from './sound'
 import { Stage, usePixelWidth } from './Stage'
 import { ACHIEVEMENTS, getServerStats, getStats, recordRun, subscribeStats } from './stats'
@@ -41,8 +41,12 @@ const SEEN = 'no-ticket-splash'
 const HALO_W = 32
 const HALO_H = 18
 
+// On a touch screen nothing hovers, so when new things to tap turn up in the
+// picture, their corners blink for this long, in seconds.
+const HINT = 1.6
+
 // The stops on the way that cost minutes. Their buttons come after the ways to go.
-const DETOURS = new Set<ActionId>(['kebab', 'pizza', 'bar', 'kiosk', 'pesula', 'sauna'])
+const DETOURS = new Set<ActionId>(['kebab', 'pizza', 'bar', 'kiosk', 'pesula', 'sauna', 'tattoo'])
 
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
@@ -90,6 +94,11 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         let shown = uiOf(game.current)
         // Runs can end inside step() or inside a key press, so compare frame to frame.
         let seen = game.current.phase
+        const touch = window.matchMedia('(pointer: coarse)').matches
+        // Which tappable things this phase has already hinted at.
+        let hinted = new Set<string>()
+        let hintPhase = ''
+        let hintAt = -HINT
         const loop = (now: number) => {
             const g = game.current
             step(g, Math.min(0.1, (now - last) / 1000))
@@ -109,6 +118,21 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             const spot = at && spotAt(g, at.x, at.y)
             // The title menu marks its picked row itself.
             if (spot && g.phase !== 'title') highlight(ctx, spot, g.time)
+            if (touch && g.phase !== 'title') {
+                // Only something new to tap starts the hint: walking down the car
+                // or talking to someone shuffles the spots without adding any.
+                const place = `${g.phase}|${g.kurvi?.place ?? ''}|${g.kurvi?.stage ?? ''}`
+                if (place !== hintPhase) {
+                    hintPhase = place
+                    hinted = new Set()
+                }
+                const all = spots(g)
+                if (all.some((s) => !hinted.has(s.id))) {
+                    for (const s of all) hinted.add(s.id)
+                    hintAt = g.time
+                }
+                if (g.time - hintAt < HINT) for (const s of all) highlight(ctx, { ...s, label: '' }, g.time)
+            }
             if (canvas.current) canvas.current.style.cursor = spot || single(g) ? 'pointer' : 'default'
             // Every frame, without a render: the doors wait for nobody.
             if (hurry.current) hurry.current.style.transform = `scaleX(${doorsLeft(g) ?? 0})`
@@ -142,7 +166,10 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
         if (spot?.aim !== undefined) g.aim = spot.aim
         // On the street, a tap on nothing in particular pockets the phone.
         const pocket = !spot && g.phase === 'intro' && g.phoneUp && actions(g).some((a) => a.id === 'phone')
-        const id = spot?.id ?? (pocket ? 'phone' : single(g))
+        // At a stop along the way, a tap on the train still gets you off: the
+        // stay-on default is for stray key presses, not a deliberate tap.
+        const off = g.phase === 'doors' && g.aboard && actions(g).some((a) => a.id === 'jump' && !a.disabled)
+        const id = spot?.id ?? (pocket ? 'phone' : off ? 'jump' : single(g))
         if (id) press(id)
     }
 
@@ -172,15 +199,22 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                 const pick = g.phase === 'title' ? list[g.menu] : list[0]
                 if (pick) act(g, pick.id)
             }
-            const n = Number(e.key)
-            if (n >= 1 && n <= list.length) {
+            // Numbers for the ways, letters for the places that have one.
+            const keys = keysOf(list)
+            const typed = e.key.toLowerCase()
+            const i = typed === '1' ? keys.indexOf('space') : keys.indexOf(typed)
+            if (i >= 0 && typed !== ' ') {
                 unlock()
-                act(g, list[n - 1].id)
+                act(g, list[i].id)
             }
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [])
+
+    // The key shown on each choice, and which choice is the way through the doors.
+    const keys = keysOf(ui.actions)
+    const doorButton = ui.actions[0]?.id === 'stay' ? 1 : 0
 
     return (
         <>
@@ -277,15 +311,21 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                                                 : 'border-white/30 enabled:hover:border-foreground enabled:hover:bg-white/10'
                                         }`}
                                     >
-                                        <span className="truncate">{a.label}</span>
-                                        <kbd
-                                            className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
-                                                i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
-                                            }`}
-                                        >
-                                            {i === 0 ? 'space' : i + 1}
-                                        </kbd>
-                                        {i === 0 && ui.phase === 'doors' && (
+                                        <span className="truncate">
+                                            {a.label}
+                                            {a.note && <span className="ml-2 text-[11px] text-muted-foreground">{a.note}</span>}
+                                        </span>
+                                        {keys[i] && (
+                                            <kbd
+                                                className={`border px-1 text-[10px] leading-4 [@media(pointer:coarse)]:hidden ${
+                                                    i === 0 ? 'border-black/20 text-black/55' : 'border-white/15 text-muted-foreground'
+                                                }`}
+                                            >
+                                                {keys[i]}
+                                            </kbd>
+                                        )}
+                                        {/* The doors' countdown goes on the way through them, not on Stay on. */}
+                                        {i === doorButton && ui.phase === 'doors' && (
                                             <span
                                                 ref={hurry}
                                                 aria-hidden

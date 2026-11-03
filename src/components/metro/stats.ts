@@ -44,6 +44,7 @@ export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
     { id: 'scooter', name: 'Last mile', text: 'on time on a scooter the pizza paid for' },
     { id: 'chatty', name: 'Not very Finnish', text: 'talked to three strangers in one run' },
     { id: 'gull', name: 'Seagull tax', text: 'a gull took your kebab' },
+    { id: 'inked', name: 'Fresh ink', text: 'held still for Lin, and still on time' },
     { id: 'home', name: 'Night bus', text: 'home before the phone died, paying nothing' },
 ]
 
@@ -118,6 +119,7 @@ export function recordRun(g: Game): string[] {
         guide: g.flags.includes('guide'),
         chatty: g.talked.length >= 3,
         gull: g.flags.includes('gull'),
+        inked: onTime && g.flags.includes('inked'),
         home: onTime && g.home && free,
         collector: s.fines >= 300,
     }
