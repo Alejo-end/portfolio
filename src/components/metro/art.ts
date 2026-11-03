@@ -157,7 +157,9 @@ export const KURVI_SPOTS: Record<'main' | 'side', { id: ActionId; x: number; w: 
     ],
     side: [
         // Lin's studio, upstairs over the tram stop: first, so it wins over the stop below.
-        { id: 'tattoo', x: 136, w: 58, y: 37, h: 23 },
+        { id: 'tattoo', x: 139, w: 56, y: 40, h: 41 },
+        { id: 'tattoo', x: 107, w: 16, y: 92, h: 18 },
+        { id: 'tattoo', x: 183, w: 12, y: 82, h: 8 },
         { id: 'sauna', x: 2, w: 60, y: 64, h: 46 },
         { id: 'pizza', x: 66, w: 52, y: 66, h: 30 },
         { id: 'bus', x: 120, w: 12, y: 54, h: 56 },
@@ -737,27 +739,91 @@ function sauna(ctx: Ctx, x: number, time: number, still: boolean, day: boolean) 
         }
 }
 
-// Lin's tattoo studio on the second floor over the stops: a long lit window,
-// flash sheets taped to the glass, Lin at her table, a sign under the eaves.
-function tattooStudio(ctx: Ctx, x: number, time: number, day: boolean) {
-    R(ctx, x, 49, 56, 10, '#2a1a22')
-    R(ctx, x + 1, 50, 54, 8, day ? '#9a8a90' : '#c8566a')
-    if (!day) dither(ctx, x + 1, 50, 54, 2, '#e88a98')
-    for (const fx of [3, 8, 13, 39]) R(ctx, x + fx, 51, 4, 5, '#efe6d2')
-    R(ctx, x + 4, 52, 2, 2, C.ink)
-    R(ctx, x + 9, 53, 2, 1, C.orange)
-    R(ctx, x + 14, 52, 2, 2, '#d84a6a')
-    R(ctx, x + 18, 50, 1, 8, '#2a1a22')
-    R(ctx, x + 37, 50, 1, 8, '#2a1a22')
-    // Lin, bent over the table under her lamp, the bun on top.
-    R(ctx, x + 27, 51, 2, 1, '#1a1214')
-    R(ctx, x + 26, 52, 3, 3, '#1a1214')
-    R(ctx, x + 24, 55, 7, 3, '#1a1214')
-    R(ctx, x + 32, 51, 3, 1, '#3a2a2a')
-    if (!day) R(ctx, x + 32, 52, 3, 1, '#ffe7a3')
-    R(ctx, x, 58, 56, 1, '#4a3a3e')
-    const flicker = !day && Math.floor(time * 5) % 23 === 0
-    neon(ctx, 'Tattoo', x + 28, 41, day ? '#6a5a6a' : flicker ? '#7a3a4a' : '#ff6a90')
+// Lin's tattoo studio, on the first floor of the grey block over the stops:
+// the old flat windows knocked into one pink-lit band, a blade sign with
+// chasing neon letters, Lin at work behind the glass, and her street door
+// with a chalk board out front for the walk-ins.
+const STUDIO = { x: 151, w: 43, y: 70 }
+const PINK = '#ff6a90'
+
+function tattooStudio(ctx: Ctx, time: number, still: boolean, day: boolean) {
+    const { x, w, y } = STUDIO
+    const wall = '#5a6470'
+    const frame = shade(wall, -0.45)
+    const glass = day ? '#a8949c' : '#c8566a'
+    // The window band, in the building's own frame, a sill under it.
+    R(ctx, x - 1, y - 1, w + 2, 11, shade(wall, -0.18))
+    R(ctx, x, y, w, 9, frame)
+    R(ctx, x + 1, y + 1, w - 2, 7, glass)
+    if (!day) dither(ctx, x + 1, y + 1, w - 2, 2, '#f08aa0')
+    R(ctx, x - 1, y + 9, w + 2, 1, shade(wall, 0.25))
+    for (const m of [11, 22, 33]) R(ctx, x + m, y + 1, 1, 7, frame)
+    const ink = day ? '#3a2a30' : '#1a1214'
+    // Bay one: flash sheets taped to the glass, seen from behind.
+    R(ctx, x + 2, y + 2, 3, 4, '#efe6d2')
+    R(ctx, x + 6, y + 3, 3, 4, '#efe6d2')
+    R(ctx, x + 3, y + 3, 1, 2, C.ink)
+    R(ctx, x + 7, y + 4, 1, 1, '#d84a6a')
+    // Bay two: Lin at the table under her lamp. Every few seconds she looks
+    // up and waves the machine at the street.
+    const wave = !still && time % 5 < 0.9
+    R(ctx, x + 19, y + 1, 3, 1, '#3a2a2a')
+    if (!day) R(ctx, x + 19, y + 2, 3, 1, '#ffe7a3')
+    R(ctx, x + 15, y + (wave ? 1 : 2), 2, 1, ink)
+    R(ctx, x + 14, y + (wave ? 2 : 3), 3, 3, ink)
+    R(ctx, x + 13, y + 6, 6, 2, ink)
+    if (wave) R(ctx, x + 18 + (Math.floor(time * 8) % 2), y + 2, 1, 3, ink)
+    // Bay three: someone in the chair, arm out, being brave.
+    R(ctx, x + 24, y + 5, 8, 2, ink)
+    R(ctx, x + 24, y + 3, 2, 2, ink)
+    R(ctx, x + 29, y + 4, 3, 1, ink)
+    // Bay four: a neon heart with a dagger through it, flickering.
+    const off = !day && !still && Math.floor(time * 6) % 17 === 0
+    const heart = day ? '#8a4a5a' : off ? '#7a2a3a' : '#ff3a5a'
+    R(ctx, x + 35, y + 3, 2, 1, heart)
+    R(ctx, x + 38, y + 3, 2, 1, heart)
+    R(ctx, x + 35, y + 4, 5, 1, heart)
+    R(ctx, x + 36, y + 5, 3, 1, heart)
+    R(ctx, x + 37, y + 6, 1, 1, heart)
+    line(ctx, x + 34, y + 7, x + 40, y + 1, day ? '#9a9a9a' : '#e8ecef')
+    // The buzz of the machine, drifting out of the window now and then.
+    if (!still && !day && time % 3.2 < 1.1) {
+        const k = (time % 3.2) / 1.1
+        drawText(ctx, 'bzz', x + 18 + Math.round(k * 4), y - 6 - Math.round(k * 5), k < 0.7 ? '#f0a0b8' : '#8a5a6a')
+    }
+    // The blade sign on its bracket, TATTOO top to bottom. The letters
+    // light one by one, then the whole sign blinks, then again.
+    R(ctx, 147, 41, 4, 1, '#2a2a2a')
+    R(ctx, 146, 41, 1, 3, '#2a2a2a')
+    R(ctx, 140, 42, 10, 39, '#1a1416')
+    R(ctx, 140, 42, 10, 1, day ? '#6a5a6a' : '#7a3a4a')
+    R(ctx, 140, 80, 10, 1, day ? '#6a5a6a' : '#7a3a4a')
+    const step = still ? 9 : Math.floor(time * 5) % 12
+    'TATTOO'.split('').forEach((ch, i) => {
+        const lit = !day && (step >= 6 && step < 9 ? true : step >= 9 ? step % 2 === 0 : i <= step)
+        drawText(ctx, ch, 145, 44 + i * 6, day ? '#9a8a9a' : lit ? PINK : '#5a2a3a', 1, 'center')
+    })
+    // Her street door in the shutters, lit pink, the floor number on it.
+    R(ctx, 184, 83, 10, 13, '#2a1a22')
+    R(ctx, 185, 84, 8, 7, day ? '#b8a8b0' : '#e8789a')
+    R(ctx, 187, 86, 1, 1, C.ink)
+    R(ctx, 190, 86, 1, 1, C.ink)
+    R(ctx, 187, 87, 4, 1, C.ink)
+    R(ctx, 188, 88, 2, 1, C.ink)
+    R(ctx, 191, 92, 1, 2, '#c9a24a')
+}
+
+// The chalk board out on the pavement, by the bus stop, pointing up.
+function chalkBoard(ctx: Ctx) {
+    const bx = 109
+    R(ctx, bx, 94, 12, 13, '#3a2a20')
+    R(ctx, bx + 1, 95, 10, 10, '#1e2420')
+    drawText(ctx, 'INK', bx + 6, 96, '#f0a0b8', 1, 'center')
+    R(ctx, bx + 3, 102, 6, 1, '#e8e4dc')
+    R(ctx, bx + 7, 101, 1, 1, '#e8e4dc')
+    R(ctx, bx + 7, 103, 1, 1, '#e8e4dc')
+    R(ctx, bx + 1, 107, 1, 2, '#3a2a20')
+    R(ctx, bx + 10, 107, 1, 2, '#3a2a20')
 }
 
 /** The side street, flat on: the sauna, the pizzeria, the stops, Billy K's side. */
@@ -773,10 +839,10 @@ function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
     // Round the corner on the right, Billy K's front going away down Hämeentie.
     receding(ctx, 244, 1, BILLY, day)
     sauna(ctx, 4, time, still, day)
-    tattooStudio(ctx, 137, time, day)
     pizzaFront(ctx, 66, day)
     R(ctx, 122, 84, 72, 12, '#5a5a5e')
     for (let y = 85; y < 96; y += 2) R(ctx, 122, y, 72, 1, '#4a4a4e')
+    tattooStudio(ctx, time, still, day)
     // Billy K's side: the same green windows and regulars, a hanging sign.
     R(ctx, 196, 80, 48, 3, '#1c1a1a')
     R(ctx, 196, 83, 48, 1, day ? '#4a4646' : '#8a7a5a')
@@ -796,6 +862,7 @@ function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
     ground(ctx, time, still, day, [62, 196], [[18, 18, '#5a3a2a'], [84, 16, '#2a5a3a'], [210, 22, '#4a3a24']])
     // The zebra crossing over the side street, where the trams come round.
     for (let y = 113; y < 140; y += 4) R(ctx, 200, y, 40, 2, day ? '#d8d4cc' : '#8a867e')
+    chalkBoard(ctx)
     busStop(ctx, 124)
     tramStop(ctx, 134, day)
     parkedScooter(ctx, 185, g.code, time)
