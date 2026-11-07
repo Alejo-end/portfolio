@@ -81,7 +81,7 @@ export const projects: Project[] = [
   {
     title: "H2H",
     description:
-      "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. SysEx passes in one piece. One cable powers both sides. With only a charger, MIDI IN plays MIDI OUT. A panic button stops every note. Bare copper art under a thin OSP coat: each unit ages its own way. First batch soon on Tori.",
+      "USB MIDI between two computers, both ways, no drivers. TRS MIDI in and out, type A or B. SysEx passes in one piece. One cable powers both sides. With only a charger, MIDI IN plays MIDI OUT. A panic button stops every note. Bare copper art under a thin OSP coat: each unit ages its own way. First units built and tested. On Tori soon.",
     materials: ["black FR-4", "OSP copper", "hardwood", "M2 spacers"],
     software: ["KiCad", "FreeCAD", "Python", "Arduino", "TinyUSB"],
     alias: "h2h",
@@ -92,6 +92,7 @@ export const projects: Project[] = [
       { label: "case", value: "65.7 × 44.9 × 9.9 mm, PCB sandwich" },
       { label: "alt case", value: "62.4 × 47.3 × 10.4 mm, hardwood, PCB lid" },
       { label: "board", value: "2 layers, assembled by JLCPCB" },
+      { label: "batch", value: "20, numbered" },
     ],
     prototype: {
       title: "MIDI Host-to-Host Bridge",
