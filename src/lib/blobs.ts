@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 import { list } from '@vercel/blob'
 import { projects } from '@/data/projects'
+import localMedia from '@/data/media.json'
 
 export interface GalleryBlob {
     url: string
@@ -58,17 +59,26 @@ const listAllowed = cache(
     )
 )
 
-// Older projects keep media under Images/<alias>*, newer ones under <alias>/.
-// Once a project has an <alias>/ folder, that folder replaces its Images/ files.
+// Files in public/media/<alias>/, served by Vercel as static files. Posters
+// sit at public/media/posters/<video pathname>.jpg, as on Blob.
+const local: GalleryBlob[] = localMedia.map((pathname) => ({ url: `/media/${pathname}`, pathname }))
+
+const fileName = (pathname: string) => pathname.slice(pathname.lastIndexOf('/') + 1)
+
+// Media is moving from Blob to public/media. Until it has all moved, a
+// project shows both, in file name order. Older projects keep media under
+// Images/<alias>* on Blob; an <alias>/ folder anywhere replaces those files.
 export const getGalleryBlobs = cache(async (alias: string): Promise<GalleryBlob[]> => {
-    const blobs = await listAllowed()
+    const blobs = [...local, ...(await listAllowed())]
     const posters = new Map(
         blobs
             .filter(({ pathname }) => pathname.startsWith('posters/'))
             .map(({ pathname, url }) => [pathname.slice('posters/'.length, -'.jpg'.length), url])
     )
     const withPoster = (files: GalleryBlob[]) => files.map((b) => ({ ...b, poster: posters.get(b.pathname) }))
-    const current = blobs.filter(({ pathname }) => pathname.startsWith(`${alias}/`))
+    const current = blobs
+        .filter(({ pathname }) => pathname.startsWith(`${alias}/`))
+        .sort((a, b) => fileName(a.pathname).localeCompare(fileName(b.pathname)))
     if (current.length > 0) return withPoster(current)
     return withPoster(blobs.filter(({ pathname }) => pathname.startsWith(`Images/${alias}`)))
 })
