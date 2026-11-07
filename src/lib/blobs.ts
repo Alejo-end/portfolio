@@ -12,8 +12,9 @@ export interface GalleryBlob {
 
 export const isImagePath = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname)
 
-// One store listing shared by every page, refreshed on the same 5 minute
-// cadence the project pages revalidate on.
+// One store listing shared by every page, refreshed once an hour. Each listing
+// is an advanced operation, and Hobby allows 2,000 a month: listing every
+// 5 minutes used them up and got the store blocked (11.2026).
 const listAllowed = cache(
     unstable_cache(
         async (): Promise<GalleryBlob[]> => {
@@ -41,10 +42,19 @@ const listAllowed = cache(
                 }
                 cursor = page.hasMore ? page.cursor : undefined
             } while (cursor)
+            // A blocked store still lists, but every file answers 403. Render
+            // the text without media then, instead of a page of broken images.
+            if (found.length > 0) {
+                const probe = await fetch(found[0].url, { method: 'HEAD', cache: 'no-store' })
+                if (probe.status === 403) {
+                    console.warn('Blob store is blocked; galleries render empty.')
+                    return []
+                }
+            }
             return found
         },
         ['gallery-blobs'],
-        { revalidate: 300 }
+        { revalidate: 3600 }
     )
 )
 
