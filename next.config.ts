@@ -66,6 +66,12 @@ const nextConfig: NextConfig = {
         destination: "/projects/reins",
         permanent: true,
       },
+      {
+        // Mangler grew into four; it lives on four's page as its prototype.
+        source: "/projects/mangler",
+        destination: "/projects/four",
+        permanent: true,
+      },
     ];
   },
   async headers() {
