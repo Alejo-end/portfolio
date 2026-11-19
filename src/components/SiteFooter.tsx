@@ -52,7 +52,7 @@ export function SiteFooter() {
                 </Course>
                 <Course title="Colophon">
                     <p className="max-w-[18rem] leading-relaxed text-muted-foreground">
-                        Set in Geist and Geist Mono, Silkscreen on small screens. Next.js on Vercel, media on Vercel Blob.
+                        Set in Geist and Geist Mono, Silkscreen on small screens. Next.js on Vercel, media in the repository.
                     </p>
                 </Course>
             </div>

@@ -75,4 +75,6 @@ export interface Project {
   year: number;
   /** 'grid' keeps sequential UI screenshots in reading order; 'columns' (default) is masonry for mixed-ratio photos. */
   galleryLayout?: "grid" | "columns";
+  /** The project's own tab icon on its page, from public/: an SVG, and a PNG for a phone's home screen. */
+  icons?: { icon: string; apple?: string };
 }

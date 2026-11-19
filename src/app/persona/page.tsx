@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Download } from 'lucide-react'
 import { DotPortrait } from '@/components/DotPortrait'
+import { LinkButton } from '@/components/LinkButton'
 import { SpecList } from '@/components/SpecList'
 import { Module } from '@/components/koivu/Module'
 import { PageTop } from '@/components/koivu/Spines'
@@ -28,7 +30,7 @@ const into: Spec[] = [
 
 // A quiet page: the title like every other page, then the portrait large on
 // the left and the two lists of facts on the right, with room around them.
-// Links live in the footer, not here too.
+// Links live in the footer, not here too; only the CV downloads sit here.
 export default function Persona() {
     return (
         <main className="page">
@@ -54,6 +56,10 @@ export default function Persona() {
                     <Module no="02" title="into">
                         <SpecList specs={into} />
                     </Module>
+                    <div className="flex flex-wrap gap-3">
+                        <LinkButton href="/downloads/Alejandro_De_Leon_CV.pdf" icon={<Download className="h-4 w-4" />} label="Download CV" download />
+                        <LinkButton href="/downloads/Alejandro_De_Leon_CV_es.pdf" icon={<Download className="h-4 w-4" />} label="CV en español" download />
+                    </div>
                 </div>
             </div>
         </main>
