@@ -56,6 +56,12 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // EcoBridge left the portfolio; old links land on the project list.
+        source: "/projects/ecobridge",
+        destination: "/projects",
+        permanent: true,
+      },
+      {
         // Mangler grew into four; it lives on four's page as its prototype.
         source: "/projects/mangler",
         destination: "/projects/four",

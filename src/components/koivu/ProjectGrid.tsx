@@ -49,11 +49,13 @@ const setFilter = (f: Filter) => window.history.replaceState(null, '', f === 'al
 // Tabs to filter by kind, then a grid of numbered tiles.
 function Grid({ cards, filter }: { cards: ProjectCard[]; filter: Filter }) {
     const shown = filter === 'all' ? cards : cards.filter((card) => card.kind === filter)
+    // A kind with no projects gets no tab.
+    const tabs = filters.filter((f) => f === 'all' || cards.some((card) => card.kind === f))
 
     return (
         <div>
             <div role="tablist" aria-label="Filter projects" className="flex flex-wrap border-b border-foreground">
-                {filters.map((f) => {
+                {tabs.map((f) => {
                     const active = f === filter
                     const count = f === 'all' ? cards.length : cards.filter((card) => card.kind === f).length
                     return (
