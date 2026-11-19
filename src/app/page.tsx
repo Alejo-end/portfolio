@@ -9,7 +9,7 @@ import { Featured, type FeaturedItem } from "@/components/koivu/Featured";
 import { projectRow } from "@/components/koivu/projectRow";
 
 // The projects shown big on the home page, top first.
-const FEATURED = ["h2h", "stray", "reins", "four", "weather"];
+const FEATURED = ["four", "h2h", "stray", "reins", "weather"];
 
 export const metadata: Metadata = {
     description:
@@ -34,7 +34,7 @@ export default function Home() {
         };
     });
 
-    // The showcase, in this order, H2H first.
+    // The showcase, in this order, four first.
     const featured: FeaturedItem[] = [];
     for (const alias of FEATURED) {
         const project = projects.find((p) => p.alias === alias);
