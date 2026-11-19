@@ -1,13 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { projects, getProjectByAlias, projectNo } from '@/data/projects'
-import { getGalleryBlobs, isImagePath } from '@/lib/blobs'
+import { getGallery, isImagePath } from '@/lib/media'
 import { ProjectDetails } from '@/components/ProjectDetails'
 import { Pager } from '@/components/koivu/Pager'
 import { PageTop } from '@/components/koivu/Spines'
-
-// The blob store is mutable; refresh the static pages every 5 minutes.
-export const revalidate = 300
 
 export function generateStaticParams() {
     return projects.map((p) => ({ slug: p.alias }))
@@ -19,7 +16,7 @@ export async function generateMetadata(
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) return {}
-    const blobs = await getGalleryBlobs(slug).catch(() => [])
+    const blobs = getGallery(slug)
     const image = blobs.find((b) => isImagePath(b.pathname))
     return {
         title: project.title,
@@ -38,10 +35,8 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) notFound()
-    const [blobs, prototypeBlobs] = await Promise.all([
-        getGalleryBlobs(slug),
-        project.prototype ? getGalleryBlobs(project.prototype.alias) : [],
-    ])
+    const blobs = getGallery(slug)
+    const prototypeBlobs = project.prototype ? getGallery(project.prototype.alias) : []
     const i = projects.indexOf(project)
     const prev = projects[(i - 1 + projects.length) % projects.length]
     const next = projects[(i + 1) % projects.length]

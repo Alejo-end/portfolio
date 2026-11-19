@@ -36,7 +36,7 @@ export interface Spec {
 /** An earlier build shown on a project's page, with its own media folder. */
 export interface Prototype {
   title: string;
-  /** Blob folder for its media, as with a project alias. */
+  /** Media folder in public/media, as with a project alias. */
   alias: string;
   year: number;
   description: string;
