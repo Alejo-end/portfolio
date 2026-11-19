@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookOpen, Download } from "lucide-react"
+import { LinkButton } from "@/components/LinkButton"
 import { SoundBadge } from "@/components/koivu/SoundBadge"
 import { hasSound } from "@/data/sound"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
@@ -93,17 +94,6 @@ function HeroVideo({ src, poster }: { src: string; poster?: string }) {
       preload="none"
       className="h-auto w-full"
     />
-  )
-}
-
-function LinkButton({ href, icon, label, download }: { href: string; icon: React.ReactNode; label: string; download?: boolean }) {
-  // A download saves in place; a new tab would only open and close again.
-  const target = download ? {} : { target: "_blank", rel: "noopener noreferrer" }
-  return (
-    <a href={href} {...target} className="plain btn">
-      {icon}
-      {label}
-    </a>
   )
 }
 

@@ -5,7 +5,7 @@ export const projects: Project[] = [
     title: "Stray",
     description:
       "A spectral processor for a field recording, played from a MIDI keyboard. Play soft and the sound stays calm, play harder and it gets restless, then chaotic, moving around the room as it goes. Midterm for Programming in Max 1 at Sibelius Academy. The patch will be published soon.",
-    software: ["Max 9", "MSP", "JavaScript", "Dante", "Bitwig"],
+    software: ["Max 9", "Bitwig"],
     alias: "stray",
     kind: "sound",
     galleryLayout: "grid",
@@ -23,7 +23,7 @@ export const projects: Project[] = [
     title: "Reins",
     description:
       "The MIDI Guitar as open hardware. A board on the guitar reads your hand. A pedal turns it into MIDI.",
-    software: ["KiCad", "FreeCAD", "Arduino", "PlatformIO", "Python"],
+    software: ["KiCad", "FreeCAD", "Arduino", "Python"],
     alias: "reins",
     kind: "hardware",
     specs: [
@@ -48,7 +48,7 @@ export const projects: Project[] = [
         { label: "output", value: "CC · pitch bend" },
       ],
       materials: ["Squier Mustang", "copper-clad board"],
-      software: ["KiCad", "Arduino", "Max"],
+      software: ["KiCad", "Arduino"],
       githubUrl: "https://github.com/Alejo-end/midiguitar",
       liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
     },
@@ -59,7 +59,7 @@ export const projects: Project[] = [
     description:
       "Live sampler for norns with four stereo tracks. Each track records its own take and plays it through its own voice, filter, two effects and sends: tape, grains, two time stretches or Mutable Instruments Clouds. Scenes crossfade between any two sounds. The DSP that SuperCollider lacked is my own C++, and the website walks every page on the real screen.",
     materials: ["norns"],
-    software: ["Lua", "SuperCollider", "C++", "softcut", "three.js"],
+    software: ["Lua", "SuperCollider", "C++", "softcut"],
     alias: "four",
     kind: "sound",
     specs: [
@@ -143,7 +143,7 @@ export const projects: Project[] = [
     title: "Sounds of the Weather Turning",
     description:
       "Max for Live effect. The live weather of a city moves a shimmer reverb, an echo, a delay and a Roar distortion, and draws the city's skyline under the sky of the hour. Version 2: Open-Meteo, no API key. Free on maxforlive.com soon.",
-    software: ["Max for Live", "Ableton Live", "Max 9", "JavaScript", "p5.js", "Open-Meteo"],
+    software: ["Max for Live", "Ableton Live", "Max 9", "JavaScript", "p5.js"],
     specs: [
       { label: "version", value: "2.0, 10.2026" },
       { label: "cities", value: "29, each with its own skyline" },
@@ -161,7 +161,7 @@ export const projects: Project[] = [
       year: 2025,
       description:
         "The first version. Live air quality data from WAQI controls delay, reverb, echo and distortion. Needs a free WAQI API key. Started in the Computational Art class at Aalto.",
-      software: ["Max for Live", "Ableton Live", "WAQI API"],
+      software: ["Max for Live", "Ableton Live"],
       // The listing holds 1.1 until version 2 goes up.
       githubUrl: "https://maxforlive.com/library/device/14101/sounds-of-the-weather-turning",
       liveUrl: "https://youtu.be/wVJ3n1L9Egk",
@@ -200,7 +200,7 @@ export const projects: Project[] = [
     title: "3D & Photogrammetry",
     description:
       "Scans in RealityScan, cleanup in Blender, a few shown on the web with Three.js.",
-    software: ["RealityScan", "RealityCapture", "Blender", "Tinkercad", "Three.js", "React"],
+    software: ["RealityScan", "Blender", "Tinkercad", "Three.js", "React"],
     alias: "3dscanning",
     kind: "image",
     year: 2024,
@@ -228,7 +228,7 @@ export const projects: Project[] = [
     title: "EcoBridge",
     description:
       "Open data on public finances. Global finalist, IBM Call for Code 2021.",
-    software: ["React", "Node.js", "MongoDB", "Ant Design", "TypeScript"],
+    software: ["React", "Node.js", "TypeScript"],
     alias: "ecobridge",
     kind: "web",
     githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
