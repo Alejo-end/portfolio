@@ -2,7 +2,7 @@
 // 2026-10-13). Add a clip here when it has sound worth hearing.
 const SOUND_PREFIXES = [
     'music/',
-    'norns/01-norns-1',
+    'norns/01-printing-the-case',
     'midihost/ableton-demo',
     'midihost/case-video',
     'stray/',

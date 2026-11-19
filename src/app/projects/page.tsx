@@ -16,10 +16,10 @@ const isClip = (pathname: string) => /\.mp4$/i.test(pathname)
 
 export default function ProjectsPage() {
     const cards: ProjectCard[] = projects.map((project) => {
-        const blobs = getGallery(project.alias)
-        const images = blobs.filter((b) => isImagePath(b.pathname)).map((b) => b.url)
-        const cover = project.videos?.[0]?.poster ?? images[0] ?? blobs.find((b) => b.poster)?.poster
-        const video = project.videos?.[0]?.src ?? blobs.find((b) => isClip(b.pathname))?.url
+        const gallery = getGallery(project.alias)
+        const images = gallery.filter((b) => isImagePath(b.pathname)).map((b) => b.url)
+        const cover = project.videos?.[0]?.poster ?? images[0] ?? gallery.find((b) => b.poster)?.poster
+        const video = project.videos?.[0]?.src ?? gallery.find((b) => isClip(b.pathname))?.url
         return {
             no: projectNo(project),
             alias: project.alias,
@@ -29,7 +29,7 @@ export default function ProjectsPage() {
             cover,
             burst: images.filter((url) => url !== cover).slice(0, 8),
             video,
-            sound: blobs.some((b) => hasSound(b.pathname)),
+            sound: gallery.some((b) => hasSound(b.pathname)),
         }
     })
 

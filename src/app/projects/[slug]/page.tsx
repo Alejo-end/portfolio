@@ -16,8 +16,8 @@ export async function generateMetadata(
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) return {}
-    const blobs = getGallery(slug)
-    const image = blobs.find((b) => isImagePath(b.pathname))
+    const gallery = getGallery(slug)
+    const image = gallery.find((b) => isImagePath(b.pathname))
     return {
         title: project.title,
         description: project.description,
@@ -42,8 +42,8 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
     const { slug } = await params
     const project = getProjectByAlias(slug)
     if (!project) notFound()
-    const blobs = getGallery(slug)
-    const prototypeBlobs = project.prototype ? getGallery(project.prototype.alias) : []
+    const gallery = getGallery(slug)
+    const prototypeGallery = project.prototype ? getGallery(project.prototype.alias) : []
     const i = projects.indexOf(project)
     const prev = projects[(i - 1 + projects.length) % projects.length]
     const next = projects[(i + 1) % projects.length]
@@ -51,7 +51,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
         <main className="page">
             <PageTop>
                 <div className="space-y-12">
-                    <ProjectDetails project={project} no={projectNo(project)} blobs={blobs} prototypeBlobs={prototypeBlobs} />
+                    <ProjectDetails project={project} no={projectNo(project)} gallery={gallery} prototypeGallery={prototypeGallery} />
                     <Pager
                         prev={{ href: `/projects/${prev.alias}`, title: prev.title }}
                         index={{ href: '/projects', title: 'all projects' }}

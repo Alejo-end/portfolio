@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
     const rows: IndexRow[] = projects.map((project) => {
-        const blobs = getGallery(project.alias);
+        const gallery = getGallery(project.alias);
         return {
             no: projectNo(project),
             alias: project.alias,
@@ -28,9 +28,9 @@ export default function Home() {
             description: project.description,
             cover:
                 project.videos?.[0]?.poster ??
-                blobs.find((b) => isImagePath(b.pathname))?.url ??
-                blobs.find((b) => b.poster)?.poster,
-            sound: blobs.some((b) => hasSound(b.pathname)),
+                gallery.find((b) => isImagePath(b.pathname))?.url ??
+                gallery.find((b) => b.poster)?.poster,
+            sound: gallery.some((b) => hasSound(b.pathname)),
         };
     });
 
@@ -39,10 +39,10 @@ export default function Home() {
     for (const alias of FEATURED) {
         const project = projects.find((p) => p.alias === alias);
         if (!project) continue;
-        const blobs = getGallery(project.alias);
+        const gallery = getGallery(project.alias);
         const media = [
             ...(project.videos ?? []).flatMap((v) => (v.poster ? [{ src: v.poster, video: v.src }] : [])),
-            ...blobs.flatMap((b) => (isImagePath(b.pathname) ? [{ src: b.url }] : b.poster ? [{ src: b.poster, video: b.url }] : [])),
+            ...gallery.flatMap((b) => (isImagePath(b.pathname) ? [{ src: b.url }] : b.poster ? [{ src: b.poster, video: b.url }] : [])),
         ].slice(0, 10);
         if (media.length === 0) continue;
         featured.push(projectRow({ ...project, no: projectNo(project) }, media));

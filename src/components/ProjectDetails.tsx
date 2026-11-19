@@ -11,6 +11,7 @@ import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
 import type { CodeSnippet, Project, Spec } from "@/app/types"
+import type { GalleryFile } from "@/lib/media"
 
 // How many columns the mood board has at the current window width.
 const subscribeResize = (onChange: () => void) => {
@@ -22,20 +23,13 @@ const columnCount = () => {
   return w >= 1024 ? 4 : w >= 768 ? 3 : w >= 640 ? 2 : 1
 }
 
-export interface BlobFile {
-  url: string
-  pathname?: string
-  contentType?: string
-  poster?: string
-}
-
 interface ProjectDetailsProps {
   project: Project
   /** Catalog number, e.g. "13". */
   no: string
-  blobs?: BlobFile[]
+  gallery?: GalleryFile[]
   /** Media of the project's prototype, shown in its own section under the main gallery. */
-  prototypeBlobs?: BlobFile[]
+  prototypeGallery?: GalleryFile[]
 }
 
 // Spec lines, then "materials" and "software" when the project lists them.
@@ -45,15 +39,12 @@ const sheetSpecs = ({ specs = [], materials = [], software = [] }: { specs?: Spe
   ...(software.length > 0 ? [{ label: "software", value: software.join(" · ") }] : []),
 ]
 
-const isVideoFile = (file: BlobFile) =>
-  file.contentType
-    ? file.contentType.toLowerCase().startsWith("video")
-    : /\.(mp4|mov)$/i.test(file.url)
+const isVideoFile = (file: GalleryFile) => /\.(mp4|mov)$/i.test(file.url)
 
 // "mangler/02-take-rec-v2.png" -> "take rec": the filename is the only caption
 // we have. A -v2 or -hq on the end is only there to get past caches after a
 // re-upload.
-const mediaName = (file: BlobFile) => {
+const mediaName = (file: GalleryFile) => {
   const base = (file.pathname ?? file.url).split("/").pop() ?? ""
   return decodeURIComponent(base)
     .replace(/\.[^.]+$/, "")
@@ -97,7 +88,7 @@ function HeroVideo({ src, poster }: { src: string; poster?: string }) {
   )
 }
 
-export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }: ProjectDetailsProps) {
+export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [] }: ProjectDetailsProps) {
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
@@ -113,7 +104,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
   }
   const dialogRef = useRef<HTMLDialogElement>(null)
   // One lightbox steps through the main gallery and then the prototype's.
-  const media = [...blobs, ...prototypeBlobs]
+  const media = [...gallery, ...prototypeGallery]
 
   const openCarousel = (index: number) => {
     setCurrentIndex(index)
@@ -147,7 +138,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
 
   // `offset` is where these files start in the shared lightbox sequence.
   const renderGallery = (
-    files: BlobFile[],
+    files: GalleryFile[],
     offset: number,
     snippets: CodeSnippet[] = [],
     layout: Project["galleryLayout"] = "columns",
@@ -173,7 +164,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
         ? "(min-width: 1024px) 31vw, (min-width: 640px) 50vw, 100vw"
         : "(min-width: 1024px) 23vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
 
-    const renderTile = (file: BlobFile, i: number) => {
+    const renderTile = (file: GalleryFile, i: number) => {
           const index = offset + i
           const isVideo = isVideoFile(file)
           const name = mediaName(file)
@@ -414,7 +405,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
       <div className="w-full overflow-hidden">
         {project.reactComponent
           ? project.reactComponent
-          : renderGallery(blobs, 0, project.codeSnippets, project.galleryLayout)}
+          : renderGallery(gallery, 0, project.codeSnippets, project.galleryLayout)}
       </div>
       {prototype && (
         <section className="space-y-6 pt-10">
@@ -441,7 +432,7 @@ export function ProjectDetails({ project, no, blobs = [], prototypeBlobs = [] }:
               </div>
             )}
           </SpecSheet>
-          {renderGallery(prototypeBlobs, blobs.length)}
+          {renderGallery(prototypeGallery, gallery.length)}
         </section>
       )}
       {renderCarousel()}
