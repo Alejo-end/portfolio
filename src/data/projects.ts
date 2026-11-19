@@ -225,17 +225,6 @@ export const projects: Project[] = [
     software: ["Hydra", "p5.js", "Strudel", "Max", "SuperCollider"],
     year: 2023,
   },
-  {
-    title: "EcoBridge",
-    description:
-      "A market for recyclable material: collectors list what they gather, makers find what they need. Latin American finalist, IBM Call for Code 2021.",
-    software: ["React", "Node.js", "TypeScript"],
-    alias: "ecobridge",
-    kind: "web",
-    githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
-    liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
-    year: 2021,
-  },
 ];
 
 /** Catalog number, newest highest: "13". */
