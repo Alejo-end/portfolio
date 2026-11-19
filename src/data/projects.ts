@@ -229,10 +229,10 @@ export const projects: Project[] = [
     title: "EcoBridge",
     description:
       "A market for recyclable material: collectors list what they gather, makers find what they need. Latin American finalist, IBM Call for Code 2021.",
-    software: ["React", "Node.js", "TypeScript"],
+    software: ["Next.js", "React", "TypeScript", "TensorFlow.js", "Python", "FastAPI"],
     alias: "ecobridge",
     kind: "web",
-    githubUrl: "https://github.com/EcoBridge-Team/ecosystem",
+    githubUrl: "https://github.com/EcoBridge-Team/EcoBridge",
     liveUrl: "https://www.youtube.com/watch?v=eDPPhKLgn-o",
     year: 2021,
   },
