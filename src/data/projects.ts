@@ -62,6 +62,7 @@ export const projects: Project[] = [
     software: ["Lua", "SuperCollider", "C++", "softcut"],
     alias: "four",
     kind: "sound",
+    icons: { icon: "/icons/four.svg", apple: "/icons/four-apple.png" },
     specs: [
       { label: "tracks", value: "4 stereo · 60 s takes" },
       { label: "voices", value: "PLAY · GRAIN · WARP · PV · CLOUD" },

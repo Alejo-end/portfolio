@@ -22,6 +22,13 @@ export async function generateMetadata(
         title: project.title,
         description: project.description,
         alternates: { canonical: `/projects/${slug}` },
+        // A project with its own icon shows it in the tab; the others keep the site's.
+        ...(project.icons && {
+            icons: {
+                icon: [{ url: project.icons.icon, type: 'image/svg+xml', sizes: 'any' }],
+                ...(project.icons.apple && { apple: project.icons.apple }),
+            },
+        }),
         openGraph: {
             title: project.title,
             description: project.description,
