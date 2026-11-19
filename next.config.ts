@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-const blobHost = "https://kskxrvod79sqlfxd.public.blob.vercel-storage.com";
 const dev = process.env.NODE_ENV === "development";
 // Preview deployments load the Vercel toolbar and its comment socket.
 const preview = process.env.VERCEL_ENV === "preview";
@@ -11,8 +10,8 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval' https://va.vercel-scripts.com" : ""}${preview ? " https://vercel.live" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${blobHost}${preview ? " https://vercel.live https://vercel.com" : ""}`,
-  `media-src 'self' ${blobHost}`,
+  `img-src 'self' data: blob:${preview ? " https://vercel.live https://vercel.com" : ""}`,
+  "media-src 'self'",
   "font-src 'self' data:",
   `connect-src 'self'${preview ? " https://vercel.live wss://ws-us3.pusher.com" : ""}`,
   `frame-src ${preview ? "https://vercel.live" : "'none'"}`,
@@ -25,19 +24,9 @@ const csp = [
 const nextConfig: NextConfig = {
   //reactStrictMode: true,
   poweredByHeader: false,
-  // @vercel/blob 2.x can't be webpack-bundled (its OIDC dependency reads
-  // module paths at import time); load it from node_modules at runtime.
-  serverExternalPackages: ["@vercel/blob"],
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 85],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: new URL(blobHost).hostname,
-        pathname: "/**",
-      },
-    ],
   },
   async redirects() {
     return [

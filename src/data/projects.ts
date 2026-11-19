@@ -154,7 +154,7 @@ export const projects: Project[] = [
     ],
     alias: "weather",
     kind: "sound",
-    downloadUrl: "https://kskxrvod79sqlfxd.public.blob.vercel-storage.com/downloads/sounds_of_the_weather_turning_v2.0.zip?download=1",
+    downloadUrl: "/downloads/sounds_of_the_weather_turning_v2.0.zip",
     prototype: {
       title: "Sounds of the Weather Turning 1.1",
       alias: "weather1",
