@@ -64,6 +64,7 @@ import {
     SCALD,
     SCRATCH,
     SPLASH,
+    PLATFORM_WAIT,
     FLASH,
     LINE_UP,
     needle,
@@ -860,7 +861,7 @@ function kurviSide(ctx: Ctx, g: Game, still: boolean, tram: number | null) {
     R(ctx, 229 + swing, 65, 10, 1, '#c9a24a')
     R(ctx, 229 + swing, 73, 10, 1, '#c9a24a')
     drawText(ctx, 'BK', 234 + swing, 67, '#f2e2b8', 1, 'center')
-    ground(ctx, time, still, day, [62, 196], [[18, 18, '#5a3a2a'], [84, 16, '#2a5a3a'], [210, 22, '#4a3a24']])
+    ground(ctx, time, still, day, [62, 196], [[18, 18, '#5a3a2a'], [84, 16, '#2a5a3a'], [150, 12, '#5a2a44'], [210, 22, '#4a3a24']])
     // The zebra crossing over the side street, where the trams come round.
     for (let y = 113; y < 140; y += 4) R(ctx, 200, y, 40, 2, day ? '#d8d4cc' : '#8a867e')
     chalkBoard(ctx)
@@ -1394,6 +1395,18 @@ function stop(ctx: Ctx, g: Game, still: boolean) {
     const left = vehicleLeft(g)
     const open = doorOpen(g)
     const t = doorClock(g)
+    // Before it shows, its headlights do: light running up the rails and
+    // the wall from the right, where it comes from.
+    // The light stays on the rails until the front of it is in the picture.
+    const pulling = g.phase === 'doors' && !g.aboard && t !== null && t < ARRIVE * 0.5
+    const near = still ? 0 : pulling ? 1 : g.phase === 'platform' ? clamp01((g.t - (PLATFORM_WAIT - 2.2)) / 2.2) : 0
+    if (near > 0 && !g.rush) {
+        const reach = Math.round(W * near * near)
+        dither(ctx, W - reach, metro ? 84 : 96, reach, metro ? 12 : 8, '#8a7a4a')
+        if (reach > 60) dither(ctx, W - reach + 60, metro ? 78 : 96, reach - 60, metro ? 18 : 8, '#c8b060')
+        R(ctx, W - reach, metro ? 100 : 99, reach, 1, '#fff3c8')
+        if (!metro && g.mode === 'tram') R(ctx, W - reach, 102, reach, 1, '#fff3c8')
+    }
     const warn = t !== null && t >= g.closeAt - CHIME && t < g.closeAt + SHUT && Math.floor(time * 6) % 2 === 0
     const inside = (l: number) => () => {
         for (const r of g.riders) {
@@ -1533,10 +1546,13 @@ function interior(ctx: Ctx, g: Game, still: boolean) {
     R(ctx, 0, 0, W, H, look.floor)
     // What the rock uncovers at the top is ceiling, not floor.
     R(ctx, 0, 0, W, 2, shade(look.wall, 0.1))
+    // Braking into the stop, everything pitches a pixel the way it is going.
+    const lurch = moving && g.t > g.segment - 0.5 ? -1 : 0
     ctx.save()
-    ctx.translate(0, rock)
+    ctx.translate(lurch, rock)
     insideCar(ctx, g, still, look, moving)
     ctx.restore()
+    if (lurch) ctx.drawImage(ctx.canvas, W - 2, 0, 1, H, W - 1, 0, 1, H)
 }
 
 function insideCar(ctx: Ctx, g: Game, still: boolean, look: (typeof CABINS)[Transit], moving: boolean) {
@@ -2152,8 +2168,8 @@ function kamppi(ctx: Ctx, g: Game, still: boolean, t: number) {
     }
     R(ctx, 176, 38, 44, 12, '#111')
     drawText(ctx, clockText(g.clock), 198, 42, C.led, 1, 'center')
-    R(ctx, 20, 38, 50, 12, '#111')
-    drawText(ctx, 'Kamppi', 45, 42, C.white, 1, 'center')
+    R(ctx, 20, 52, 50, 12, '#111')
+    drawText(ctx, 'Kamppi', 45, 56, C.white, 1, 'center')
 
     // The chapel: a tall wooden bowl of horizontal planks, wider near the top.
     for (let y = 46; y < 110; y++) {
@@ -2181,12 +2197,25 @@ function kamppi(ctx: Ctx, g: Game, still: boolean, t: number) {
 }
 
 function card(ctx: Ctx, g: Game) {
+    // A station sign, hung from two rods on the left, clear of the clock
+    // tower and the screen at Kamppi. It drops in.
     const titles = { made: 'Made it', late: 'Late', fined: 'Fined', fake: 'Busted' }
-    R(ctx, 0, 0, W, 38, 'rgba(10, 13, 24, 0.86)')
-    drawText(ctx, titles[g.ending ?? 'late'], W / 2, 6, g.ending === 'made' ? C.yellowL : C.white, 3, 'center')
     const early = earlyBy(g)
     const when = early > 0 ? `${early} min early` : early === 0 ? 'on the dot' : `${-early} min late`
-    drawText(ctx, `${clockText(g.clock)}   paid ${euro(g.paid)}   ${when}`, W / 2, 27, C.light, 1, 'center')
+    const head = titles[g.ending ?? 'late']
+    const facts = `${clockText(g.clock)}  paid ${euro(g.paid)}  ${when}`
+    const w = Math.max(textWidth(head, 3) + 30, textWidth(facts) + 16)
+    const y = Math.round(-44 * (1 - ease(clamp01((g.t - 2.4) / 0.35))))
+    const x = 8
+    R(ctx, x + 8, y, 1, 8, '#1c1c1e')
+    R(ctx, x + w - 9, y, 1, 8, '#1c1c1e')
+    R(ctx, x + 2, y + 10, w, 36, 'rgba(0, 0, 0, 0.35)')
+    R(ctx, x, y + 8, w, 36, '#1c1c1e')
+    R(ctx, x, y + 8, w, 1, '#3a3a3e')
+    R(ctx, x, y + 43, w, 1, g.ending === 'made' ? C.yellowD : C.redD)
+    sign(ctx, 'metro', x + 5, y + 13, 13, g.ending === 'made' ? C.orange : C.grey)
+    drawText(ctx, head, x + 23, y + 13, g.ending === 'made' ? C.yellowL : C.white, 3)
+    drawText(ctx, facts, x + 8, y + 33, C.light)
 }
 
 function dim(ctx: Ctx) {
@@ -3907,9 +3936,107 @@ export function render(ctx: Ctx, g: Game, still: boolean) {
         ctx.scale(1 + 0.04 * sway, 1 + 0.04 * sway)
         ctx.translate(-W / 2 + Math.sin(g.time * 0.7) * 2 * sway, -H / 2)
     }
+    const [jx, jy] = still ? [0, 0] : jolt(g)
+    ctx.translate(jx, jy)
     scene(ctx, g, still)
     ctx.restore()
     if (g.phase === 'platform' || g.phase === 'doors' || g.phase === 'ride' || g.phase === 'bike') notification(ctx, g)
+    if (!still) dissolve(ctx, g)
+}
+
+// ——— Between scenes ——————————————————————————————————————————————————
+// A change of place is never a hard cut: the old picture breaks up into
+// black in an ordered dither, and the new one comes out of it. Checks,
+// side games and the shots inside one cut scene keep the place they are in.
+
+const sceneKey = (g: Game): string | null => {
+    switch (g.phase) {
+        case 'splash':
+        case 'title':
+            return 'title'
+        case 'intro':
+        case 'buy':
+            return 'street'
+        case 'platform':
+        case 'doors':
+        case 'exit':
+            return `stop${g.at}`
+        case 'ride':
+            return 'ride'
+        case 'bike':
+            return 'bike'
+        case 'cut':
+            return 'cut'
+        case 'kurvi':
+            return `kurvi:${g.kurvi?.place}`
+        case 'outro':
+            return 'outro'
+        default:
+            return null
+    }
+}
+
+const FADE_OUT = 0.13
+const FADE_IN = 0.22
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+// Black dither patterns, from one pixel in sixteen to all of them.
+let masks: (CanvasPattern | null)[] | null = null
+let snap: HTMLCanvasElement | null = null
+let old: HTMLCanvasElement | null = null
+let lastKey: string | null = null
+let cutAt = -9
+
+function maskOf(ctx: Ctx, level: number) {
+    masks ??= Array.from({ length: 17 }, (_, n) => {
+        const c = document.createElement('canvas')
+        c.width = c.height = 4
+        const m = c.getContext('2d')
+        if (!m) return null
+        m.fillStyle = '#000'
+        BAYER.forEach((b, i) => b < n && m.fillRect(i % 4, Math.floor(i / 4), 1, 1))
+        return ctx.createPattern(c, 'repeat')
+    })
+    return masks[Math.max(0, Math.min(16, level))]
+}
+
+function dissolve(ctx: Ctx, g: Game) {
+    const sheet = () => {
+        const c = document.createElement('canvas')
+        c.width = W
+        c.height = H
+        return c
+    }
+    snap ??= sheet()
+    old ??= sheet()
+    const key = sceneKey(g) ?? lastKey
+    if (key !== lastKey) {
+        // The frame before this one is what we are leaving.
+        if (lastKey !== null) {
+            old.getContext('2d')?.drawImage(snap, 0, 0)
+            cutAt = g.time
+        }
+        lastKey = key
+    }
+    snap.getContext('2d')?.drawImage(ctx.canvas, 0, 0)
+    const e = g.time - cutAt
+    if (e < 0 || e >= FADE_OUT + FADE_IN) return
+    const out = e < FADE_OUT
+    if (out) ctx.drawImage(old, 0, 0)
+    const level = out ? Math.ceil((e / FADE_OUT) * 16) : Math.floor((1 - (e - FADE_OUT) / FADE_IN) * 16)
+    const mask = maskOf(ctx, level)
+    if (!mask) return
+    ctx.fillStyle = mask
+    ctx.fillRect(0, 0, W, H)
+}
+
+// A knock to the whole picture: the badge coming out, a fall off the bike,
+// the doors slamming with you inside.
+function jolt(g: Game): [number, number] {
+    if (shotOf(g) === 'badge' && g.t < 0.4) return [Math.round(Math.sin(g.t * 80) * 2 * (1 - g.t / 0.4)), 0]
+    if (g.phase === 'bike' && g.bike && g.time - g.bike.downAt < 0.3) return [0, Math.round(Math.sin((g.time - g.bike.downAt) * 60) * 2)]
+    const t = doorClock(g)
+    if (g.phase === 'doors' && t !== null && t >= g.closeAt + SHUT && t < g.closeAt + SHUT + 0.12) return [0, 1]
+    return [0, 0]
 }
 
 // A new message in the group chat slides in at the top right for a moment.

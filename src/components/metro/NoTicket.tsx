@@ -4,7 +4,7 @@ import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from 'rea
 import { H, W, render } from './art'
 import { act, actions, createGame, doorsLeft, euro, keysOf, sameUi, splash, step, uiOf, type ActionId, type Game, type Ui } from './game'
 import { highlight, spotAt, spots } from './hotspots'
-import { play, unlock } from './sound'
+import { ambience, play, unlock, type Bed } from './sound'
 import { Stage, usePixelWidth } from './Stage'
 import { ACHIEVEMENTS, getServerStats, getStats, recordRun, subscribeStats } from './stats'
 
@@ -48,6 +48,30 @@ const HINT = 1.6
 // The stops on the way that cost minutes. Their buttons come after the ways to go.
 const DETOURS = new Set<ActionId>(['kebab', 'pizza', 'bar', 'kiosk', 'pesula', 'sauna', 'tattoo'])
 
+// The quiet noise under each place. A cut scene keeps whatever was playing.
+const bedOf = (g: Game): Bed | null | undefined => {
+    const riding = g.phase === 'ride' || ((g.phase === 'check' || g.phase === 'ticket') && g.checkFrom === 'ride')
+    if (riding) return 'tunnel'
+    switch (g.phase) {
+        case 'cut':
+            return undefined
+        case 'splash':
+        case 'title':
+            return 'station'
+        case 'intro':
+        case 'buy':
+            return g.home ? 'square' : 'street'
+        case 'bike':
+            return 'street'
+        case 'kurvi':
+            return g.kurvi?.place === 'bar' ? 'bar' : g.kurvi?.place === 'sauna' ? 'sauna' : 'room'
+        case 'outro':
+            return 'square'
+        default:
+            return g.mode === 'metro' ? 'station' : 'street'
+    }
+}
+
 // The one action on offer, if there is exactly one, for a click anywhere.
 const single = (g: Game): ActionId | null => {
     const open = actions(g).filter((a) => !a.disabled)
@@ -88,6 +112,8 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
                 localStorage.setItem(SEEN, '1')
             }
         } catch {}
+        // In development the game is on the window, to set up a scene by hand.
+        if (process.env.NODE_ENV !== 'production') Object.assign(window, { noTicket: { game, act } })
         let last = performance.now()
         let frame = 0
         let ticks = 0
@@ -110,6 +136,9 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             }
             seen = g.phase
             for (const cue of g.cues.splice(0)) if (!mutedRef.current) play(cue)
+            const bed = bedOf(g)
+            if (mutedRef.current) ambience(null)
+            else if (bed !== undefined) ambience(bed)
             render(ctx, g, still)
             // The halo follows the scene a few times a second; more would only cost.
             const glow = halo.current?.getContext('2d')
@@ -144,7 +173,15 @@ export function NoTicket({ top }: { top?: React.ReactNode }) {
             frame = requestAnimationFrame(loop)
         }
         frame = requestAnimationFrame(loop)
-        return () => cancelAnimationFrame(frame)
+        // A hidden tab stops drawing; it should stop humming too.
+        const hush = () => document.hidden && ambience(null)
+        document.addEventListener('visibilitychange', hush)
+        return () => {
+            cancelAnimationFrame(frame)
+            document.removeEventListener('visibilitychange', hush)
+            // Leaving the page takes the rain and the tunnel with it.
+            ambience(null)
+        }
     }, [])
 
     // Audio may only start inside a tap or key press, so every input unlocks it.
