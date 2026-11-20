@@ -392,6 +392,7 @@ export type ShotId =
     | 'leave'
     | 'shift'
     | 'window'
+    | 'other'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -546,6 +547,10 @@ export type Game = {
     left: Kurvi | null
     // The first stranger you had a real word with. They turn up again at the end.
     met: Look | null
+    // Whoever got the fine you hid from, for the shot of it.
+    other: Look | null
+    // You have been on board at some point this run.
+    everAboard: boolean
     // Clean slices off the spit: a better kebab is a better bribe.
     slices: number
     // What happened to the kebab, if it is gone: for what you say at the end.
@@ -831,7 +836,7 @@ function combo(g: Game, id: string) {
 export const combos = (g: Game) => g.flags.filter((f) => f.startsWith('combo:')).length
 
 // On the easy run, or once Lin has tattooed you, the chat is always right.
-const sure = (g: Game) => g.easy || g.flags.includes('inked')
+const sure = (g: Game) => g.easy || g.flags.includes('inked') || g.flags.includes('dog')
 
 function trainTip(g: Game) {
     const { vehicle, place } = line(g)
@@ -928,6 +933,8 @@ export function createGame(seed = Date.now()): Game {
         lastInk: null,
         left: null,
         met: null,
+        other: null,
+        everAboard: false,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1050,6 +1057,8 @@ function begin(g: Game, kind: Kind) {
         lastInk: null,
         left: null,
         met: null,
+        other: null,
+        everAboard: false,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1890,6 +1899,7 @@ function land(g: Game) {
     standUp(g)
     if (g.aboard) return stepOff(g)
     g.aboard = true
+    g.everAboard = true
     // Back on board, out of sight of the vests outside.
     g.spotted = false
     g.player.slot = g.player.x = g.player.door
@@ -2061,6 +2071,27 @@ function talk(g: Game, r: Rider) {
         return
     }
     g.met ??= { ...r.look, phone: false, asleep: false }
+    // Some people are a conversation of their own: the dog, the guitar, the pram.
+    if (r.look.dog && !g.flags.includes('dog')) {
+        g.flags.push('dog')
+        g.bubble = { id: r.id, text: 'HAU.', until: g.time + 2.4 }
+        g.caption = 'You say hello to the dog first. The dog approves. Its owner adds you to the good kontrollit chat, the one that is right.'
+        return
+    }
+    if (r.look.guitar && !g.flags.includes('guitar')) {
+        g.flags.push('guitar')
+        g.heat = Math.max(0, g.heat - 1)
+        g.cues.push('note0', 'note2')
+        g.bubble = { id: r.id, text: 'ANY REQUESTS?', until: g.time + 2.4 }
+        g.caption = 'A busker on the way home. You ask for something loud. Half the car looks at them now, and nobody at you.'
+        return
+    }
+    if (r.look.pram && !g.flags.includes('pram')) {
+        g.flags.push('pram')
+        g.bubble = { id: r.id, text: '...', until: g.time + 2.4 }
+        g.caption = 'The baby in the pram looks at you for a long time. It knows. It says nothing. Babies ride free.'
+        return
+    }
     // The kebab in your hand is a conversation. One bite buys you a friend
     // who stands between you and the vests.
     if (g.kebab && !g.flags.includes('combo:bite') && Math.random() < 0.4) {
@@ -2205,6 +2236,7 @@ export function receipt(g: Game): { rows: [string, string][]; foot: [string, str
         ['Strangers', String(g.talked.length)],
     ]
     if (dodged) rows.push(['Checks dodged', String(dodged)])
+    if (g.flags.includes('other')) rows.push(['Fined instead', '1'])
     if (g.cash > 0) rows.push(['In your pocket', euro(g.cash)])
     const free = g.paid === 0
     const foot: [string, string] = honest(g)
@@ -2645,7 +2677,22 @@ function reachPlayer(g: Game, insp: Inspector) {
             }
             g.flags.push(shown)
             const t = g.t
-            cut(g, [{ id: 'pass', dur: 2.6, caption }], (g) => {
+            const shots: Shot[] = [{ id: 'pass', dur: 2.6, caption }]
+            // Sometimes the fine you hid from lands two seats on. Once a run.
+            const unlucky = g.riders.find((r) => r.seated && !r.checked && !r.look.asleep)
+            if (unlucky && !g.flags.includes('other') && Math.random() < 0.4) {
+                g.flags.push('other')
+                g.other = g.met ?? unlucky.look
+                shots.push({
+                    id: 'other',
+                    dur: 3.6,
+                    caption: g.met
+                        ? 'Two seats on, they stop. No ticket there either. It is the one you talked to. 100 €. They do not look your way.'
+                        : 'Two seats on, they stop at someone else. No ticket there either. 100 €. It was on its way to you.',
+                    cue: 'beep',
+                })
+            }
+            cut(g, shots, (g) => {
                 enter(g, 'ride', caption)
                 g.t = t
             })
@@ -3086,7 +3133,14 @@ export function act(g: Game, id: ActionId) {
         case 'tattoo':
             return visit(g, id)
         case 'stay':
-            if (g.phase !== 'doors' || !g.aboard) return
+            if (g.phase !== 'doors') return
+            if (!g.aboard) {
+                // On the platform at the last stop: let the doors go and walk.
+                if (g.at !== lastStop(g)) return
+                g.closeAt = Math.min(g.closeAt, g.t)
+                g.caption = say(['You head for the way out.', 'This is you. Up and out.'])
+                return
+            }
             if (g.player.queued !== null) {
                 g.player.queued = null
                 g.caption = say(['You step back from the door.', 'Changed your mind. You stay on.'])
@@ -3314,6 +3368,12 @@ export function actions(g: Game): Action[] {
             if (g.player.asleep) return [{ id: 'jump', label: 'Asleep', disabled: true }]
             const disabled = !canJump(g)
             if (g.aboard) return midway ? [stay, { id: 'jump', label: 'Jump out', disabled }] : [{ id: 'jump', label: 'Get off', disabled }]
+            // Off at the last stop, the first choice is the way out, not back in.
+            if (g.at === lastStop(g) && g.everAboard)
+                return [
+                    { id: 'stay', label: 'Way out' },
+                    { id: 'jump', label: 'Back in', disabled },
+                ]
             if (g.mode === 'bus') {
                 return [
                     { id: 'front', label: 'Front door', disabled },

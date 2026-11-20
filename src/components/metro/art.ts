@@ -3944,6 +3944,37 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
         }
         case 'window':
             return windowShot(ctx, g, still, t)
+        case 'other': {
+            // From where you are crouched: two seats on, someone else gets
+            // the reader, the red light and the slip. They sign. Nobody
+            // looks at anybody.
+            interior(ctx, g, true)
+            dim(ctx)
+            R(ctx, 0, 0, W, H, 'rgba(8, 8, 10, 0.3)')
+            const insp = g.crew.find((i) => i.aboard)
+            const them = g.other ?? EXTRAS[0]
+            R(ctx, 96, 104, 60, 6, CABINS[transitOf(g)].seat)
+            R(ctx, 96, 70, 8, 40, CABINS[transitOf(g)].seat)
+            big(ctx, 3, () => {
+                person(ctx, 42, 40, { ...them, phone: false, asleep: false }, 1, 'sit', 'rider', 0, -1, 'worried')
+                if (insp) person(ctx, 64, 40, insp.look, -1, 'stand', insp.plain ? 'badge' : 'vest')
+            })
+            // The reader, red, and then the slip changing hands.
+            R(ctx, 166, 78, 12, 16, C.navyD)
+            R(ctx, 168, 80, 8, 6, t > 0.9 ? '#c8322a' : '#5be07a')
+            if (t > 1.8) {
+                const k = ease(clamp01((t - 1.8) / 0.6))
+                R(ctx, Math.round(lerp(168, 138, k)), 92, 16, 20, '#f4f1ea')
+                R(ctx, Math.round(lerp(168, 138, k)), 92, 16, 4, C.blue)
+            }
+            // The back of your own head, low in the corner, keeping still.
+            R(ctx, 0, 108, 44, 36, g.look.hair)
+            R(ctx, 4, 104, 34, 6, g.look.hair)
+            R(ctx, 0, 132, 52, 12, g.look.coat)
+            if (t > 0.9 && t < 2) bubble(ctx, 190, 56, 'LIPPU?')
+            else if (t >= 2.2) bubble(ctx, 190, 56, '100 €.')
+            return letterbox(ctx)
+        }
         case 'leave':
             return leaveShot(ctx, g, still, t)
         case 'shift':
