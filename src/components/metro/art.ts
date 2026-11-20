@@ -3455,6 +3455,195 @@ function ending(ctx: Ctx, g: Game, still: boolean, t = g.t) {
     else square(ctx, g, still, t)
 }
 
+// A filled circle, row by row.
+function disc(ctx: Ctx, cx: number, cy: number, r: number, color: string) {
+    for (let dy = -r; dy <= r; dy++) {
+        const half = Math.round(Math.sqrt(r * r - dy * dy))
+        R(ctx, cx - half, cy + dy, half * 2 + 1, 1, color)
+    }
+}
+
+// Steam or smoke: a few pale dots rising from (x, y) and thinning out.
+function wisps(ctx: Ctx, x: number, y: number, time: number, n = 5, spread = 10) {
+    for (let i = 0; i < n; i++) {
+        const k = (time * 0.5 + i / n) % 1
+        R(ctx, x + Math.round(Math.sin(time * 2 + i * 2.1) * 3) + ((i * 7) % spread) - spread / 2, Math.round(y - k * 26), 2, 2, k < 0.5 ? '#e8ecef' : '#8a9098')
+    }
+}
+
+// What you came away from a Kurvi place with, close up, in a pool of light
+// on the dark street: the kebab, the box, the glasses, the coins.
+function leaveShot(ctx: Ctx, g: Game, still: boolean, t: number) {
+    const k = g.left
+    opening(ctx, g, still)
+    dim(ctx)
+    R(ctx, 0, 0, W, H, 'rgba(8, 8, 10, 0.35)')
+    if (!k) return letterbox(ctx)
+    const time = still ? 0 : g.time
+    pool(ctx, 128, 44, 74, 34, '#2a2c3a')
+    const skin = g.look.skin
+    // Your hand, coming up into the light from below.
+    const hand = (x: number, w: number) => {
+        R(ctx, x, 96, w, 48, skin)
+        R(ctx, x, 96, w, 2, shade(skin, 0.15))
+        R(ctx, x + w - 3, 96, 3, 48, shade(skin, -0.15))
+    }
+    if (k.place === 'kebab') {
+        if (!g.kebab) {
+            // Face down on the pavement, a slice of tomato beside it.
+            R(ctx, 96, 104, 64, 10, '#cdb98a')
+            R(ctx, 92, 112, 72, 4, '#8a4a2a')
+            for (const [x, y] of [[84, 110], [170, 114], [122, 118], [150, 119]]) R(ctx, x, y, 5, 3, '#c8402f')
+            R(ctx, 104, 116, 6, 2, '#5a9a4a')
+            if (t > 0.6) bubble(ctx, 128, 84, '...')
+        } else {
+            hand(108, 40)
+            // Foil at the bottom, bread, and as much meat as you caught.
+            R(ctx, 104, 62, 48, 40, '#e8d8a8')
+            R(ctx, 104, 62, 48, 3, '#cdb98a')
+            R(ctx, 100, 84, 56, 22, '#c8ccd0')
+            for (let i = 0; i < 6; i++) R(ctx, 102 + i * 9, 86 + (i % 2) * 3, 6, 1, '#f2f4f6')
+            const meat = [0, 2, 4, 7][g.slices] ?? 4
+            for (let i = 0; i < meat; i++) R(ctx, 106 + ((i * 13) % 40), 52 + ((i * 5) % 9), 9, 6, i % 2 ? '#8a4a2a' : '#9a5a32')
+            R(ctx, 110, 58, 8, 3, '#5a9a4a')
+            R(ctx, 136, 56, 7, 3, '#c8402f')
+            if (g.flags.includes('hot')) R(ctx, 124, 50, 3, 6, '#c8322a')
+            if (!still) wisps(ctx, 128, 50, time)
+        }
+    } else if (k.place === 'pizza') {
+        const burnt = k.bake > GOLDEN[1]
+        const pale = !burnt && !k.good
+        // The box, lid up, and what is in it.
+        R(ctx, 78, 30, 100, 30, '#d8ccb4')
+        R(ctx, 78, 30, 100, 2, '#b8ac98')
+        drawText(ctx, 'Pizza', 128, 40, '#c8402f', 2, 'center')
+        R(ctx, 74, 60, 108, 44, '#e8e0d0')
+        R(ctx, 74, 100, 108, 4, '#b8ac98')
+        disc(ctx, 128, 81, 19, burnt ? '#1a1410' : pale ? '#e8d8b0' : '#d8a048')
+        disc(ctx, 128, 81, 16, burnt ? '#2a1a12' : pale ? '#f2e6c8' : '#e8c070')
+        k.toppings.slice(0, k.n).forEach((top, i) => {
+            if (!k.want.includes(top) && k.score === k.toppings.length) return
+            for (let j = 0; j < 3; j++) R(ctx, 118 + ((i * 11 + j * 7) % 20), 72 + ((i * 5 + j * 9) % 18), 3, 2, burnt ? '#0a0806' : TOPPINGS[top])
+        })
+        // One slice already gone.
+        for (let i = 0; i < 12; i++) R(ctx, 128, 81 - i, i, 1, '#e8e0d0')
+        if (!still) wisps(ctx, 128, 62, time, burnt ? 8 : 4, 30)
+    } else if (k.place === 'bar') {
+        const won = k.score === k.round.length
+        R(ctx, 40, 96, 176, 6, '#5a3a22')
+        R(ctx, 40, 96, 176, 1, '#8a6a42')
+        R(ctx, 40, 102, 176, 30, '#3a2416')
+        for (const [i, x] of [108, 128].entries()) {
+            R(ctx, x, 76, 12, 20, '#cfd8dc')
+            R(ctx, x + 1, 77, 2, 18, '#ffffff')
+            R(ctx, x + 2, 92, 8, 3, g.drink.color)
+            if (i === 1) R(ctx, x + 9, 80, 2, 2, '#e8ecef')
+        }
+        if (won) {
+            disc(ctx, 164, 92, 5, C.yellow)
+            R(ctx, 163, 89, 2, 6, C.yellowL)
+        } else if (!still) {
+            // They made you sing: notes, going up and off key.
+            for (let i = 0; i < 3; i++) {
+                const y = Math.round(70 - ((time * 12 + i * 14) % 40))
+                const x = 160 + i * 12 + Math.round(Math.sin(time * 3 + i) * 3)
+                R(ctx, x, y, 3, 2, C.paper)
+                R(ctx, x + 2, y - 6, 1, 6, C.paper)
+            }
+        }
+    } else if (k.place === 'kiosk') {
+        hand(106, 44)
+        const won = scratchWin(k)
+        if (k.score === -1) {
+            // A paper ticket, zone letters and all.
+            R(ctx, 92, 58, 72, 40, '#f4f1ea')
+            R(ctx, 92, 58, 72, 9, C.blue)
+            drawText(ctx, 'HSL', 96, 60, C.white)
+            drawText(ctx, 'AB', 128, 72, C.ink, 2, 'center')
+            drawText(ctx, clockText(g.clock), 128, 88, C.grey, 1, 'center')
+        } else {
+            R(ctx, 84, 52, 88, 48, won ? '#f2d25e' : '#b8b4a8')
+            R(ctx, 86, 54, 84, 44, won ? '#fff6d0' : '#d8d4c8')
+            if (won) for (const [i, cx] of [106, 128, 150].entries()) scratchSymbol(ctx, won, cx, 76 + (still ? 0 : Math.round(Math.sin(time * 5 + i) * 2)), time)
+            else drawText(ctx, 'Ei voittoa', 128, 72, '#8a8478', 1, 'center')
+        }
+    } else if (k.place === 'pesula') {
+        hand(98, 60)
+        R(ctx, 92, 84, 72, 14, skin)
+        const coins = k.washes.filter((w) => w.open && w.kind === 'coin')
+        coins.forEach((w, i) => {
+            const cx = 110 + i * 18
+            disc(ctx, cx, 88, 6, C.yellowD)
+            disc(ctx, cx, 87, 5, C.yellow)
+            R(ctx, cx - 2, 84, 2, 2, C.yellowL)
+        })
+        if (!coins.length) for (const [x, y] of [[112, 86], [126, 90], [140, 85]]) R(ctx, x, y, 6, 3, '#9a9a96')
+        drawText(ctx, coins.length ? euro(k.score) : 'Lint', 128, 64, C.yellowL, 2, 'center')
+        // The cat you met, watching you go.
+        if (k.washes.some((w) => w.open && w.kind === 'cat')) {
+            R(ctx, 196, 100, 18, 12, '#3a3230')
+            R(ctx, 197, 95, 4, 5, '#3a3230')
+            R(ctx, 209, 95, 4, 5, '#3a3230')
+            if (still || Math.floor(time * 0.7) % 4) {
+                R(ctx, 200, 103, 3, 2, C.yellowL)
+                R(ctx, 207, 103, 3, 2, C.yellowL)
+            }
+        }
+    } else {
+        // Out of the sauna: you on the bench outside, steaming into the night.
+        const won = k.score > 0
+        R(ctx, 70, 112, 116, 5, '#6a4a2a')
+        R(ctx, 78, 117, 4, 16, '#4a3420')
+        R(ctx, 174, 117, 4, 16, '#4a3420')
+        big(ctx, 3, () => person(ctx, 42, 44, { ...you(g), flushed: true, kebab: false }, 1, 'sit', 'player', 0, -1, won ? 'happy' : 'worried'))
+        if (!still) {
+            wisps(ctx, 122, 80, time, 7, 26)
+            wisps(ctx, 134, 86, time + 1.3, 5, 18)
+        }
+        if (t > 0.7) bubble(ctx, 176, 70, won ? 'AAAH.' : 'HUH.')
+    }
+    letterbox(ctx)
+}
+
+// The inspectors off shift: a bench on an empty platform, a thermos between
+// them, the clock over their heads. One line each.
+function shiftShot(ctx: Ctx, g: Game, still: boolean, t: number) {
+    R(ctx, 0, 0, W, H, '#c9a23a')
+    for (let x = 6; x < W; x += 12) R(ctx, x, 12, 1, 90, '#b08a2c')
+    dither(ctx, 0, 84, W, 18, '#8a6a22')
+    R(ctx, 0, 102, W, 42, '#8f877c')
+    R(ctx, 0, 102, W, 3, '#d6ad35')
+    R(ctx, 0, 0, W, H, 'rgba(10, 12, 24, 0.35)')
+    // The platform clock, at the time you got there.
+    R(ctx, 120, 12, 1, 8, '#1c1c1e')
+    disc(ctx, 120, 30, 10, '#1c1c1e')
+    disc(ctx, 120, 30, 8, '#f3eedf')
+    const m = ((g.clock % 60) / 60) * Math.PI * 2
+    const h = (((g.clock / 60) % 12) / 12) * Math.PI * 2
+    line(ctx, 120, 30, 120 + Math.round(Math.sin(m) * 6), 30 - Math.round(Math.cos(m) * 6), C.ink)
+    line(ctx, 120, 30, 120 + Math.round(Math.sin(h) * 4), 30 - Math.round(Math.cos(h) * 4), C.ink)
+    // The bench.
+    R(ctx, 64, 104, 128, 5, '#2a2a2e')
+    R(ctx, 64, 86, 128, 3, '#2a2a2e')
+    R(ctx, 72, 109, 4, 20, '#1c1c1e')
+    R(ctx, 180, 109, 4, 20, '#1c1c1e')
+    const pair = g.crew.slice(0, 2)
+    const a = pair[0]?.look ?? EXTRAS[1]
+    const b = pair[1]?.look ?? EXTRAS[4]
+    big(ctx, 3, () => {
+        person(ctx, 33, 36, { ...a, asleep: t > 2.6 }, 1, 'sit', 'vest', 0, -1, 'calm')
+        person(ctx, 53, 36, b, -1, 'sit', 'vest', 0, -1, 'calm')
+    })
+    // The thermos and its cup, between them.
+    R(ctx, 124, 88, 7, 16, '#5a7a8a')
+    R(ctx, 124, 88, 7, 3, '#c8ccd0')
+    R(ctx, 134, 98, 6, 6, '#e8e4dc')
+    if (!still) wisps(ctx, 137, 96, g.time, 3, 4)
+    if (t > 0.6 && t < 2.2) bubble(ctx, 96, 44, 'LAST CAR.')
+    else if (t >= 2.2 && t < 3.8) bubble(ctx, 160, 44, 'THEN HOME.')
+    letterbox(ctx)
+}
+
 // An inspector from the knee down, walking left past the camera: coat hem
 // (with the light band, for vests), trouser legs, shoes, and the reader
 // swinging from one hand, blinking.
@@ -3601,6 +3790,10 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             else if (gone) bubble(ctx, 76, 64, say2(g, ['PHEW.', 'HUH.', 'OK. OK.']))
             return letterbox(ctx)
         }
+        case 'leave':
+            return leaveShot(ctx, g, still, t)
+        case 'shift':
+            return shiftShot(ctx, g, still, t)
         case 'showink':
         case 'inked': {
             // The same close-up serves when you show it to an inspector: no
