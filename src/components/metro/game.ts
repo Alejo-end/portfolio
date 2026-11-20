@@ -3714,6 +3714,9 @@ export function keysOf(list: Action[]): (string | null)[] {
     })
 }
 
+/** The phone's battery on the way home: 4% at the start, dead at meet plus grace. */
+const phoneLeft = (g: Game) => Math.max(0, Math.ceil((4 * (g.meet + GRACE - g.clock)) / (g.meet + GRACE - g.start)))
+
 export function uiOf(g: Game): Ui {
     const stops = stopsOf(g)
     const riding =
@@ -3734,7 +3737,8 @@ export function uiOf(g: Game): Ui {
         phase: g.phase,
         caption: g.caption,
         tip: g.tip,
-        clock: clockText(g.clock),
+        // On the way home the phone is the clock that matters: what is left in it.
+        clock: g.home && g.phase !== 'title' ? `${clockText(g.clock)} · ${phoneLeft(g)}%` : clockText(g.clock),
         where: choosing ? stops[0].name : riding ? `> ${stops[g.at + 1]?.name ?? ''}` : stops[Math.min(g.at, lastStop(g))].name,
         heat: g.heat,
         countdown: g.phase === 'ride' && g.sweep ? `next stop ${Math.max(0, left)} s` : '',

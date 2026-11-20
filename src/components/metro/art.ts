@@ -1130,10 +1130,42 @@ function yellowWall(ctx: Ctx, time: number, still: boolean) {
     for (let x = 0; x < W; x += 4) R(ctx, x, 137, 2, 1, '#4a4640')
 }
 
+// The departure board settles like a split-flap one: each letter runs
+// through a few others first, left to right, a row after a row.
+const FLAPS = 'ABCDEFGHJKLMNOPRSTUVWXYZ0123456789'
+function flap(text: string, since: number, row: number, time: number) {
+    const at = since - row * 0.09
+    return [...text]
+        .map((ch, i) => {
+            if (ch === ' ' || at > 0.25 + i * 0.045) return ch
+            if (at < i * 0.02) return ' '
+            return FLAPS[Math.floor(time * 24 + i * 7 + row * 13) % FLAPS.length]
+        })
+        .join('')
+}
+
 function title(ctx: Ctx, g: Game, still: boolean) {
     const time = g.time
     yellowWall(ctx, time, still)
+    // Every so often a train goes through on the far track: its light runs
+    // along the wall, right to left, and the signs swing a little after it.
+    const pass = still ? -1 : (time % 13) - 9
+    if (pass > 0 && pass < 1.8) {
+        const bx = Math.round(W + 40 - (pass / 1.8) * (W + 160))
+        dither(ctx, bx, 12, 70, 122, C.yellowL)
+        R(ctx, bx + 20, 12, 30, 122, '#fff0b0')
+        dither(ctx, bx + 16, 12, 38, 122, C.yellowL)
+        for (let x = 6; x < W; x += 12) if (x >= bx && x < bx + 70) R(ctx, x, 12, 1, 122, C.yellowD)
+    }
+    const swing = pass > 0.6 && pass < 3.2 ? Math.round(Math.sin((pass - 0.6) * 9) * (1 - (pass - 0.6) / 2.6)) : 0
+    ctx.save()
+    ctx.translate(swing, 0)
+    titleSign(ctx)
+    ctx.restore()
+    titleBoard(ctx, g, still)
+}
 
+function titleSign(ctx: Ctx) {
     // The name panel: the M, the name, the Swedish under it.
     const name = 'NO TICKET'
     const pw = textWidth(name, 3) + 36
@@ -1147,9 +1179,15 @@ function title(ctx: Ctx, g: Game, still: boolean) {
     drawText(ctx, name, px + 26, 21, C.white, 3)
     drawText(ctx, 'Ingen biljett', px + 26, 39, C.grey2)
 
+}
+
+function titleBoard(ctx: Ctx, g: Game, still: boolean) {
+    const time = g.time
     // The departure board, hung from two rods.
     const { x, w, y, step, h } = MENU
     const rows = actions(g)
+    // How long the board has been up: it flaps in once, when you arrive.
+    const since = still ? 99 : g.t
     const bottom = y + rows.length * step + 2
     R(ctx, x + 24, 48, 1, 6, '#111')
     R(ctx, x + w - 25, 48, 1, 6, '#111')
@@ -1163,8 +1201,8 @@ function title(ctx: Ctx, g: Game, still: boolean) {
         const picked = i === g.menu
         const ink = picked ? '#0d0d0d' : C.led
         if (picked) R(ctx, x, ry - 1, w, h, blink ? C.led : '#c8701c')
-        drawText(ctx, a.label, x + 8, ry, ink, 2)
-        drawText(ctx, NOTES[a.id] ?? '', x + w - 6, ry + 3, picked ? '#3a2208' : '#a8642a', 1, 'right')
+        drawText(ctx, flap(a.label.toUpperCase(), since, i, time), x + 8, ry, ink, 2)
+        drawText(ctx, flap((NOTES[a.id] ?? '').toUpperCase(), since - 0.3, i, time), x + w - 6, ry + 3, picked ? '#3a2208' : '#a8642a', 1, 'right')
     })
 }
 
@@ -2855,6 +2893,7 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
                 R(ctx, x, 58, 2, 40, '#2a2a2a')
                 R(ctx, x - 3, 56, 8, 2, '#3a3a3a')
                 R(ctx, x - 2, 58, 6, 1, day ? '#9a9a96' : C.glow)
+                if (!day) pool(ctx, x + 1, 97, 16, 5, '#5d5640')
             }
         }
         for (const sight of SIGHTS) {
@@ -2878,6 +2917,12 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
     R(ctx, 0, 112, W, 26, '#2c2b2d')
     for (let x = -(off % 20); x < W; x += 20) R(ctx, x, 136, 10, 1, '#bdb7ab')
     R(ctx, 0, 138, W, 6, '#232325')
+    // At night the road is wet: every lamp is drawn out long in it.
+    if (!day && !bridge && leg !== parkLeg(g))
+        for (let x = -(off % 128) + 40; x < W + 10; x += 128) {
+            dither(ctx, x - 3, 113, 8, 22, '#4a4638')
+            dither(ctx, x - 1, 113, 4, 12, '#7a7050')
+        }
 
     for (const o of bike.obstacles) obstacle(ctx, g, o, bike.s)
 
@@ -2895,6 +2940,21 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
             for (const [dy, len] of [[-14, 18], [-8, 26], [-2, 14]]) {
                 R(ctx, RIDER_X - 14 - len - Math.floor(time * 40) % 6, LANE + swerve + dy, len, 1, '#bdb7ab')
             }
+        }
+        if (!day) {
+            // You in the wet road, upside down and faint, and the spray off the back wheel.
+            ctx.save()
+            ctx.globalAlpha = 0.14
+            ctx.translate(0, 2 * (LANE + swerve) + 1)
+            ctx.scale(1, -1)
+            if (g.scooter) scooterRider(ctx, RIDER_X, LANE + swerve, you(g))
+            else cyclist(ctx, RIDER_X, LANE + lift, you(g), 1, bike.s * 9)
+            ctx.restore()
+            if (!still && bike.hold <= 0 && !lift)
+                for (let i = 0; i < 4; i++) {
+                    const k = (time * 3 + i / 4) % 1
+                    R(ctx, RIDER_X - 12 - Math.round(k * 12), LANE + swerve - 1 - Math.round(Math.sin(k * Math.PI) * 5), 1, 1, k < 0.6 ? '#8a94a8' : '#4a5468')
+                }
         }
         const top = g.scooter
             ? scooterRider(ctx, RIDER_X, LANE + swerve, you(g), 1, g.flags.includes('box'))
