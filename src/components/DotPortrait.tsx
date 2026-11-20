@@ -111,6 +111,9 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
         img.onerror = () => {
             if (!cancelled) setRevealed(true)
         }
+        // The dots are what the page shows first, so their source goes ahead
+        // of the photo underneath, which only shows on hover.
+        img.fetchPriority = 'high'
         img.src = gridSource(src)
 
         const ro = new ResizeObserver(() => draw())
@@ -141,7 +144,8 @@ export function DotPortrait({ src, width, height, alt }: DotPortraitProps) {
                 width={width}
                 height={height}
                 sizes="(min-width: 768px) 26rem, 100vw"
-                priority
+                loading="eager"
+                fetchPriority="low"
                 className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${revealed ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100`}
             />
             <canvas

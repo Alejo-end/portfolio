@@ -1,10 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { addXp } from '@/lib/xp'
-import { Snake } from './Snake'
+import { GameLink } from './GameLink'
+
+// The snake game sits behind a button on every page, so its script is only
+// fetched when someone reaches for it: on hover or focus, ahead of the click.
+const loadSnake = () => import('./Snake').then((m) => m.Snake)
+const Snake = dynamic(loadSnake, {
+    ssr: false,
+    loading: () => <p className="py-10 text-center text-muted-foreground">loading…</p>,
+})
 
 // A snake as a phone game draws one: a block body zigzagging from the tail
 // at the bottom left up to a head with an eye and a tongue, a dot of food
@@ -76,6 +85,8 @@ export function SnakeButton() {
             const target = e.target instanceof Element ? e.target : null
             if (target?.closest('input, textarea, select, [contenteditable="true"], [role="application"]')) return
             typed = (typed + e.key.toLowerCase()).slice(-5)
+            // Four letters in, the game starts loading, so the fifth opens it at once.
+            if (typed.endsWith('snak')) void loadSnake()
             if (typed === 'snake') setOpen(true)
             if (typed === 'metro') router.push('/metro')
         }
@@ -108,12 +119,20 @@ export function SnakeButton() {
                     <Grows>leave game</Grows>
                 </Link>
             ) : (
-                <Link href="/metro" aria-label="Play No ticket" className={`plain ${corner}`}>
+                <GameLink aria-label="Play No ticket" className={`plain ${corner}`}>
                     <PixelIcon grid={TICKET} />
                     <Grows>play no ticket</Grows>
-                </Link>
+                </GameLink>
             )}
-            <button type="button" onClick={() => setOpen((o) => !o)} aria-label={open ? 'Hide snake' : 'Play snake'} aria-expanded={open} className={corner}>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                onPointerEnter={() => void loadSnake()}
+                onFocus={() => void loadSnake()}
+                aria-label={open ? 'Hide snake' : 'Play snake'}
+                aria-expanded={open}
+                className={corner}
+            >
                 <PixelIcon grid={ICON} />
                 <Grows>{open ? 'hide snake' : 'play snake'}</Grows>
             </button>

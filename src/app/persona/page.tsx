@@ -46,7 +46,7 @@ export default function Persona() {
                         width={2000}
                         height={1348}
                     />
-                    <figcaption className="label">On film · hover to develop</figcaption>
+                    <figcaption className="label">Shot on film. Hover or tap to develop it.</figcaption>
                 </figure>
 
                 <div className="rise rise-3 space-y-14 lg:col-span-5 lg:col-start-8">

@@ -7,7 +7,9 @@ export interface SkyNumber {
     alias: string
 }
 
-const TONES = [0.04, 0.06, 0.09, 0.13, 0.2, 0.35, 0.6]
+// How dark a number rests. Kept light: the numbers hang over the page's text,
+// which has to stay easy to read through them. A picked number still goes black.
+const TONES = [0.03, 0.045, 0.06, 0.08, 0.11, 0.15, 0.2]
 
 interface Placed {
     cell: number

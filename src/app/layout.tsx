@@ -20,11 +20,13 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-// norns-style bitmap face, kept to small screen moments (404, counters).
+// norns-style bitmap face, kept to small screen moments (404, counters, the
+// games), so it is fetched when one of those shows and not ahead of every page.
 const silkscreen = localFont({
   src: "./fonts/Silkscreen/Silkscreen-Regular.woff2",
   variable: "--font-pixel",
   weight: "400",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -43,7 +45,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // In-page jumps glide (globals.css); the attribute tells Next to keep a
+    // change of page instant all the same.
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
         className={`${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >

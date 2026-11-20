@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { projects, projectNo } from "@/data/projects";
 import { workExperiences, shortYears } from "@/data/experience";
-import { getGallery, isImagePath } from "@/lib/media";
+import { getGallery, isImagePath, sizeOf } from "@/lib/media";
 import { hasSound } from "@/data/sound";
 import { experienceId } from "@/components/ExperienceDetails";
 import { HomeIndex, type IndexRow } from "@/components/koivu/HomeIndex";
@@ -13,12 +13,16 @@ const FEATURED = ["four", "h2h", "stray", "reins", "weather"];
 
 export const metadata: Metadata = {
     description:
-        "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, with an enthusiasm for electronics and experimental music.",
+        "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, who makes electronics and experimental music.",
 };
 
 export default function Home() {
     const rows: IndexRow[] = projects.map((project) => {
         const gallery = getGallery(project.alias);
+        const cover =
+            project.videos?.[0]?.poster ??
+            gallery.find((b) => isImagePath(b.pathname))?.url ??
+            gallery.find((b) => b.poster)?.poster;
         return {
             no: projectNo(project),
             alias: project.alias,
@@ -26,10 +30,8 @@ export default function Home() {
             year: project.year,
             kind: project.kind,
             description: project.description,
-            cover:
-                project.videos?.[0]?.poster ??
-                gallery.find((b) => isImagePath(b.pathname))?.url ??
-                gallery.find((b) => b.poster)?.poster,
+            cover,
+            coverSize: sizeOf(cover),
             sound: gallery.some((b) => hasSound(b.pathname)),
         };
     });
@@ -43,7 +45,9 @@ export default function Home() {
         const media = [
             ...(project.videos ?? []).flatMap((v) => (v.poster ? [{ src: v.poster, video: v.src }] : [])),
             ...gallery.flatMap((b) => (isImagePath(b.pathname) ? [{ src: b.url }] : b.poster ? [{ src: b.poster, video: b.url }] : [])),
-        ].slice(0, 10);
+        ]
+            .slice(0, 10)
+            .map((m) => ({ ...m, ...sizeOf(m.src) }));
         if (media.length === 0) continue;
         featured.push(projectRow({ ...project, no: projectNo(project) }, media));
     }

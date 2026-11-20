@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { GameLink } from './GameLink'
 
 // The site's only navigation: links set on their sides like book spines, at
 // the left edge of the top of every page. There is no header bar. On phones,
@@ -47,7 +48,7 @@ export function SpineLabel({ children }: { children: ReactNode }) {
 export function SiteSpines({ className = '' }: { className?: string }) {
     const pathname = usePathname()
     return (
-        <nav aria-label="Site" className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] lg:flex-nowrap lg:items-start lg:gap-1 ${className}`}>
+        <nav aria-label="Site" className={`flex flex-wrap items-baseline gap-x-4 gap-y-2 font-mono text-[13px] lg:flex-nowrap lg:items-start lg:gap-1 lg:text-xs ${className}`}>
             <span className="text-muted-foreground lg:hidden">site</span>
             <span className="hidden lg:block">
                 <SpineLabel>site</SpineLabel>
@@ -55,8 +56,10 @@ export function SiteSpines({ className = '' }: { className?: string }) {
             {/* One link per page: a word in a line on phones, a spine from lg up. */}
             {SITE.map((item) => {
                 const on = here(pathname, item.href)
+                // The game's link fetches the game only when reached for.
+                const Item = item.href === '/metro' ? GameLink : Link
                 return (
-                    <Link
+                    <Item
                         key={item.href}
                         href={item.href}
                         aria-current={on ? 'page' : undefined}
@@ -65,7 +68,7 @@ export function SiteSpines({ className = '' }: { className?: string }) {
                         <span aria-hidden className={`hidden h-2 w-2 shrink-0 rounded-full border border-foreground lg:inline-block ${on ? 'bg-foreground' : ''}`} />
                         {item.label}
                         {item.note && <span className="hidden text-muted-foreground lg:inline">{item.note}</span>}
-                    </Link>
+                    </Item>
                 )
             })}
         </nav>

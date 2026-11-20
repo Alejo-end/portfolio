@@ -134,6 +134,31 @@
   .rise-4 { animation-delay: 0.35s; }
 }
 
+/* Pictures (Picture.tsx): one that arrives after the page comes up like a
+   print in the developer, over the gray of its frame. */
+img[data-developing] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  img[data-developed] {
+    transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+/* Rows and tiles further down rise into place as they scroll into view, the
+   way the page top does on load. Tied to the scroll position, so it costs no
+   script; browsers without scroll timelines show everything as it is. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .enter {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 9rem;
+    }
+  }
+}
+
 /* 404 screen: a heartbeat crossing a flat line. Units are SVG user units. */
 @keyframes blip-run {
   from { transform: translateX(-24px); }
@@ -174,6 +199,14 @@
   .btn:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+  }
+}
+
+/* A jump within a page, such as a job picked from the list on the work page,
+   glides there, so it is clear where on the page it landed. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
 
