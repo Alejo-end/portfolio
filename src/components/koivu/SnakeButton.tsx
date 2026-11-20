@@ -100,7 +100,11 @@ export function SnakeButton() {
     }, [router])
 
     return (
-        <div className="fixed bottom-3 right-3 z-50 flex items-end gap-1.5 font-mono text-[10px] leading-none">
+        // On a phone the metro game's own buttons reach the bottom of the screen,
+        // and this corner sat on top of them. There the site nav is the way out.
+        <div
+            className={`fixed bottom-3 right-3 z-50 flex items-end gap-1.5 font-mono text-[10px] leading-none ${pathname === '/metro' ? 'max-sm:hidden' : ''}`}
+        >
             {open && (
                 <div className="absolute bottom-full right-0 mb-2 w-[calc(100vw-1.5rem)] border border-foreground bg-background p-2 sm:w-72">
                     <div className="mb-2 flex justify-between text-muted-foreground">
