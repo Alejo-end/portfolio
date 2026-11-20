@@ -3971,8 +3971,8 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             R(ctx, 0, 108, 44, 36, g.look.hair)
             R(ctx, 4, 104, 34, 6, g.look.hair)
             R(ctx, 0, 132, 52, 12, g.look.coat)
-            if (t > 0.9 && t < 2) bubble(ctx, 190, 56, 'LIPPU?')
-            else if (t >= 2.2) bubble(ctx, 190, 56, '100 €.')
+            if (t > 0.9 && t < 2) bubble(ctx, 190, 42, 'LIPPU?')
+            else if (t >= 2.2) bubble(ctx, 190, 42, '100 €.')
             return letterbox(ctx)
         }
         case 'leave':
