@@ -202,6 +202,14 @@ img[data-developing] {
   }
 }
 
+/* A jump within a page, such as a job picked from the list on the work page,
+   glides there, so it is clear where on the page it landed. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* The page under an open lightbox stays put. */
 html:has(dialog[open]) {
   overflow: hidden;

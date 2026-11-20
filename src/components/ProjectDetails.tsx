@@ -105,6 +105,8 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
     if (w && h && ratios[url] !== w / h) setRatios((r) => ({ ...r, [url]: w / h }))
   }
   const dialogRef = useRef<HTMLDialogElement>(null)
+  // Where a finger went down in the viewer, to tell a swipe from a tap.
+  const swipe = useRef<{ x: number; y: number } | null>(null)
   // One lightbox steps through the main gallery and then the prototype's.
   const media = [...gallery, ...prototypeGallery]
 
@@ -128,6 +130,18 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
 
   const handleShare = async () => {
     const url = `${window.location.origin}/projects/${project.alias}`
+
+    // On a phone, the system's own share sheet: messages, mail, AirDrop.
+    // Anywhere else, or if the sheet fails, the link goes to the clipboard.
+    if (typeof navigator.share === "function" && window.matchMedia("(pointer: coarse)").matches) {
+      try {
+        await navigator.share({ title: project.title, url })
+        return
+      } catch (err) {
+        // Closing the sheet without picking anything is not a failure.
+        if (err instanceof DOMException && err.name === "AbortError") return
+      }
+    }
 
     try {
       await navigator.clipboard.writeText(url)
@@ -190,7 +204,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
                   loading={index < 3 ? "eager" : "lazy"}
                   sizes={tileSizes}
                   onLoad={file.width ? undefined : learn(file.poster)}
-                  className="w-full h-auto bg-secondary object-cover"
+                  className="w-full h-auto object-cover"
                 />
               ) : isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
@@ -214,7 +228,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
                   fetchPriority={index === 0 ? "high" : undefined}
                   sizes={tileSizes}
                   onLoad={file.width ? undefined : learn(file.url)}
-                  className="w-full h-auto bg-secondary object-cover"
+                  className="w-full h-auto object-cover"
                 />
               )}
               {sound && <SoundBadge />}
@@ -277,7 +291,9 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
         ref={dialogRef}
         aria-label={`${project.title} media viewer`}
         // !m-0: the dialog is a child of a space-y stack, which would push it down.
-        className="fixed inset-0 !m-0 h-full max-h-none w-full max-w-none items-center justify-center bg-transparent p-4 open:flex backdrop:bg-black/80"
+        // The page behind is blurred as well as dimmed: some pictures are
+        // cut-outs, and the gallery would show through them.
+        className="fixed inset-0 !m-0 h-full max-h-none w-full max-w-none items-center justify-center bg-transparent p-4 open:flex backdrop:bg-black/85 backdrop:backdrop-blur-xl"
         onClose={closeCarousel}
         onClick={(e) => {
           if (e.target === e.currentTarget) closeCarousel()
@@ -291,6 +307,22 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
           <div
             className="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
+            // A sideways swipe steps through the pictures. Not on a clip,
+            // where the same drag scrubs its timeline.
+            onTouchStart={(e) => {
+              const t = e.touches[0]
+              swipe.current = e.touches.length === 1 && !(e.target instanceof HTMLVideoElement) ? { x: t.clientX, y: t.clientY } : null
+            }}
+            onTouchEnd={(e) => {
+              const from = swipe.current
+              swipe.current = null
+              if (!from || media.length < 2) return
+              const dx = e.changedTouches[0].clientX - from.x
+              const dy = e.changedTouches[0].clientY - from.y
+              if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+              if (dx < 0) nextImage()
+              else prevImage()
+            }}
           >
             <Button
               variant="ghost"
@@ -351,10 +383,13 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
               ))}
             </div>
 
-            <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">
-              {currentIndex + 1} / {media.length}
-              {name ? ` · ${name}` : ""}
-              {isVideo && hasSound(currentFile.pathname) ? " · sound on" : ""}
+            {/* On its own dark plate, so it reads over a pale picture too. Above a clip's controls. */}
+            <div className={`pointer-events-none absolute left-0 right-0 text-center ${isVideo ? "top-4" : "bottom-4"}`}>
+              <span className="inline-block max-w-[calc(100%-2rem)] bg-black/70 px-2 py-1 font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white">
+                {currentIndex + 1} / {media.length}
+                {name ? ` · ${name}` : ""}
+                {isVideo && hasSound(currentFile.pathname) ? " · sound on" : ""}
+              </span>
             </div>
           </div>
         )}

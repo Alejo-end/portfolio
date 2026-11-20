@@ -15,14 +15,18 @@ import Image, { type ImageProps } from 'next/image'
  */
 const waiting = (img: HTMLImageElement) => img.loading === 'lazy' && !img.complete && img.getBoundingClientRect().top > window.innerHeight
 
+// One function for every picture, so React does not detach and re-attach the
+// ref (and measure the picture again) each time its parent renders.
+const mark = (img: HTMLImageElement | null) => {
+    if (img && waiting(img)) img.dataset.developing = ''
+}
+
 export function Picture({ alt, onLoad, onError, ...props }: ImageProps) {
     return (
         <Image
             {...props}
             alt={alt}
-            ref={(img) => {
-                if (img && waiting(img)) img.dataset.developing = ''
-            }}
+            ref={mark}
             onLoad={(e) => {
                 const img = e.currentTarget
                 if ('developing' in img.dataset) {

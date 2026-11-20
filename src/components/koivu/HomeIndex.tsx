@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { getImageProps } from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
 import { Picture } from '@/components/Picture'
@@ -75,6 +76,24 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
     const hovered = focus && 'alias' in focus ? rows.find((r) => r.alias === focus.alias) : undefined
     const list = useRef<HTMLUListElement>(null)
 
+    // The corner print shows a project's cover the moment its row is hovered,
+    // so the covers are fetched when the pointer first reaches either list,
+    // not one by one as each row is hovered. Asked for exactly as the print
+    // asks, so the browser reuses the same files.
+    const warmed = useRef(false)
+    const warm = () => {
+        if (warmed.current || !window.matchMedia('(pointer: fine)').matches) return
+        warmed.current = true
+        for (const row of rows) {
+            if (!row.cover || !row.coverSize) continue
+            const { props } = getImageProps({ src: row.cover, alt: '', ...row.coverSize, sizes: '240px' })
+            const img = new window.Image()
+            if (props.sizes) img.sizes = props.sizes
+            if (props.srcSet) img.srcset = props.srcSet
+            img.src = props.src
+        }
+    }
+
     // No hover on touch screens: the row crossing the middle of the screen
     // picks its number instead, so scrolling the list plays the numbers.
     useEffect(() => {
@@ -134,7 +153,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
                 </p>
 
                 {/* Every project on its side, the index as a row of spines. */}
-                <nav aria-label="Project list" className="hidden justify-end gap-x-1 lg:col-span-3 lg:flex" onMouseLeave={unfocus}>
+                <nav aria-label="Project list" className="hidden justify-end gap-x-1 lg:col-span-3 lg:flex" onMouseEnter={warm} onMouseLeave={unfocus}>
                     <SpineLabel>project list · {rows.length}</SpineLabel>
                     {rows.map((row) => {
                         const state = picked(row)
@@ -184,7 +203,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
                     </span>
                 }
             >
-                <ul ref={list} onMouseLeave={() => setFocus(null)}>
+                <ul ref={list} onMouseEnter={warm} onMouseLeave={() => setFocus(null)}>
                     {rows.map((row) => {
                         const state = picked(row)
                         return (

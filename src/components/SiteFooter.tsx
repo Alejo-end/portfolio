@@ -62,7 +62,9 @@ export function SiteFooter() {
             </p>
             <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">The studio practice of Alejandro?</p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground">
+            {/* Room on the right for the two game buttons pinned to that corner,
+                which would otherwise sit on top of the theme switch. */}
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground sm:pr-28">
                 {/* The maker's mark, small, the way it sits on the plate. */}
                 <AdlMark className="h-8 w-8 shrink-0 text-foreground" />
                 <span>© {built.getFullYear()} Alejandro De Leon</span>
