@@ -1,7 +1,7 @@
 'use client'
 
 import { addXp } from '@/lib/xp'
-import { PRICE, earlyBy, euro, type Game, type Mode } from './game'
+import { PRICE, combos, earlyBy, euro, type Game, type Mode } from './game'
 
 // Runs, best arrival, fines paid and achievements, kept in this browser
 // only. Each new ending, each way of travelling and each achievement also
@@ -45,6 +45,8 @@ export const ACHIEVEMENTS: { id: string; name: string; text: string }[] = [
     { id: 'chatty', name: 'Not very Finnish', text: 'talked to three strangers in one run' },
     { id: 'gull', name: 'Seagull tax', text: 'a gull took your kebab' },
     { id: 'inked', name: 'Fresh ink', text: 'held still for Lin, and still on time' },
+    { id: 'regular', name: 'Kurvi knows you', text: 'three places noticed where you had been, in one run' },
+    { id: 'inkpass', name: 'Lin did that', text: 'a tattoo got you through a check' },
     { id: 'home', name: 'Night bus', text: 'home before the phone died, paying nothing' },
 ]
 
@@ -120,6 +122,8 @@ export function recordRun(g: Game): string[] {
         chatty: g.talked.length >= 3,
         gull: g.flags.includes('gull'),
         inked: onTime && g.flags.includes('inked'),
+        regular: combos(g) >= 3,
+        inkpass: g.flags.includes('inkpass'),
         home: onTime && g.home && free,
         collector: s.fines >= 300,
     }

@@ -52,7 +52,7 @@ import {
     GOLDEN,
     LANE_X,
     POUR_SHOW,
-    TOPPING_TIME,
+    toppingTime,
     TOPPINGS,
     FALL,
     LANE_SPEED,
@@ -1676,7 +1676,10 @@ function insideCar(ctx: Ctx, g: Game, still: boolean, look: (typeof CABINS)[Tran
     }
     if (g.player.hidden) drawPlayer()
     for (const r of g.riders) {
-        const x = slotX(r.slot) + r.dx
+        // Whoever stands next to your kebab leans a little away from it.
+        const off = r.slot - g.player.slot
+        const shy = g.kebab && !r.seated && off !== 0 && Math.abs(off) <= 1 ? Math.sign(off) * 3 : 0
+        const x = slotX(r.slot) + r.dx + shy
         const top = person(ctx, x, 116, r.look, r.face, r.seated ? 'sit' : 'stand')
         if (time - r.okAt < 0.8) tick(ctx, x, top - 6)
         else if (r.look.asleep && !still) snore(ctx, x, top, time, r.look.seed ?? 0)
@@ -2030,9 +2033,18 @@ function scooter(ctx: Ctx, x: number, ground: number, face: 1 | -1 = 1) {
 }
 
 /** Someone standing on a scooter. Returns the top of the head. */
-function scooterRider(ctx: Ctx, x: number, ground: number, look: Look, face: 1 | -1 = 1) {
+function scooterRider(ctx: Ctx, x: number, ground: number, look: Look, face: 1 | -1 = 1, box = false) {
     scooter(ctx, x, ground, face)
-    return person(ctx, x - face, ground - 3, look, face, 'stand', 'player')
+    const top = person(ctx, x - face, ground - 3, look, face, 'stand', 'player')
+    if (box) pizzaBox(ctx, x + face * 5, ground - 17)
+    return top
+}
+
+// What is left of a good pizza, flat on the handlebars or the rack.
+function pizzaBox(ctx: Ctx, x: number, y: number) {
+    R(ctx, x - 5, y, 11, 3, '#e8e0d0')
+    R(ctx, x - 5, y + 2, 11, 1, '#b8ac98')
+    R(ctx, x - 1, y + 1, 3, 1, '#c8402f')
 }
 
 // You, walking or riding onto the square, and your friend if you are on time.
@@ -2042,9 +2054,10 @@ function arrival(ctx: Ctx, g: Game, still: boolean, t: number) {
     if (g.mode !== 'bike') {
         person(ctx, lerp(20, 70, k), 134, you(g), 1, k < 1 ? 'walk' : 'stand', 'player', t * 7, -1, mood)
     } else if (g.scooter) {
-        if (k < 1) scooterRider(ctx, lerp(-20, 56, k), 134, you(g))
+        if (k < 1) scooterRider(ctx, lerp(-20, 56, k), 134, you(g), 1, g.flags.includes('box'))
         else {
             scooter(ctx, 56, 134)
+            if (g.flags.includes('box')) pizzaBox(ctx, 61, 117)
             person(ctx, 72, 134, you(g), 1, 'stand', 'player', 0, -1, mood)
         }
     } else if (k < 1) {
@@ -2732,8 +2745,9 @@ function bikeScene(ctx: Ctx, g: Game, still: boolean) {
             }
         }
         const top = g.scooter
-            ? scooterRider(ctx, RIDER_X, LANE + swerve, you(g))
+            ? scooterRider(ctx, RIDER_X, LANE + swerve, you(g), 1, g.flags.includes('box'))
             : cyclist(ctx, RIDER_X, LANE - lift, you(g), 1, bike.s * 9)
+        if (!g.scooter && g.flags.includes('box')) pizzaBox(ctx, RIDER_X - 11, LANE - lift - 13)
         if (time - bike.ringAt < 0.5) drawText(ctx, 'pling', RIDER_X + 4, top - 8, C.yellowL)
         if (time - bike.brakeAt < 0.4 && !lift) R(ctx, RIDER_X - 24, LANE - 1, 12, 1, '#151515')
     }
@@ -2920,7 +2934,7 @@ function kurviScene(ctx: Ctx, g: Game) {
             R(ctx, x, 30, w, 18, '#1a1a1a')
             R(ctx, x + 4, 35, 8, 8, TOPPINGS[now])
             drawText(ctx, now, 185 + 6, 35, C.white, 2, 'center')
-            const left = 1 - clamp01((g.time - k.shownAt) / TOPPING_TIME)
+            const left = 1 - clamp01((g.time - k.shownAt) / toppingTime(g))
             R(ctx, x, 49, Math.round(w * left), 2, left < 0.35 ? C.red : C.yellowL)
             for (const [b, text] of [[PIZZA_NO, 'Not that'], [PIZZA_YES, 'On it']] as const) {
                 R(ctx, b.x, b.y, b.w, b.h, '#1a1a1a')
@@ -3163,6 +3177,11 @@ function saunaScene(ctx: Ctx, g: Game, k: Kurvi) {
         person(ctx, 66, 39, { ...REGULAR, flushed: red }, 1, 'sit', 'rider', 0, -1, s.heat > 1 ? 'happy' : 'calm')
         person(ctx, 84, 39, { ...REGULAR, skin: SKIN[3], seed: 0.7, flushed: red }, -1, 'sit', 'rider', 0, -1, s.heat > 1 ? 'happy' : 'calm')
         person(ctx, 60, 52, { ...you(g), coat: g.look.skin, pants: '#f2f0e8', bag: null, kebab: false, flushed: s.heat > 0.6 }, 1, 'sit', 'player', 0, -1, s.sisu < 0.3 ? 'worried' : 'calm')
+        // Fresh ink under cling film on your arm, shining in the heat.
+        if (g.lastInk) {
+            R(ctx, 62, 42, 3, 3, '#e8f0f4')
+            R(ctx, 63, 43, 1, 1, INK_TONE[g.lastInk.design])
+        }
     })
     // The thermometer on the wall: the line is a proper löyly.
     R(ctx, 96, 16, 10, 40, '#e8e4dc')
@@ -3582,7 +3601,11 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             else if (gone) bubble(ctx, 76, 64, say2(g, ['PHEW.', 'HUH.', 'OK. OK.']))
             return letterbox(ctx)
         }
+        case 'showink':
         case 'inked': {
+            // The same close-up serves when you show it to an inspector: no
+            // gloves then, and they have something to say.
+            const shown = shotOf(g) === 'showink'
             // Under the lamp, your arm held up by Lin's gloved hands: the design
             // big, the skin a little red round it, the cling film catching the light.
             const ink = g.lastInk
@@ -3593,7 +3616,7 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
             R(ctx, 0, 46, W, 3, shade(skin, 0.15))
             R(ctx, 0, 100, W, 4, shade(skin, -0.15))
             // Black nitrile gloves, fingers over the top and thumbs underneath.
-            for (const gx of [14, 214]) {
+            for (const gx of shown ? [] : [14, 214]) {
                 for (let f = 0; f < 4; f++) R(ctx, gx + f * 7, 38 + (f % 3 === 0 ? 2 : 0), 6, 16, '#18181c')
                 R(ctx, gx + 2, 38, 2, 1, '#3a3a44')
                 R(ctx, gx + 6, 96, 18, 10, '#18181c')
@@ -3632,7 +3655,14 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                 R(ctx, 186, 52, 1, 5, '#ffffff')
                 R(ctx, 184, 54, 5, 1, '#ffffff')
             }
-            if (t > 0.8) bubble(ctx, 196, 28, ink && ink.marks.filter((m) => m === 'smudge').length <= 1 ? 'GOOD ARM.' : 'IT IS ART.')
+            const clean = ink && ink.marks.filter((m) => m === 'smudge').length <= 1
+            if (shown) {
+                // The reader lowers when it lands, and comes back up when it does not.
+                const up = g.verdict === 'pass' ? Math.round(clamp01((t - 1.4) / 0.6) * 30) : 0
+                R(ctx, 206, 104 + up, 22, 30, C.navyD)
+                R(ctx, 208, 107 + up, 18, 10, t > 1.4 && g.verdict !== 'pass' ? '#c8322a' : '#5be07a')
+                if (t > 1.2) bubble(ctx, 196, 28, g.verdict === 'pass' ? (clean ? 'LIN DID THAT?' : 'OH NO. WHO?') : 'NICE. TICKET?')
+            } else if (t > 0.8) bubble(ctx, 196, 28, clean ? 'GOOD ARM.' : 'IT IS ART.')
             return letterbox(ctx)
         }
         case 'tip': {
@@ -3912,8 +3942,10 @@ function cutScene(ctx: Ctx, g: Game, still: boolean) {
                     text:
                         g.ending === 'fake'
                             ? 'with a screenshot'
-                            : g.caughtWith === 'kebab'
-                              ? 'offered a kebab'
+                            : g.caughtWith === 'ink'
+                              ? 'showed a tattoo lol'
+                              : g.caughtWith === 'kebab'
+                                ? 'offered a kebab'
                               : g.caughtWith === 'story'
                                 ? 'long story guy'
                                 : 'black hoodie',

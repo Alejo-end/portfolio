@@ -24,6 +24,7 @@ const notes: Spec[] = [
     { label: 'laundromat', value: 'coins left in the drums, three looks. Mind the cat' },
     { label: 'sauna', value: 'löyly on hot stones only. Hold the heat, outlast the regulars. One of them drives a bus' },
     { label: 'tattoo', value: 'upstairs over the tram stop. Breathe when Lin lifts the needle, never while it is down. Her flatmate runs the kontrollit chat' },
+    { label: 'kurvi knows', value: 'places notice where you have been. Shots before a tattoo, a tattoo in the sauna, a kebab at the pizzeria, dryer coins at the kiosk. The order matters' },
     { label: 'the street', value: 'tap a place or a stop. Pocket the phone, pan with the arrows' },
     { label: 'scooter', value: 'swerve, throttle, watch the battery. The park is a slow zone' },
     { label: 'runs', value: 'night, easy from 21:00, rush hour, the long way to Kamppi, the way home at three, daily' },
