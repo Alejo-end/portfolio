@@ -57,15 +57,16 @@ function Grid({ cards, filter }: { cards: ProjectCard[]; filter: Filter }) {
 
     return (
         <div>
-            <div role="tablist" aria-label="Filter projects" className="flex flex-wrap border-b border-foreground">
+            {/* Toggle buttons, not tabs: they narrow one list instead of swapping panels. */}
+            <div role="group" aria-label="Filter projects" className="flex flex-wrap border-b border-foreground">
                 {tabs.map((f) => {
                     const active = f === filter
                     const count = f === 'all' ? cards.length : cards.filter((card) => card.kind === f).length
                     return (
                         <button
                             key={f}
-                            role="tab"
-                            aria-selected={active}
+                            type="button"
+                            aria-pressed={active}
                             onClick={() => setFilter(f)}
                             className={`flex items-center gap-2 px-2.5 py-1.5 font-mono text-xs sm:px-3.5 sm:text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                                 active ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'

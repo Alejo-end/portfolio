@@ -1,3 +1,4 @@
+import { CursorToggle } from './CursorToggle'
 import { DarkModeToggle } from './DarkModeToggle'
 import { SpecList } from './SpecList'
 import { AdlMark } from './AdlMark'
@@ -70,7 +71,8 @@ export function SiteFooter() {
                 <AdlMark className="h-8 w-8 shrink-0 text-foreground" />
                 <span>© {built.getFullYear()} Alejandro De Leon</span>
                 <span>updated {updated}</span>
-                <span className="sm:ml-auto">
+                <span className="flex items-center gap-x-6 sm:ml-auto">
+                    <CursorToggle />
                     <DarkModeToggle showLabel />
                 </span>
             </div>

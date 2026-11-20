@@ -73,6 +73,22 @@ export function SnakeButton() {
     const pathname = usePathname()
     const router = useRouter()
     const [open, setOpen] = useState(false)
+    // On a phone the two buttons sit over the text. They step out of the way
+    // while the page scrolls down and come back as soon as it scrolls up.
+    const [away, setAway] = useState(false)
+
+    useEffect(() => {
+        let last = window.scrollY
+        const onScroll = () => {
+            const y = window.scrollY
+            if (Math.abs(y - last) < 8) return
+            // Phones only: on a wide screen the corner is clear of the text.
+            setAway(y > last && y > 120 && window.innerWidth < 640)
+            last = y
+        }
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => window.removeEventListener('scroll', onScroll)
+    }, [])
 
     useEffect(() => {
         addXp(`page:${pathname}`)
@@ -100,7 +116,13 @@ export function SnakeButton() {
     }, [router])
 
     return (
-        <div className="fixed bottom-3 right-3 z-50 flex items-end gap-1.5 font-mono text-[10px] leading-none">
+        <div
+            // Not in the game, where the corner is the only way out, and not with snake open.
+            inert={away && !open && pathname !== '/metro' ? true : undefined}
+            className={`fixed bottom-3 right-3 z-50 flex items-end gap-1.5 font-mono text-[10px] leading-none transition-transform duration-300 ${
+                away && !open && pathname !== '/metro' ? 'max-sm:translate-y-[calc(100%+1rem)]' : ''
+            }`}
+        >
             {open && (
                 <div className="absolute bottom-full right-0 mb-2 w-[calc(100vw-1.5rem)] border border-foreground bg-background p-2 sm:w-72">
                     <div className="mb-2 flex justify-between text-muted-foreground">

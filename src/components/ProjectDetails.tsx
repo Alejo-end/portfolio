@@ -9,9 +9,8 @@ import { SoundBadge } from "@/components/koivu/SoundBadge"
 import { hasSound } from "@/data/sound"
 import { Picture } from "@/components/Picture"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
-import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
-import type { CodeSnippet, Project, Spec } from "@/app/types"
+import type { Project, Spec } from "@/app/types"
 import type { GalleryFile } from "@/lib/media"
 
 // How many columns the mood board has at the current window width.
@@ -56,23 +55,38 @@ const mediaName = (file: GalleryFile) => {
 }
 
 // Hero clips only play while on screen, and never on their own under reduced
-// motion: the poster stands in and the controls start it.
+// motion: the poster stands in and the controls start it. The browser's own
+// controls are always there, to pause, scrub or go full screen. A clip the
+// reader paused stays paused when it scrolls back into view.
 function HeroVideo({ src, poster }: { src: string; poster?: string }) {
   const ref = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const v = ref.current
     if (!v) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      v.controls = true
-      return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let onScreen = false
+    let pausedByReader = false
+    // A pause while on screen is the reader's; one we make happens off screen.
+    const onPause = () => {
+      if (onScreen && !v.ended) pausedByReader = true
+    }
+    const onPlay = () => {
+      pausedByReader = false
     }
     const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) v.play().catch(() => {})
-      else v.pause()
+      onScreen = entry.isIntersecting
+      if (!onScreen) v.pause()
+      else if (!pausedByReader) v.play().catch(() => {})
     })
+    v.addEventListener("pause", onPause)
+    v.addEventListener("play", onPlay)
     io.observe(v)
-    return () => io.disconnect()
+    return () => {
+      io.disconnect()
+      v.removeEventListener("pause", onPause)
+      v.removeEventListener("play", onPlay)
+    }
   }, [])
 
   return (
@@ -83,6 +97,7 @@ function HeroVideo({ src, poster }: { src: string; poster?: string }) {
       loop
       muted
       playsInline
+      controls
       preload="none"
       className="h-auto w-full"
     />
@@ -156,10 +171,9 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
   const renderGallery = (
     files: GalleryFile[],
     offset: number,
-    snippets: CodeSnippet[] = [],
     layout: Project["galleryLayout"] = "columns",
   ) => {
-    if (files.length === 0 && snippets.length === 0) {
+    if (files.length === 0) {
       return (
         <div className="w-full h-64 flex items-center justify-center">
           <p className="text-muted-foreground">No media available</p>
@@ -236,16 +250,9 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
           )
     }
 
-    const codeBoxes = snippets.map((snippet) => (
-      <div key={snippet.filename} className="break-inside-avoid mb-4">
-        <CodeBox snippet={snippet} />
-      </div>
-    ))
-
     if (layout === "grid") {
       return (
         <div className={layoutClass}>
-          {codeBoxes}
           {files.map(renderTile)}
         </div>
       )
@@ -265,7 +272,6 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
       <div className="flex items-start gap-4">
         {stacks.map((stack, c) => (
           <div key={c} className="flex min-w-0 flex-1 flex-col">
-            {c === 0 && codeBoxes}
             {stack.items.map((i) => renderTile(files[i], i))}
           </div>
         ))}
@@ -455,7 +461,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
       <div className="w-full overflow-hidden">
         {project.reactComponent
           ? project.reactComponent
-          : renderGallery(gallery, 0, project.codeSnippets, project.galleryLayout)}
+          : renderGallery(gallery, 0, project.galleryLayout)}
       </div>
       {prototype && (
         <section className="space-y-6 pt-10">

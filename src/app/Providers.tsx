@@ -1,6 +1,7 @@
 'use client'
 
 import { ThemeProvider } from 'next-themes'
+import { ThemeColor } from '@/components/ThemeColor'
 
 // next-themes renders an inline script that sets the theme before first
 // paint. It only has to run from the server HTML; when React renders it again
@@ -12,6 +13,7 @@ const scriptProps = typeof window === 'undefined' ? undefined : { type: 'text/pl
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <ThemeProvider attribute="class" scriptProps={scriptProps}>
+            <ThemeColor />
             {children}
         </ThemeProvider>
     )
