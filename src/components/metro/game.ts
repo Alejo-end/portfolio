@@ -211,7 +211,7 @@ const POLICE_MIN = 6
 // How long one line of chatter stays up, and the pause before the reply.
 const SAY = 1.6
 const REPLY = 0.25
-const PLATFORM_WAIT = 6
+export const PLATFORM_WAIT = 6
 const CHOOSE = 3.4
 
 // Door timeline, in seconds from the moment the vehicle appears.

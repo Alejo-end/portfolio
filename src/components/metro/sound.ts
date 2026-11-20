@@ -65,19 +65,24 @@ export function unlock() {
 
 let white: AudioBuffer | null = null
 
-// Filtered white noise: low for wheels on rails, high for door air.
-function noise(at: number, length: number, type: BiquadFilterType, freq: number, volume: number, swell = false) {
-    const ctx = context()
+// One second of white noise, made once.
+function whiteOf(ctx: AudioContext) {
     if (!white) {
         white = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate)
         const data = white.getChannelData(0)
         for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
     }
+    return white
+}
+
+// Filtered white noise: low for wheels on rails, high for door air.
+function noise(at: number, length: number, type: BiquadFilterType, freq: number, volume: number, swell = false) {
+    const ctx = context()
     const src = ctx.createBufferSource()
     const filter = ctx.createBiquadFilter()
     const gain = ctx.createGain()
     const start = ctx.currentTime + at
-    src.buffer = white
+    src.buffer = whiteOf(ctx)
     src.loop = true
     filter.type = type
     filter.frequency.value = freq
@@ -87,6 +92,71 @@ function noise(at: number, length: number, type: BiquadFilterType, freq: number,
     src.connect(filter).connect(gain).connect(ctx.destination)
     src.start(start)
     src.stop(start + length + 0.05)
+}
+
+// A quiet bed of noise under each kind of place: rain on the street, the
+// tunnel under the car, the hum of a station, a bar through a door.
+export type Bed = 'street' | 'tunnel' | 'station' | 'room' | 'bar' | 'sauna' | 'square'
+const BEDS: Record<Bed, { type: BiquadFilterType; freq: number; q: number; volume: number; wobble: number }> = {
+    street: { type: 'highpass', freq: 3200, q: 0.4, volume: 0.012, wobble: 0.15 },
+    square: { type: 'highpass', freq: 2600, q: 0.4, volume: 0.014, wobble: 0.2 },
+    tunnel: { type: 'lowpass', freq: 150, q: 1.2, volume: 0.11, wobble: 0.35 },
+    station: { type: 'lowpass', freq: 240, q: 0.6, volume: 0.03, wobble: 0.1 },
+    room: { type: 'bandpass', freq: 120, q: 6, volume: 0.035, wobble: 0.05 },
+    bar: { type: 'bandpass', freq: 520, q: 0.8, volume: 0.03, wobble: 0.5 },
+    sauna: { type: 'highpass', freq: 5200, q: 0.5, volume: 0.008, wobble: 0.3 },
+}
+let bed: { kind: Bed; gain: GainNode; stop: () => void } | null = null
+
+/** Fade to the bed for where you are now, or to silence. Only once audio is unlocked. */
+export function ambience(kind: Bed | null) {
+    if (bed?.kind === kind || (!bed && !kind)) return
+    // Never the first to wake the audio: that takes a tap or a key press.
+    if (!audio || audio.state !== 'running') return
+    try {
+        const ctx = audio
+        const now = ctx.currentTime
+        if (bed) {
+            const old = bed
+            old.gain.gain.cancelScheduledValues(now)
+            old.gain.gain.setTargetAtTime(0.0001, now, 0.25)
+            window.setTimeout(old.stop, 1500)
+            bed = null
+        }
+        if (!kind) return
+        const spec = BEDS[kind]
+        const src = ctx.createBufferSource()
+        const filter = ctx.createBiquadFilter()
+        const gain = ctx.createGain()
+        // A slow swell, so it breathes instead of hissing flat.
+        const lfo = ctx.createOscillator()
+        const depth = ctx.createGain()
+        src.buffer = whiteOf(ctx)
+        src.loop = true
+        filter.type = spec.type
+        filter.frequency.value = spec.freq
+        filter.Q.value = spec.q
+        gain.gain.setValueAtTime(0.0001, now)
+        gain.gain.setTargetAtTime(spec.volume, now, 0.4)
+        lfo.frequency.value = 0.23
+        depth.gain.value = spec.volume * spec.wobble
+        lfo.connect(depth).connect(gain.gain)
+        src.connect(filter).connect(gain).connect(ctx.destination)
+        src.start()
+        lfo.start()
+        bed = {
+            kind,
+            gain,
+            stop: () => {
+                try {
+                    src.stop()
+                    lfo.stop()
+                } catch {}
+            },
+        }
+    } catch {
+        // No audio in this browser.
+    }
 }
 
 export function play(cue: Cue) {
