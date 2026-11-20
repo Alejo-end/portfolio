@@ -13,12 +13,6 @@ export interface WorkExperience {
     githubUrl?: string
 }
 
-export interface CodeSnippet {
-  filename: string;
-  language?: string;
-  code: string;
-}
-
 export interface ProjectVideo {
   src: string;
   poster?: string;
@@ -71,7 +65,6 @@ export interface Project {
   /** A file to download, such as a packaged device. */
   downloadUrl?: string;
   reactComponent?: React.ReactNode;
-  codeSnippets?: CodeSnippet[];
   year: number;
   /** 'grid' keeps sequential UI screenshots in reading order; 'columns' (default) is masonry for mixed-ratio photos. */
   galleryLayout?: "grid" | "columns";

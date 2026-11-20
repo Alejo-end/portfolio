@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { cursorOn, serverCursorOn, subscribeCursor } from '@/lib/cursor'
 import { getXp, levelOf } from '@/lib/xp'
 
 const CELL = 8
@@ -11,11 +12,14 @@ const isTarget = (el: Element | null) => !!el?.closest?.('a, button, [role="appl
 // A square cursor that drags a pixel snake behind it. The snake grows a
 // little with every level. Mouse and trackpad only, and never when the OS asks
 // for more contrast, since that is where people set a larger system cursor.
+// The footer has a switch that turns it off (CursorToggle.tsx).
 export function Cursor() {
     const head = useRef<HTMLDivElement>(null)
     const tail = useRef<(HTMLDivElement | null)[]>([])
+    const on = useSyncExternalStore(subscribeCursor, cursorOn, serverCursorOn)
 
     useEffect(() => {
+        if (!on) return
         if (!window.matchMedia('(pointer: fine)').matches) return
         if (window.matchMedia('(forced-colors: active), (prefers-contrast: more)').matches) return
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -77,10 +81,10 @@ export function Cursor() {
             document.documentElement.classList.remove('has-cursor')
             cancelAnimationFrame(frame)
         }
-    }, [])
+    }, [on])
 
     return (
-        <div aria-hidden className="pointer-events-none fixed inset-0 z-[100] mix-blend-difference [@media(pointer:coarse)]:hidden">
+        <div aria-hidden className={`pointer-events-none fixed inset-0 z-[100] mix-blend-difference [@media(pointer:coarse)]:hidden ${on ? '' : 'hidden'}`}>
             {Array.from({ length: MAX_TAIL }, (_, i) => (
                 <div
                     key={i}

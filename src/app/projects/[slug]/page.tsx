@@ -32,9 +32,12 @@ export async function generateMetadata(
         openGraph: {
             title: project.title,
             description: project.description,
-            // Without a gallery image, the site card from app/opengraph-image.tsx.
-            images: [{ url: image ? image.url : '/opengraph-image' }],
+            // The project's share card, made from its first picture by
+            // scripts/media-manifest.mjs. Without a picture, the site card
+            // from app/opengraph-image.tsx.
+            images: [image ? { url: `/og/${slug}.jpg`, width: 1200, height: 630 } : { url: '/opengraph-image' }],
         },
+        twitter: { card: 'summary_large_image' },
     }
 }
 

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -7,6 +7,7 @@ import { Providers } from "./Providers";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Cursor } from "@/components/koivu/Cursor";
 import { SnakeButton } from "@/components/koivu/SnakeButton";
+import { EnterFallback } from "@/components/EnterFallback";
 import { siteUrl } from "@/lib/site";
 
 const geistSans = localFont({
@@ -39,6 +40,15 @@ export const metadata: Metadata = {
     "Software engineer and UX designer from Panama, based in Helsinki. Electronics, experimental music, and instruments.",
 };
 
+// A phone's browser bars take the page's background, light or dark. The
+// same two colors as PAPER in ThemeColor.tsx, which follows the footer switch.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fcfcfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,12 +62,18 @@ export default function RootLayout({
         className={`${geistMono.variable} ${geistSans.variable} ${silkscreen.variable} antialiased`}
       >
         <Providers>
+          <a href="#content" className="skip">
+            Skip to content
+          </a>
           <div className="flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
+            <div id="content" tabIndex={-1} className="flex-1 focus:outline-none">
+              {children}
+            </div>
             <SiteFooter />
           </div>
           <SnakeButton />
           <Cursor />
+          <EnterFallback />
         </Providers>
         {/* Real-user Core Web Vitals, free on the Hobby plan. */}
         <SpeedInsights />

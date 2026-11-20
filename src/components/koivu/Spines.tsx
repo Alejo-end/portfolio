@@ -31,7 +31,7 @@ export function Spine({
             href={href}
             aria-current={on ? 'page' : undefined}
             {...rest}
-            className={`plain flex items-center gap-1.5 font-mono text-[11px] transition-opacity duration-300 [writing-mode:vertical-rl] hover:underline focus-visible:underline focus-visible:outline-none ${className}`}
+            className={`plain flex items-center gap-1.5 font-mono text-[11px] transition-opacity duration-300 [writing-mode:vertical-rl] hover:underline focus-visible:underline ${className}`}
         >
             <span aria-hidden className={`inline-block h-2 w-2 shrink-0 rounded-full border border-foreground ${on ? 'bg-foreground' : ''}`} />
             {children}
@@ -63,7 +63,7 @@ export function SiteSpines({ className = '' }: { className?: string }) {
                         key={item.href}
                         href={item.href}
                         aria-current={on ? 'page' : undefined}
-                        className={`plain flex items-center gap-1.5 underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none lg:[writing-mode:vertical-rl] ${on ? 'max-lg:underline' : ''}`}
+                        className={`plain flex items-center gap-1.5 underline-offset-2 hover:underline focus-visible:underline lg:[writing-mode:vertical-rl] ${on ? 'max-lg:underline' : ''}`}
                     >
                         <span aria-hidden className={`hidden h-2 w-2 shrink-0 rounded-full border border-foreground lg:inline-block ${on ? 'bg-foreground' : ''}`} />
                         {item.label}

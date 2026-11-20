@@ -216,7 +216,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
                                     }}
                                     onFocus={() => setFocus({ alias: row.alias })}
                                     onBlur={() => setFocus(null)}
-                                    className={`plain grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-border py-2 transition-opacity duration-300 sm:grid-cols-[2.5rem_minmax(0,14rem)_5rem_minmax(0,1fr)_3rem] focus-visible:outline-none ${
+                                    className={`plain grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-border py-2 transition-opacity duration-300 sm:grid-cols-[2.5rem_minmax(0,14rem)_5rem_minmax(0,1fr)_3rem] ${
                                         state === false ? 'opacity-30' : ''
                                     }`}
                                 >
@@ -243,7 +243,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
                         <li key={job.id}>
                             <Link
                                 href={`/experience#${job.id}`}
-                                className="plain grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-border py-2 hover:bg-secondary sm:grid-cols-[minmax(0,16rem)_minmax(0,12rem)_minmax(0,1fr)_5rem] focus-visible:outline-none focus-visible:bg-secondary"
+                                className="plain grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-border py-2 hover:bg-secondary sm:grid-cols-[minmax(0,16rem)_minmax(0,12rem)_minmax(0,1fr)_5rem] focus-visible:bg-secondary"
                             >
                                 <span className="truncate text-sm font-semibold tracking-tight">{job.company}</span>
                                 <span className="hidden truncate font-mono text-[11px] sm:block">{job.position}</span>

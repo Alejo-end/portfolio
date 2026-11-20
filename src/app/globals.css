@@ -63,6 +63,30 @@
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   }
 
+  /* Whatever the keyboard lands on shows it, the same way everywhere. A
+     component with its own mark for focus turns this off itself. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* The first stop of the Tab key on every page: past the site links. */
+  .skip {
+    position: absolute;
+    left: 0.75rem;
+    top: -4rem;
+    z-index: 60;
+    padding: 0.5rem 0.75rem;
+    background: hsl(var(--foreground));
+    color: hsl(var(--background));
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  .skip:focus {
+    top: 0.75rem;
+  }
+
   /* Links look like links, the way the web used to. */
   main a:not(.plain) {
     text-decoration-line: underline;
@@ -155,6 +179,21 @@ img[data-developing] {
       animation: rise linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 9rem;
+    }
+  }
+}
+
+/* Where there are no scroll timelines (Firefox), EnterFallback.tsx marks the
+   rows still below the screen and unmarks each as it comes into view. */
+@supports not (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .enter {
+      transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    .enter[data-below] {
+      opacity: 0;
+      transform: translateY(12px);
     }
   }
 }
