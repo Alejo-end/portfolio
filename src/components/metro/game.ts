@@ -389,6 +389,8 @@ export type ShotId =
     | 'inked'
     | 'tip'
     | 'showink'
+    | 'leave'
+    | 'shift'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -539,6 +541,8 @@ export type Game = {
     kurvi: Kurvi | null
     // The tattoo you left Lin's with, for its close-up.
     lastInk: Ink | null
+    // The Kurvi place you just left, as it stood, for the shot of what you came away with.
+    left: Kurvi | null
     // Clean slices off the spit: a better kebab is a better bribe.
     slices: number
     // What happened to the kebab, if it is gone: for what you say at the end.
@@ -919,6 +923,7 @@ export function createGame(seed = Date.now()): Game {
         drink: DRINKS[0],
         kurvi: null,
         lastInk: null,
+        left: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1039,6 +1044,7 @@ function begin(g: Game, kind: Kind) {
         drink: DRINKS[0],
         kurvi: null,
         lastInk: null,
+        left: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1722,8 +1728,15 @@ function leaveKurvi(g: Game) {
             g.t = CHOOSE + 0.5
         })
     }
-    enter(g, 'intro', caption)
-    g.t = CHOOSE + 0.5
+    // Every other place gets one shot of what you came away with, unless
+    // you only looked in at the kiosk.
+    const street = (g: Game) => {
+        enter(g, 'intro', caption)
+        g.t = CHOOSE + 0.5
+    }
+    if (k.place === 'tattoo' || (k.place === 'kiosk' && k.score !== -1 && !k.cells.length)) return street(g)
+    g.left = k
+    cut(g, [{ id: 'leave', dur: 2.3, caption: back }], street)
 }
 
 /** The question on the phone, once the intro has had its say. */
@@ -2197,9 +2210,17 @@ function lastWords(g: Game) {
         ['hello??', '10 min', 'im cold', 'going home', 'dont text me'],
         ['u ok?', 'a gull looked at me', 'leaving', 'tomorrow then'],
     ]
+    // What you turn up with speaks first: a tattoo, a pizza, a sauna face.
+    const brought = g.lastInk
+        ? { you: say(['I GOT A TATTOO.', 'LOOK. LIN DID IT.']), kaveri: say(['YOU GOT A WHAT.', 'IN FIFTEEN MINUTES?']) }
+        : g.flags.includes('box')
+          ? { you: say(['I BROUGHT PIZZA.', 'HALF A PIZZA. FOR YOU.']), kaveri: say(['YOU ARE FORGIVEN.', 'IS IT WARM?']) }
+          : g.flags.includes('sauna') && !found
+            ? { you: say(['I WENT TO SAUNA.', 'MOI. I AM VERY CALM.']), kaveri: say(['WITHOUT ME?', 'WHY ARE YOU STEAMING.']) }
+            : null
     g.said = {
-        you: kebab ? you[kebab] : say(['MADE IT.', 'HEI!', 'TA-DAA.', 'MOI MOI.']),
-        kaveri,
+        you: kebab ? you[kebab] : (brought?.you ?? say(['MADE IT.', 'HEI!', 'TA-DAA.', 'MOI MOI.'])),
+        kaveri: !kebab && brought && !found ? brought.kaveri : kaveri,
         chat: [...say(chats.map((c) => c.join('|'))).split('|'), ...(found ? [`u found my ${found.short}??`] : [])],
     }
 }
@@ -2208,7 +2229,22 @@ function lastWords(g: Game) {
 function epilogue(g: Game, caption: string): Shot[] {
     lastWords(g)
     const shots: Shot[] = [{ id: 'arrive', dur: arriveTime(g), caption }]
-    if (caught(g)) return [...shots, { id: 'gossip', dur: 3.2, caption: 'The group chat, a minute later.', cue: 'buzz' }]
+    // Now and then, the other side of the night: the inspectors, off shift.
+    const met = g.crew.length > 0 || ['ghost', 'story', 'bribe', 'inkpass', 'sleeper'].some((f) => g.flags.includes(f))
+    const shift: Shot[] =
+        met && !g.home && Math.random() < 0.45
+            ? [
+                  {
+                      id: 'shift',
+                      dur: 4.2,
+                      caption: caught(g)
+                          ? 'Two stops on, the pair who wrote your slip sit down. Last car, then home. One of them has a night bus to catch, and pays for it.'
+                          : 'Somewhere behind you, two inspectors sit down. Four hundred tickets, three fines, cold coffee. Last car, then home.',
+                  },
+              ]
+            : []
+    if (caught(g)) return [...shots, ...shift, { id: 'gossip', dur: 3.2, caption: 'The group chat, a minute later.', cue: 'buzz' }]
+    shots.push(...shift)
     if (g.home) {
         if (g.scooter) shots.push({ id: 'parked', dur: 2.4, caption: 'You leave it in the middle of the pavement. Like everyone.' })
         shots.push(
