@@ -391,6 +391,7 @@ export type ShotId =
     | 'showink'
     | 'leave'
     | 'shift'
+    | 'window'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -543,6 +544,8 @@ export type Game = {
     lastInk: Ink | null
     // The Kurvi place you just left, as it stood, for the shot of what you came away with.
     left: Kurvi | null
+    // The first stranger you had a real word with. They turn up again at the end.
+    met: Look | null
     // Clean slices off the spit: a better kebab is a better bribe.
     slices: number
     // What happened to the kebab, if it is gone: for what you say at the end.
@@ -924,6 +927,7 @@ export function createGame(seed = Date.now()): Game {
         kurvi: null,
         lastInk: null,
         left: null,
+        met: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -1045,6 +1049,7 @@ function begin(g: Game, kind: Kind) {
         kurvi: null,
         lastInk: null,
         left: null,
+        met: null,
         slices: 1,
         lostKebab: null,
         said: { you: '', kaveri: '', chat: [] },
@@ -2055,6 +2060,7 @@ function talk(g: Game, r: Rider) {
         g.caption = 'You wake someone up. They fall straight back asleep.'
         return
     }
+    g.met ??= { ...r.look, phone: false, asleep: false }
     // The kebab in your hand is a conversation. One bite buys you a friend
     // who stands between you and the vests.
     if (g.kebab && !g.flags.includes('combo:bite') && Math.random() < 0.4) {
@@ -2182,6 +2188,35 @@ function finish(g: Game, ending: Ending) {
 
 const REST = 1.6
 
+/** A ticket you paid for yourself: in the app, at the kiosk, or with coins at a machine. */
+export const honest = (g: Game) => g.ticket && (g.ticketFrom === 'app' || g.ticketFrom === 'cash')
+
+/**
+ * The night as a receipt: what the ride cost, what you paid, and what the
+ * rest of it came to. The last line is the only opinion on it.
+ */
+export function receipt(g: Game): { rows: [string, string][]; foot: [string, string] } {
+    const dodged = g.flags.filter((f) => ['ghost', 'story', 'bribe', 'inkpass', 'sleeper', 'talker', 'crowd'].includes(f)).length
+    const rows: [string, string][] = [
+        ['Single AB', euro(PRICE)],
+        ['Paid', euro(g.paid)],
+        ['Minutes', String(Math.max(0, Math.round(g.clock - g.start)))],
+        ['Detours', String(g.went.length)],
+        ['Strangers', String(g.talked.length)],
+    ]
+    if (dodged) rows.push(['Checks dodged', String(dodged)])
+    if (g.cash > 0) rows.push(['In your pocket', euro(g.cash)])
+    const free = g.paid === 0
+    const foot: [string, string] = honest(g)
+        ? ['You paid your way.', 'Kiitos.']
+        : free && g.ending === 'made'
+          ? ['Someone paid for', 'this ride. Not you.']
+          : free
+            ? ['Free, and late. It', 'cost something anyway.']
+            : ['Not the ticket. You', 'paid for other things.']
+    return { rows, foot }
+}
+
 const caught = (g: Game) => g.ending === 'fined' || g.ending === 'fake'
 
 /** How long the wide shot of an ending runs: the walk in, or the slip sliding in. */
@@ -2229,6 +2264,17 @@ function lastWords(g: Game) {
 function epilogue(g: Game, caption: string): Shot[] {
     lastWords(g)
     const shots: Shot[] = [{ id: 'arrive', dur: arriveTime(g), caption }]
+    // The honest run: a ticket you bought, and so a ride with nothing to
+    // watch for. One long look out of the window before you get there.
+    if (honest(g) && g.ending === 'made' && g.mode !== 'bike')
+        shots.unshift({
+            id: 'window',
+            dur: 6,
+            caption: say([
+                'A ticket in your pocket. Nobody to watch for. For once you look out of the window, and the city goes by.',
+                `${euro(PRICE)}, and the ride is only a ride. Lights on the water. You had forgotten it could be this quiet.`,
+            ]),
+        })
     // Now and then, the other side of the night: the inspectors, off shift.
     const met = g.crew.length > 0 || ['ghost', 'story', 'bribe', 'inkpass', 'sleeper'].some((f) => g.flags.includes(f))
     const shift: Shot[] =
