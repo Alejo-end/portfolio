@@ -57,7 +57,7 @@ export const projects: Project[] = [
   {
     title: "four",
     description:
-      "Live sampler for norns with four stereo tracks. Each track records its own take and plays it through its own voice, filter, two effects and sends: tape, grains, two time stretches or Mutable Instruments Clouds. Scenes crossfade between any two sounds. The DSP that SuperCollider lacked is my own C++, and the website walks every page on the real screen.",
+      "Live sampler for norns with four stereo tracks. Each track records its own take and plays it back as tape, grains, one of two time stretches or Mutable Instruments Clouds, then through its own filter, two effects and sends. Scenes crossfade between any two sounds. I wrote the DSP that SuperCollider lacked in C++. The website goes through every page on the real screen.",
     materials: ["norns"],
     software: ["Lua", "SuperCollider", "C++", "softcut"],
     alias: "four",

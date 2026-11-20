@@ -17,19 +17,19 @@ const updated = built.toLocaleDateString('fi-FI', { timeZone: 'Europe/Helsinki' 
 function Course({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <section className="space-y-3">
-            <h2 className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{title}</h2>
+            <h2 className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</h2>
             {children}
         </section>
     )
 }
 
 // The footer, set like the back of a menu: three short courses, one big line
-// and whose practice it is, then the small print with the maker's mark, the
+// and whose site it is, then the small print with the maker's mark, the
 // ADL monogram from the bottom plate of H2H.
 export function SiteFooter() {
     return (
         <footer className="page mt-40 overflow-hidden pb-6">
-            <div className="grid gap-x-5 gap-y-10 border-t border-foreground pt-4 font-mono text-[11px] sm:grid-cols-3">
+            <div className="grid gap-x-5 gap-y-10 border-t border-foreground pt-4 font-mono text-xs sm:grid-cols-3">
                 <Course title="Elsewhere">
                     <ul className="space-y-1.5">
                         {elsewhere.map((link) => (
@@ -51,8 +51,9 @@ export function SiteFooter() {
                     />
                 </Course>
                 <Course title="Colophon">
-                    <p className="max-w-[18rem] leading-relaxed text-muted-foreground">
-                        Set in Geist and Geist Mono, Silkscreen on small screens. Next.js on Vercel, media in the repository.
+                    <p className="max-w-[20rem] leading-relaxed text-muted-foreground">
+                        Set in Geist and Geist Mono, with Silkscreen for the pixel parts. Built with Next.js, hosted on Vercel. The media lives in
+                        the repository.
                     </p>
                 </Course>
             </div>
@@ -60,11 +61,11 @@ export function SiteFooter() {
             <p aria-hidden className="display mt-20 select-none whitespace-nowrap text-[4.5vw] leading-[0.85]">
                 Still practicing.
             </p>
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">The studio practice of Alejandro?</p>
+            <p className="mt-3 font-mono text-xs text-muted-foreground">Alejandro De Leon, Helsinki</p>
 
             {/* Room on the right for the two game buttons pinned to that corner,
                 which would otherwise sit on top of the theme switch. */}
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-[11px] text-muted-foreground sm:pr-28">
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-3 font-mono text-xs text-muted-foreground sm:pr-28">
                 {/* The maker's mark, small, the way it sits on the plate. */}
                 <AdlMark className="h-8 w-8 shrink-0 text-foreground" />
                 <span>© {built.getFullYear()} Alejandro De Leon</span>

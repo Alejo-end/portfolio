@@ -13,7 +13,7 @@ const FEATURED = ["four", "h2h", "stray", "reins", "weather"];
 
 export const metadata: Metadata = {
     description:
-        "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, with an enthusiasm for electronics and experimental music.",
+        "Alejandro? is a software engineer and UX designer from Panama, based in Helsinki, who makes electronics and experimental music.",
 };
 
 export default function Home() {

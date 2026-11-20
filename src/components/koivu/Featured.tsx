@@ -29,7 +29,7 @@ const stripSizes = (shape: number) =>
     `(min-width: 2080px) ${Math.round(416 * shape)}px, (min-width: 1024px) ${Math.round(20 * shape)}vw, (min-width: 640px) ${Math.round(34 * shape)}vw, ${Math.round(56 * shape)}vw`
 
 // One project per row, the way a contact sheet reads: the name and its kind,
-// a short overview set small in capitals, then its pictures in a strip as wide
+// a short overview in plain sentences, then its pictures in a strip as wide
 // as the screen that scrolls sideways. Every picture keeps its own shape: the
 // strip sets the height, the picture its width. Nothing is cropped.
 export function Featured({ items }: { items: FeaturedItem[] }) {
@@ -133,8 +133,8 @@ function Row({ item, lead }: { item: FeaturedItem; lead: boolean }) {
                 </span>
             </header>
             <div className="lg:col-span-4">
-                <p className="mb-2 font-mono text-[11px] text-muted-foreground">i. overview</p>
-                <p className="max-w-prose font-mono text-[10px] uppercase leading-[1.45] tracking-[0.02em] text-muted-foreground">{item.description}</p>
+                <p className="mb-2 font-mono text-[11px] text-muted-foreground">overview</p>
+                <p className="max-w-prose text-sm leading-relaxed text-foreground/80">{item.description}</p>
                 {item.aside && <div className="mt-4">{item.aside}</div>}
             </div>
             <div

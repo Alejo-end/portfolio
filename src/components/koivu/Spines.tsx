@@ -48,7 +48,7 @@ export function SpineLabel({ children }: { children: ReactNode }) {
 export function SiteSpines({ className = '' }: { className?: string }) {
     const pathname = usePathname()
     return (
-        <nav aria-label="Site" className={`flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-[11px] lg:flex-nowrap lg:items-start lg:gap-1 ${className}`}>
+        <nav aria-label="Site" className={`flex flex-wrap items-baseline gap-x-4 gap-y-2 font-mono text-[13px] lg:flex-nowrap lg:items-start lg:gap-1 lg:text-xs ${className}`}>
             <span className="text-muted-foreground lg:hidden">site</span>
             <span className="hidden lg:block">
                 <SpineLabel>site</SpineLabel>

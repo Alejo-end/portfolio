@@ -141,7 +141,7 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
                     <Term n={2} href="/experience#mvision-ai" onFocus={setFocus}>
                         UX designer
                     </Term>{' '}
-                    from Panama, based in Helsinki, with an enthusiasm for{' '}
+                    from Panama, based in Helsinki, who makes{' '}
                     <Term n={3} href="/projects?kind=hardware" kind="hardware" onFocus={setFocus}>
                         electronics
                     </Term>{' '}
