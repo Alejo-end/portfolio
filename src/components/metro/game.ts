@@ -388,6 +388,7 @@ export type ShotId =
     | 'pass'
     | 'inked'
     | 'tip'
+    | 'showink'
 export type Shot = { id: ShotId; dur: number; caption: string; cue?: Cue }
 export type Cut = { shots: Shot[]; n: number; then: (g: Game) => void }
 
@@ -478,6 +479,7 @@ export type ActionId =
     | 'ink2'
     | 'breathe'
     | 'stay'
+    | 'showink'
 // `key` is a letter that does this action on a keyboard, in place of a
 // number; `note` is a word or two shown beside the label, like its cost.
 export type Action = { id: ActionId; label: string; disabled?: boolean; key?: string; note?: string }
@@ -552,7 +554,7 @@ export type Game = {
     // A slot or a rider picked by clicking the picture, for the next action.
     aim: number | null
     // What you were fined after trying instead of a ticket, for the group chat.
-    caughtWith: 'kebab' | 'story' | null
+    caughtWith: 'kebab' | 'story' | 'ink' | null
     // The run's side errand, a different one every run.
     quest: Quest
     // Picked up the thing Kaveri lost.
@@ -812,6 +814,14 @@ function addPlatformCrew(g: Game) {
 }
 
 const waiting = (g: Game) => g.crew.filter((i) => !i.aboard)
+
+// One place noticing where you have been: each kind counts once a run.
+function combo(g: Game, id: string) {
+    const flag = `combo:${id}`
+    if (!g.flags.includes(flag)) g.flags.push(flag)
+}
+/** How many times tonight one place noticed another. */
+export const combos = (g: Game) => g.flags.filter((f) => f.startsWith('combo:')).length
 
 // On the easy run, or once Lin has tattooed you, the chat is always right.
 const sure = (g: Game) => g.easy || g.flags.includes('inked')
@@ -1224,7 +1234,9 @@ export const POUR_SHOW = 0.9
 export const DROP_FALL = 1.1
 export const LANE_X = [92, 128, 164]
 // Seconds to decide on a topping, and to bake: golden in between.
-export const TOPPING_TIME = 1.8
+const TOPPING_TIME = 1.8
+/** Seconds to decide on a topping. Fewer with two shots in you. */
+export const toppingTime = (g: Game) => TOPPING_TIME * (g.drunk ? 0.8 : 1)
 const BAKE_TIME = 3.2
 export const GOLDEN: [number, number] = [0.55, 0.78]
 
@@ -1245,6 +1257,16 @@ function visit(g: Game, place: Place) {
         return enter(g, 'kurvi', say(['Pesula. Warm, humming, empty. People forget coins in the drums. Three looks.', 'The laundromat. Nobody here but the dryers. Check three drums for coins.']))
     }
     if (place === 'sauna') {
+        // A sauna voucher off a scratch card buys the good spot by the door.
+        if (g.flags.includes('voucher')) {
+            combo(g, 'voucher')
+            return enter(g, 'kurvi', 'The voucher from the kiosk gets you a birch whisk and the spot by the door, where the air is. "Löyly?" Heat it and stay.')
+        }
+        // Fresh ink and steam do not get on.
+        if (g.lastInk) {
+            combo(g, 'inksauna')
+            return enter(g, 'kurvi', 'The regulars look at the cling film on your arm and wince. "Fresh? That will sting in here." Heat it and stay, if you can.')
+        }
         return enter(g, 'kurvi', say([
             'The public sauna. Two regulars on the top bench. "Löyly?" Heat it until it bites, and stay.',
             'Sauna. The regulars look at the ladle, then at you. Make it hot. Do not leave first.',
@@ -1252,6 +1274,16 @@ function visit(g: Game, place: Place) {
     }
     if (place === 'tattoo') {
         k.stage = 'menu'
+        // Lin can tell where you have been.
+        if (g.drunk) {
+            combo(g, 'drunkink')
+            return enter(g, 'kurvi', `Lin smells the ${g.drink.name} before you sit down. "Pick one. And breathe slower than you think you need to." It will sting more.`)
+        }
+        if (g.flags.includes('sauna')) {
+            combo(g, 'cleanink')
+            k.ink.sting = 0
+            return enter(g, 'kurvi', 'Lin looks at your arm. "Sauna? Good. Clean skin, slow pulse." Pick from the wall. It will sting less.')
+        }
         return enter(g, 'kurvi', say([
             'Upstairs, the studio. Lin looks up from her drawing table. "Walk-in? Pick from the wall. Hold still and it is free."',
             'Lin\'s studio, over the tram stop. Twelve years in Kallio, flash sheets to the ceiling. "Choose one. Then breathe when I lift."',
@@ -1272,11 +1304,20 @@ function visit(g: Game, place: Place) {
         return enter(g, 'kurvi', say(['The kebab place. The cook shaves the spit. "Catch!"', 'The cook is in a hurry. "Hold the pita under it!"']))
     }
     if (place === 'pizza') {
-        const pizza = pick(g, PIZZAS)
+        // Walk in with a kebab and that is the order: you brought half of it.
+        const pizza = (g.kebab && PIZZAS.find((p) => p.name === 'Kebab')) || pick(g, PIZZAS)
         k.order = pizza.name
         k.want = [...pizza.want]
         const others = shuffle(g, Object.keys(TOPPINGS).filter((t) => !k.want.includes(t))).slice(0, 3)
         k.toppings = shuffle(g, [...k.want, ...others])
+        if (g.kebab) {
+            combo(g, 'kebabpizza')
+            return enter(g, 'kurvi', 'The cook points at your kebab. "Kebab pizza. You brought half of it. Kebab and garlic, nothing else!" Then out of the oven when it is golden.')
+        }
+        if (g.drunk) {
+            combo(g, 'fastpizza')
+            return enter(g, 'kurvi', `Two ${g.drink.name}s in, the toppings come at you fast. "One ${pizza.name}. Quick!" Then out of the oven when it is golden.`)
+        }
         return enter(g, 'kurvi', `The pizzeria is short a cook. "One ${pizza.name}. Quick!" Then out of the oven when it is golden.`)
     }
     g.drink = pick(g, DRINKS)
@@ -1316,9 +1357,17 @@ function kioskInput(g: Game, k: Kurvi, id: ActionId) {
         return
     }
     if (id === 'scratch') {
-        g.paid += SCRATCH
         k.cells = scratchCard(g)
         k.stage = 'play'
+        // Coins from the dryers spend like any others, only slower.
+        if (g.cash >= SCRATCH) {
+            g.cash -= SCRATCH
+            combo(g, 'coins')
+            g.cues.push('coin')
+            g.caption = `A scratch card, ${euro(SCRATCH)} in warm coins. The clerk counts them twice. Three of a kind wins.`
+            return
+        }
+        g.paid += SCRATCH
         g.caption = `A scratch card, ${euro(SCRATCH)}. Three of a kind wins.`
         return
     }
@@ -1381,7 +1430,8 @@ function sweatOut(g: Game, k: Kurvi, dt: number) {
     const s = k.steam
     s.heat = Math.max(0, s.heat - 0.04 * dt)
     s.stones = Math.min(1, s.stones + 0.32 * dt)
-    s.sisu -= (0.015 + s.heat * s.heat * 0.11) * dt
+    const sting = g.flags.includes('voucher') ? 0.75 : g.lastInk ? 1.35 : 1
+    s.sisu -= (0.015 + s.heat * s.heat * 0.11) * sting * dt
     s.hold = s.heat >= 1 ? s.hold + dt : 0
     if (s.hold >= HOLD) return endSauna(g, k, true, say(['"Nyt on löylyt." The regulars nod. You are one of them now.', 'They leave before you do. The older one pats your shoulder.']))
     if (s.sisu <= 0) return endSauna(g, k, false, say(['You cannot take it. Out, red as a lobster.', 'Your sisu runs out before the heat does.']))
@@ -1442,7 +1492,7 @@ function inkStep(g: Game, k: Kurvi, dt: number) {
     const now = needle(ink.t)
     const strokes = ink.marks.length
     if (now.down && now.i < strokes) {
-        ink.sting += (STING + now.i * 0.03) * dt
+        ink.sting += (STING + now.i * 0.03) * (g.drunk ? 1.22 : g.flags.includes('sauna') ? 0.85 : 1) * dt
         if (ink.sting >= 1 && ink.marks[now.i] === null) {
             k.at = g.time
             smudge(g, k, now.i, say(['It stings. You flinch. A wobble in the line.', 'Too much. Your arm jumps. "Hold STILL."']))
@@ -1566,6 +1616,12 @@ function leaveKurvi(g: Game) {
             g.drunk = false
             back = `Out and dressed, clean and calm${g.went.includes('bar') ? ', the shots sweated out' : ''}. The older regular drives a night bus. "Get in at the front."`
         } else back = say(['Out, steaming, a bit ashamed.', 'You cool off on the bench outside. Next time.'])
+        // In foil on the stove, the way sausages go.
+        if (g.kebab) {
+            combo(g, 'hotkebab')
+            g.slices = Math.min(3, g.slices + 1)
+            back += ' The kebab went on the stove in foil, like a sausage. It is hot again, and better.'
+        }
     } else if (k.place === 'tattoo') {
         const design = FLASH[k.ink.design].name
         if (!k.ink.marks.some((m) => m !== null)) back = 'You leave the studio. Lin goes back to her drawing.'
@@ -1598,7 +1654,10 @@ function leaveKurvi(g: Game) {
             g.kebab = true
             g.slices = 2
             back = 'Three kebabs. A voucher, cashed next door. A kebab to go.'
-        } else if (won === 'sauna') back = 'Three saunas. A sauna voucher. Not tonight.'
+        } else if (won === 'sauna') {
+            g.flags.push('voucher')
+            back = g.went.includes('sauna') ? 'Three saunas. A sauna voucher. You have just been.' : 'Three saunas. A sauna voucher. It is round the corner.'
+        }
         else back = say(['Nothing. The clerk has seen it all before.', 'No three of anything. Of course.'])
     } else if (k.place === 'kebab') {
         // Meat caught, of seven, as a kebab from none to the best.
@@ -1624,6 +1683,11 @@ function leaveKurvi(g: Game) {
               : k.score <= 2
                 ? `The cook takes one look and redoes the ${k.order}. A minute.`
                 : say(['Slice eaten.', 'Not bad. Gone in four bites.'])
+        // A good one leaves with you: the rest of it, in a box.
+        if (!burnt && k.score > 2) {
+            g.flags.push('box')
+            back += ' The rest goes in a box.'
+        }
     } else {
         g.drunk = true
         g.drunkAt = g.time
@@ -1672,7 +1736,9 @@ function choose(g: Game, mode: Mode | 'scooter') {
         g.scooter = true
         g.clock += 1
         g.bike = makeBike(g)
-        return cut(g, [{ id: 'scan', dur: 2.6, caption: `You type in the free code. Unlocked. Battery ${g.bike.battery}%.` }], startBike)
+        const box = g.flags.includes('box') ? ' The pizza box rides on the handlebars.' : ''
+        if (box) combo(g, 'pizzabox')
+        return cut(g, [{ id: 'scan', dur: 2.6, caption: `You type in the free code. Unlocked. Battery ${g.bike.battery}%.${box}` }], startBike)
     }
     g.scooter = false
     g.mode = mode
@@ -1974,6 +2040,29 @@ function talk(g: Game, r: Rider) {
     if (r.look.asleep) {
         g.bubble = { id: r.id, text: 'HM? ZZZ.', until: g.time + 1.8 }
         g.caption = 'You wake someone up. They fall straight back asleep.'
+        return
+    }
+    // The kebab in your hand is a conversation. One bite buys you a friend
+    // who stands between you and the vests.
+    if (g.kebab && !g.flags.includes('combo:bite') && Math.random() < 0.4) {
+        combo(g, 'bite')
+        g.slices = Math.max(1, g.slices - 1)
+        g.bubble = { id: r.id, text: 'A BITE?', until: g.time + 2.4 }
+        if (g.heat > 0) {
+            g.heat -= 1
+            g.caption = 'They ask for a bite of the kebab. You give one. They stand in front of you after that. Less attention on you.'
+        } else {
+            g.cash += 0.5
+            g.cues.push('coin')
+            g.caption = 'They ask for a bite of the kebab. You give one. They insist on 50 cents for it.'
+        }
+        return
+    }
+    // Everyone in Kallio knows whose work that is.
+    if (g.lastInk && !g.flags.includes('combo:inktalk') && Math.random() < 0.4) {
+        combo(g, 'inktalk')
+        g.bubble = { id: r.id, text: 'LIN?', until: g.time + 2.4 }
+        g.caption = `They see the cling film. "Lin did that? She did mine." A sleeve comes up. You have something in common now.`
         return
     }
     // Gifts once a run at most.
@@ -2352,9 +2441,14 @@ function hit(g: Game, bike: Bike, o: Obstacle) {
     }
     bike.hold = DOWN
     bike.downAt = g.time
-    g.clock += 1
     g.cues.push('crash')
     g.caption = say((g.scooter && SCOOTER_FALLS[o.kind]) || FALLS[o.kind] || [''])
+    // The pizza box takes the first fall for you: no minute lost.
+    if (g.flags.includes('box')) {
+        g.flags.splice(g.flags.indexOf('box'), 1)
+        combo(g, 'pizzabox')
+        g.caption += ' You land on the pizza box. It was a good pizza. No time lost.'
+    } else g.clock += 1
     // Nobody holds on to a kebab in a fall.
     if (g.kebab) {
         g.kebab = false
@@ -2452,10 +2546,14 @@ function reachPlayer(g: Game, insp: Inspector) {
     }
     if (g.player.hidden) {
         const crowd = g.riders.some((r) => r.slot === g.player.slot)
-        if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2) + luck(g)) {
+        const calm = g.flags.includes('sauna')
+        if (g.rand() < 0.6 - 0.12 * g.heat + (crowd ? 0.1 : -0.2) + (calm ? 0.12 : 0) + luck(g)) {
             insp.passed = true
             g.flags.push('ghost')
-            const caption = say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
+            if (calm) combo(g, 'calm')
+            const caption = calm
+                ? 'Still slow from the sauna, you do not even blink. They walk right past you.'
+                : say(['They walk right past you.', 'They step over your feet. Nothing.', 'A vest looks straight through you.'])
             // At floor level: their shoes and the reader go by your face. Then the ride goes on.
             // Once per stretch between stops: the second of a pair only gets the caption.
             const shown = `pass@${g.at}`
@@ -2585,8 +2683,9 @@ function letGo(g: Game, caption?: string) {
 
 // Instead of a ticket: the kebab, or after the bar, the whole story. A
 // close-up plays out, then it works or it does not.
-function excuse(g: Game, kind: 'kebab' | 'story') {
+function excuse(g: Game, kind: 'kebab' | 'story' | 'ink') {
     const driver = g.checkFrom === 'driver'
+    if (kind === 'ink') return showInk(g, driver)
     // A kebab with clean slices of meat goes further than one of onion.
     const odds = kind === 'kebab' ? (driver ? 0.75 : 0.5) + (g.slices - 1.5) * 0.1 : 0.4
     const pass = g.rand() < odds + luck(g)
@@ -2612,6 +2711,33 @@ function excuse(g: Game, kind: 'kebab' | 'story') {
         if (pass) return letGo(g, kebab ? 'They take the kebab and walk on.' : 'They lose the thread and walk on.')
         g.caughtWith = kind
         g.note = kind === 'kebab' ? 'They kept the kebab.' : 'The story did not help.'
+        finish(g, 'fined')
+    })
+}
+
+// Instead of a ticket, the fresh tattoo. Everyone in Kallio knows Lin, and a
+// clean piece of hers starts a conversation that outlasts the check.
+function showInk(g: Game, driver: boolean) {
+    const clean = g.flags.includes('inked')
+    const pass = g.rand() < (clean ? 0.6 : 0.25) + luck(g)
+    g.verdict = pass ? 'pass' : 'fail'
+    g.bubble = null
+    g.flags.push('inkshown')
+    cut(g, [{ id: 'showink', dur: 3, caption: 'You roll up your sleeve instead.' }], (g) => {
+        g.cues.push(pass ? 'ok' : 'fail')
+        if (pass) {
+            combo(g, 'inkpass')
+            g.flags.push('inkpass')
+            const told = clean ? '"Lin did that? She did my shoulder." Ten minutes about Lin.' : '"Oh no. Who did that to you?" Pity works too.'
+            if (driver) return backToDoors(g, true, `${told} The driver waves you in.`)
+            return letGo(g, `${told} They forget what they stopped you for.`)
+        }
+        if (driver) {
+            g.heat = Math.min(3, g.heat + 1)
+            return backToDoors(g, false, '"Nice. Not a ticket." The driver points at the door.')
+        }
+        g.caughtWith = 'ink'
+        g.note = 'The tattoo did not count as a ticket.'
         finish(g, 'fined')
     })
 }
@@ -2866,6 +2992,8 @@ export function act(g: Game, id: ActionId) {
             return excuse(g, 'kebab')
         case 'ramble':
             return excuse(g, 'story')
+        case 'showink':
+            return excuse(g, 'ink')
         case 'sleep':
             return sleep(g)
         case 'pizza':
@@ -3135,6 +3263,7 @@ export function actions(g: Game): Action[] {
             const list: Action[] = [{ id: 'show', label: 'Show ticket', disabled }]
             if (g.kebab) list.push({ id: 'bribe', label: 'Offer kebab', disabled })
             if (g.drunk) list.push({ id: 'ramble', label: 'Explain', disabled })
+            if (g.lastInk && !g.flags.includes('inkshown')) list.push({ id: 'showink', label: 'Show tattoo', disabled })
             list.push(driver ? { id: 'stepoff', label: 'Step off', disabled } : { id: 'giveup', label: 'Give up', disabled })
             return list
         }
@@ -3254,7 +3383,7 @@ export function step(g: Game, dt: number) {
             if (k.stage === 'play' && k.place === 'sauna') sweatOut(g, k, dt)
             if (k.stage === 'play' && k.place === 'tattoo') inkStep(g, k, dt)
             // Too slow on a topping counts as leaving it off.
-            if (k.stage === 'play' && k.place === 'pizza' && g.time - k.shownAt > TOPPING_TIME) {
+            if (k.stage === 'play' && k.place === 'pizza' && g.time - k.shownAt > toppingTime(g)) {
                 kurviInput(g, 'no')
                 if (g.kurvi?.stage === 'play' || g.kurvi?.stage === 'oven') g.caption = `Too slow. ${g.caption}`
             }
