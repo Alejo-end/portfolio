@@ -27,6 +27,7 @@ const notes: Spec[] = [
     { label: 'kurvi knows', value: 'places notice where you have been. Shots before a tattoo, a tattoo in the sauna, a kebab at the pizzeria, dryer coins at the kiosk. The order matters' },
     { label: 'the receipt', value: 'every run ends with one: what the ride cost, what you paid, and the rest of it' },
     { label: 'the honest run', value: `buy the ${euro(PRICE)} ticket and nothing happens. You look out of the window` },
+    { label: 'strangers', value: 'the dog, the busker and the pram each have something for you. The first one you talk to remembers you' },
     { label: 'the street', value: 'tap a place or a stop. Pocket the phone, pan with the arrows' },
     { label: 'scooter', value: 'swerve, throttle, watch the battery. The park is a slow zone' },
     { label: 'runs', value: 'night, easy from 21:00, rush hour, the long way to Kamppi, the way home at three, daily' },
