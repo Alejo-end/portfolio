@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
+import { Picture } from '@/components/Picture'
 
 export interface FeaturedItem {
     // Unique per row; also the row's anchor id when `id` is set.
@@ -17,10 +17,16 @@ export interface FeaturedItem {
     description: string
     // Under the overview: skills, materials, anything set as spec lines.
     aside?: ReactNode
-    // A picture, or a clip's first frame with the clip itself in `video`.
-    media: { src: string; video?: string }[]
+    // A picture, or a clip's first frame with the clip itself in `video`, and
+    // its pixel size, which holds its place in the strip before it loads.
+    media: { src: string; video?: string; width?: number; height?: number }[]
 }
 
+// The strip sets a picture's height (56vw, 34vw from sm, 20vw from lg up to
+// 26rem), so its width on screen is that times its shape. Telling the browser
+// lets it fetch a copy that is just large enough.
+const stripSizes = (shape: number) =>
+    `(min-width: 2080px) ${Math.round(416 * shape)}px, (min-width: 1024px) ${Math.round(20 * shape)}vw, (min-width: 640px) ${Math.round(34 * shape)}vw, ${Math.round(56 * shape)}vw`
 
 // One project per row, the way a contact sheet reads: the name and its kind,
 // a short overview set small in capitals, then its pictures in a strip as wide
@@ -29,8 +35,8 @@ export interface FeaturedItem {
 export function Featured({ items }: { items: FeaturedItem[] }) {
     return (
         <div className="space-y-10">
-            {items.map((item) => (
-                <Row key={item.alias} item={item} />
+            {items.map((item, i) => (
+                <Row key={item.alias} item={item} lead={i === 0} />
             ))}
         </div>
     )
@@ -45,7 +51,9 @@ const RUSH = 420
 // the end and back. There is no scrollbar: on a mouse, the pointer steers.
 // Toward the right edge of the strip it runs forward faster, toward the left
 // edge it runs back. On a phone, a swipe moves it, and it waits after that.
-function Row({ item }: { item: FeaturedItem }) {
+// The first row is near the top of its page, so its first pictures load at
+// once; every other picture waits until the reader is close.
+function Row({ item, lead }: { item: FeaturedItem; lead: boolean }) {
     const row = useRef<HTMLElement>(null)
     const strip = useRef<HTMLDivElement>(null)
     const [awake, setAwake] = useState(false)
@@ -107,7 +115,7 @@ function Row({ item }: { item: FeaturedItem }) {
             id={item.id}
             onMouseEnter={() => setAwake(true)}
             onMouseLeave={() => setAwake(false)}
-            className="grid scroll-mt-8 gap-x-5 gap-y-3 border-t border-border pt-1.5 lg:grid-cols-12"
+            className="enter grid scroll-mt-8 gap-x-5 gap-y-3 border-t border-border pt-1.5 lg:grid-cols-12"
         >
             <header className="flex items-baseline gap-2 font-mono text-[11px] lg:col-span-2 lg:flex-col lg:gap-1.5">
                 <span className="flex items-baseline gap-2">
@@ -149,7 +157,16 @@ function Row({ item }: { item: FeaturedItem }) {
                         tabIndex={i === 0 ? undefined : -1}
                         className="plain relative h-[56vw] shrink-0 bg-secondary sm:h-[34vw] lg:h-[20vw] lg:max-h-[26rem]"
                     >
-                        <Image src={m.src} alt="" width={0} height={0} sizes="(min-width: 1024px) 40vw, 90vw" className="h-full w-auto" />
+                        <Picture
+                            src={m.src}
+                            alt=""
+                            width={m.width ?? 0}
+                            height={m.height ?? 0}
+                            sizes={m.width && m.height ? stripSizes(m.width / m.height) : '(min-width: 1024px) 40vw, 90vw'}
+                            loading={lead && i < 3 ? 'eager' : 'lazy'}
+                            fetchPriority={lead && i === 0 ? 'high' : undefined}
+                            className="h-full w-auto"
+                        />
                         {m.video && (
                             <>
                                 {/* The first frame holds the shape; the clip plays over it. */}

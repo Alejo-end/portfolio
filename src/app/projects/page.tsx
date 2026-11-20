@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { projects, projectNo } from '@/data/projects'
-import { getGallery, isImagePath } from '@/lib/media'
+import { getGallery, isImagePath, sizeOf } from '@/lib/media'
 import { hasSound } from '@/data/sound'
 import { ProjectGrid, type ProjectCard } from '@/components/koivu/ProjectGrid'
 import { PageTop } from '@/components/koivu/Spines'
@@ -27,6 +27,7 @@ export default function ProjectsPage() {
             year: project.year,
             kind: project.kind,
             cover,
+            coverSize: sizeOf(cover),
             burst: images.filter((url) => url !== cover).slice(0, 8),
             video,
             sound: gallery.some((b) => hasSound(b.pathname)),

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
+import { Picture } from '@/components/Picture'
 import { addXp } from '@/lib/xp'
 import { kinds } from './kinds'
 import { SoundBadge } from './SoundBadge'
@@ -16,6 +17,8 @@ export interface ProjectCard {
     year: number
     kind: ProjectKind
     cover?: string
+    /** The cover's pixel size, which holds the tile's place before it loads. */
+    coverSize?: { width: number; height: number }
     /** More stills, flicked through while the tile is active. */
     burst: string[]
     /** A clip that plays while the tile is active, in place of the burst. */
@@ -76,7 +79,7 @@ function Grid({ cards, filter }: { cards: ProjectCard[]; filter: Filter }) {
 
             <ul className="columns-1 gap-5 pt-6 sm:columns-2 2xl:columns-3">
                 {shown.map((card, i) => (
-                    <Tile key={card.alias} card={card} priority={i < 4} />
+                    <Tile key={card.alias} card={card} order={i} />
                 ))}
             </ul>
         </div>
@@ -104,7 +107,9 @@ function useActive<T extends HTMLElement>() {
     return { ref, active: hover || centered, bind: { onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false) } }
 }
 
-function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
+// The first tiles are on screen when the page opens, so they load at once
+// and the very first goes ahead of everything else.
+function Tile({ card, order }: { card: ProjectCard; order: number }) {
     const { ref, active, bind } = useActive<HTMLLIElement>()
     const [frame, setFrame] = useState(0)
     const [woken, setWoken] = useState(false)
@@ -134,17 +139,18 @@ function Tile({ card, priority }: { card: ProjectCard; priority: boolean }) {
     }, [active, woken])
 
     return (
-        <li ref={ref} {...bind} className="mb-10 break-inside-avoid">
+        <li ref={ref} {...bind} className="enter mb-10 break-inside-avoid">
             <Link href={`/projects/${card.alias}`} className="plain group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="relative overflow-hidden bg-secondary">
                     {card.cover ? (
-                        <Image
+                        <Picture
                             src={card.cover}
                             alt=""
-                            width={600}
-                            height={450}
+                            width={card.coverSize?.width ?? 600}
+                            height={card.coverSize?.height ?? 450}
                             quality={60}
-                            priority={priority}
+                            loading={order < 4 ? 'eager' : 'lazy'}
+                            fetchPriority={order === 0 ? 'high' : undefined}
                             sizes="(min-width: 1152px) 560px, (min-width: 640px) 50vw, 100vw"
                             className="h-auto w-full"
                         />

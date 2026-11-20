@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75, 85],
+    // Resized copies are kept for a month, not four hours. Media files do not
+    // change in place: a replaced picture gets a new name.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
   },
   async redirects() {
     return [

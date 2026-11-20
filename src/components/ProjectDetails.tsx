@@ -7,6 +7,7 @@ import { X, ChevronLeft, ChevronRight, Share2, Check, CodeIcon, VideoIcon, BookO
 import { LinkButton } from "@/components/LinkButton"
 import { SoundBadge } from "@/components/koivu/SoundBadge"
 import { hasSound } from "@/data/sound"
+import { Picture } from "@/components/Picture"
 import { Figure, SpecSheet } from "@/components/SpecSheet"
 import { CodeBox } from "@/components/CodeBox"
 import { KindTag } from "@/components/koivu/kinds"
@@ -92,8 +93,9 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
   const [carouselOpen, setCarouselOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [copied, setCopied] = useState(false)
-  // Width over height of each picture, learned as it loads, so the mood
-  // board can put the next one in its shortest column.
+  // Width over height of each picture, so the mood board can put the next
+  // one in its shortest column. Measured pictures are placed right from the
+  // first paint; only a clip with no poster is learned as it loads.
   const [ratios, setRatios] = useState<Record<string, number>>({})
   const columns = useSyncExternalStore(subscribeResize, columnCount, () => 4)
   const learn = (url: string) => (e: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement>) => {
@@ -179,15 +181,16 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
               className="relative block w-full break-inside-avoid mb-4 overflow-hidden cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {isVideo && file.poster ? (
-                <Image
+                <Picture
                   src={file.poster}
                   alt={`${project.title}, ${name}`}
-                  width={800}
-                  height={600}
+                  width={file.width ?? 800}
+                  height={file.height ?? 600}
                   quality={85}
+                  loading={index < 3 ? "eager" : "lazy"}
                   sizes={tileSizes}
-                  onLoad={learn(file.poster)}
-                  className="w-full h-auto object-cover"
+                  onLoad={file.width ? undefined : learn(file.poster)}
+                  className="w-full h-auto bg-secondary object-cover"
                 />
               ) : isVideo ? (
                 // "#t=0.1" makes the browser paint a first frame instead of an empty box.
@@ -200,16 +203,18 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
                   className="w-full h-auto object-cover"
                 />
               ) : (
-                <Image
+                <Picture
                   src={file.url || "/placeholder.svg"}
                   alt={`${project.title}, ${name}`}
-                  width={800}
-                  height={600}
+                  width={file.width ?? 800}
+                  height={file.height ?? 600}
                   quality={85}
-                  priority={index < 3}
+                  // The first row is on screen when the page opens.
+                  loading={index < 3 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : undefined}
                   sizes={tileSizes}
-                  onLoad={learn(file.url)}
-                  className="w-full h-auto object-cover"
+                  onLoad={file.width ? undefined : learn(file.url)}
+                  className="w-full h-auto bg-secondary object-cover"
                 />
               )}
               {sound && <SoundBadge />}
@@ -239,7 +244,8 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
     files.forEach((file, i) => {
       const shortest = stacks.reduce((a, b) => (b.height < a.height ? b : a))
       shortest.items.push(i)
-      shortest.height += 1 / (ratios[file.poster ?? file.url] ?? 1)
+      const shape = file.width && file.height ? file.width / file.height : ratios[file.poster ?? file.url]
+      shortest.height += 1 / (shape ?? 1)
     })
     return (
       <div className="flex items-start gap-4">
@@ -259,6 +265,12 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
     const currentFile = media[currentIndex]
     const isVideo = isVideoFile(currentFile)
     const name = mediaName(currentFile)
+    // The pictures one step away load behind the open one, so stepping
+    // through the viewer never waits on the network.
+    const beside = [...new Set([(currentIndex + 1) % media.length, (currentIndex - 1 + media.length) % media.length])]
+      .filter((i) => i !== currentIndex)
+      .map((i) => media[i])
+      .filter((file) => !isVideoFile(file))
 
     return (
       <dialog
@@ -329,11 +341,14 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
                     src={currentFile.url || "/placeholder.svg"}
                     alt={`${project.title}, ${name}`}
                     fill
-                    sizes="100vw"
+                    sizes="(min-width: 1056px) 1024px, 100vw"
                     className="object-contain"
                   />
                 </div>
               )}
+              {beside.map((file) => (
+                <Image key={file.url} src={file.url} alt="" aria-hidden fill sizes="(min-width: 1056px) 1024px, 100vw" loading="eager" className="invisible object-contain" />
+              ))}
             </div>
 
             <div className="absolute bottom-4 left-0 right-0 text-center font-[family-name:var(--font-pixel)] text-xs uppercase tracking-[0.1em] text-white/80">

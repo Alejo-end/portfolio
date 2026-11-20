@@ -1,14 +1,27 @@
 import { projects } from '@/data/projects'
 import localMedia from '@/data/media.json'
+import measured from '@/data/sizes.json'
 
 export interface GalleryFile {
     url: string
     pathname: string
     /** First frame of a video, for thumbnails. */
     poster?: string
+    /** Pixel size of the picture, or of a video's poster. */
+    width?: number
+    height?: number
 }
 
 export const isImagePath = (pathname: string) => /\.(png|jpe?g|webp)$/i.test(pathname)
+
+/**
+ * The pixel size of a picture in public/, measured by scripts/media-manifest.mjs.
+ * With it a page holds the picture's place before it loads, so nothing jumps.
+ */
+export const sizeOf = (url: string | undefined): { width: number; height: number } | undefined => {
+    const size = url ? (measured as Record<string, number[]>)[url] : undefined
+    return size && { width: size[0], height: size[1] }
+}
 
 // Gallery files live in public/media/<alias>/ and are served as static files.
 // Posters sit at public/media/posters/<video pathname>.jpg.
@@ -30,5 +43,8 @@ export const getGallery = (alias: string): GalleryFile[] =>
         ? files
               .filter(({ pathname }) => pathname.startsWith(`${alias}/`))
               .sort((a, b) => fileName(a.pathname).localeCompare(fileName(b.pathname)))
-              .map((file) => ({ ...file, poster: posters.get(file.pathname) }))
+              .map((file) => {
+                  const poster = posters.get(file.pathname)
+                  return { ...file, poster, ...sizeOf(poster ?? file.url) }
+              })
         : []

@@ -3,6 +3,7 @@ import { Featured, type FeaturedItem } from '@/components/koivu/Featured'
 import { PageTop } from '@/components/koivu/Spines'
 import { SpecList } from '@/components/SpecList'
 import { workExperiences, shortYears } from '@/data/experience'
+import { sizeOf } from '@/lib/media'
 
 // Each job as a row, the way the featured projects read on the home page:
 // company, role and years, a short overview, the stack, then its pictures.
@@ -19,7 +20,7 @@ const rows: FeaturedItem[] = workExperiences.map((job) => ({
         ...(job.gallery ?? []).map((g) => ({ src: g.src })),
         ...(job.videoSrc && job.posterSrc ? [{ src: job.posterSrc, video: job.videoSrc }] : []),
         ...(job.imageSrc ? [{ src: job.imageSrc }] : []),
-    ],
+    ].map((m) => ({ ...m, ...sizeOf(m.src) })),
 }))
 
 export default function WorkExperience() {

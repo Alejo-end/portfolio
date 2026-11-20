@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { ProjectKind } from '@/app/types'
+import { Picture } from '@/components/Picture'
 import { addXp } from '@/lib/xp'
 import { kinds } from './kinds'
 import { Module } from './Module'
@@ -27,6 +27,7 @@ export interface IndexRow {
     kind: ProjectKind
     description: string
     cover?: string
+    coverSize?: { width: number; height: number }
     sound?: boolean
 }
 
@@ -239,7 +240,15 @@ export function HomeIndex({ rows, featured, work }: { rows: IndexRow[]; featured
             {hovered?.cover && (
                 <div className="pointer-events-none fixed bottom-3 left-3 z-40 hidden w-60 border border-foreground bg-background p-1.5 [@media(pointer:fine)]:block">
                     {/* The whole picture, its own shape, never cropped. */}
-                    <Image src={hovered.cover} alt="" width={0} height={0} sizes="240px" className="h-auto max-h-[45vh] w-full object-contain grayscale" />
+                    <Picture
+                        src={hovered.cover}
+                        alt=""
+                        width={hovered.coverSize?.width ?? 0}
+                        height={hovered.coverSize?.height ?? 0}
+                        sizes="240px"
+                        loading="eager"
+                        className="h-auto max-h-[45vh] w-full object-contain grayscale"
+                    />
                     <p className="mt-1.5 flex justify-between font-mono text-[10px]">
                         <span>{hovered.title}</span>
                         <span className="text-muted-foreground">{hovered.no}</span>
