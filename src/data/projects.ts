@@ -129,6 +129,7 @@ export const projects: Project[] = [
       githubUrl: "https://digital-fabrication-1baba0.gitlab.io/media/files/Midi2host.zip",
       liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/07_electronics-design.html",
     },
+    liveUrl: "https://alejo-end.github.io/h2h/",
     year: 2026,
   },
   {
