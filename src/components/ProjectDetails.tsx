@@ -402,7 +402,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
     if (videos.length === 0) return null
 
     return (
-      <div className={videos.length > 1 ? "grid gap-4 md:grid-cols-2" : undefined}>
+      <div className={videos.length > 1 || project.videosAt === "end" ? "grid gap-4 md:grid-cols-2" : undefined}>
         {videos.map((video, i) => (
           <Figure key={video.src} index={i + 1} caption={video.caption}>
             <div className="overflow-hidden bg-secondary">
@@ -451,7 +451,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
           )}
         </div>
       </SpecSheet>
-      {renderVideos()}
+      {project.videosAt !== "end" && renderVideos()}
       <div className="w-full overflow-hidden">
         {project.reactComponent
           ? project.reactComponent
@@ -485,6 +485,7 @@ export function ProjectDetails({ project, no, gallery = [], prototypeGallery = [
           {renderGallery(prototypeGallery, gallery.length)}
         </section>
       )}
+      {project.videosAt === "end" && renderVideos()}
       {renderCarousel()}
     </div>
   )

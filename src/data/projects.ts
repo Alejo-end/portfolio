@@ -33,10 +33,9 @@ export const projects: Project[] = [
       { label: "mcu", value: "2 × XIAO ESP32-S3" },
       { label: "build", value: "printed pickguard and case · boards assembled by JLCPCB" },
     ],
-    videos: [
-      { src: "/videos/reins-pedal.mp4", poster: "/videos/reins-pedal-poster.jpg", caption: "box" },
-      { src: "/videos/reins-guitar.mp4", poster: "/videos/reins-guitar-poster.jpg", caption: "guitar side" },
-    ],
+    videos: [{ src: "/videos/reins-guitar.mp4", poster: "/videos/reins-guitar-poster.jpg", caption: "guitar side, first version" }],
+    videosAt: "end",
+    galleryLayout: "grid",
     prototype: {
       title: "MIDI Guitar",
       alias: "midiguitar",
