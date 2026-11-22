@@ -22,17 +22,19 @@ export const projects: Project[] = [
   {
     title: "Reins",
     description:
-      "The MIDI Guitar as open hardware. A board on the guitar reads your hand. A pedal turns it into MIDI.",
-    software: ["KiCad", "FreeCAD", "Arduino", "Python"],
+      "A gesture MIDI controller for a guitar. A distance sensor in a printed pickguard reads how high your hand is over the body and sends it as MIDI, by radio, to a small box on the floor. The box plays it out over USB and 5-pin DIN and adds its own sensor, an expression pedal and two footswitches. Open hardware: boards, case, pickguard and firmware.",
+    software: ["KiCad", "FreeCAD", "Arduino", "Python", "three.js"],
     alias: "reins",
     kind: "hardware",
     specs: [
-      { label: "guitar side", value: "ToF · LED ring · OLED · encoder · battery" },
-      { label: "pedal", value: "MIDI DIN out · EXP · FOOT · OLED · LED bar" },
-      { label: "link", value: "wireless" },
+      { label: "guitar side", value: "VL53L1X ToF · 16 LED ring · OLED · encoder · LiPo" },
+      { label: "box", value: "8 × 8 ToF · USB MIDI · DIN out · EXP · FOOT · OLED · LED bar" },
+      { label: "link", value: "ESP-NOW, 2 to 4 ms" },
+      { label: "mcu", value: "2 × XIAO ESP32-S3" },
+      { label: "build", value: "printed pickguard and case · boards assembled by JLCPCB" },
     ],
     videos: [
-      { src: "/videos/reins-pedal.mp4", poster: "/videos/reins-pedal-poster.jpg", caption: "pedal" },
+      { src: "/videos/reins-pedal.mp4", poster: "/videos/reins-pedal-poster.jpg", caption: "box" },
       { src: "/videos/reins-guitar.mp4", poster: "/videos/reins-guitar-poster.jpg", caption: "guitar side" },
     ],
     prototype: {
@@ -52,6 +54,8 @@ export const projects: Project[] = [
       githubUrl: "https://github.com/Alejo-end/midiguitar",
       liveUrl: "https://digital-fabrication-1baba0.gitlab.io/assignments/final-project.html",
     },
+    githubUrl: "https://github.com/Alejo-end/midiguitar",
+    liveUrl: "https://alejo-end.github.io/reins/",
     year: 2026,
   },
   {
