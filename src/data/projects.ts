@@ -27,7 +27,7 @@ export const projects: Project[] = [
     alias: "reins",
     kind: "hardware",
     specs: [
-      { label: "guitar side", value: "VL53L1X ToF · 16 LED ring · OLED · encoder · LiPo" },
+      { label: "guitar side", value: "VL53L1X ToF · 16 LED ring · OLED · encoder · LiPo · 2 Mustang slide switches" },
       { label: "box", value: "8 × 8 ToF · USB MIDI · DIN out · EXP · FOOT · OLED · LED bar" },
       { label: "link", value: "ESP-NOW, 2 to 4 ms" },
       { label: "mcu", value: "2 × XIAO ESP32-S3" },
