@@ -66,6 +66,8 @@ export interface Project {
   videoSrc?: string;
   /** Autoplaying loops shown between the title card and the gallery. */
   videos?: ProjectVideo[];
+  /** 'end' moves the videos to the bottom of the page, after the gallery and the prototype. */
+  videosAt?: "top" | "end";
   githubUrl?: string;
   liveUrl?: string;
   /** A file to download, such as a packaged device. */
